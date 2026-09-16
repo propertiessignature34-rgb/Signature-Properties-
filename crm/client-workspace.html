@@ -1,0 +1,3211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Workspace — Signature Properties</title>
+  <style>
+    :root {
+      --clr-primary: #5c3317; --clr-primary-soft: #fdf8ec;
+      --clr-gold: #b8860b; --clr-gold-mid: #d4a017; --clr-gold-soft: #fdf8ec;
+      --clr-success: #16a34a; --clr-warning: #d97706; --clr-danger: #dc2626;
+      --clr-neutral: #6b7280; --clr-bg: #faf7f2; --clr-card: #ffffff;
+      --clr-border: #e8ddd0; --clr-text: #1c0a00; --clr-text-light: #7a6355;
+      --radius: 10px; --shadow: 0 2px 8px rgba(92,51,23,.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--clr-bg); color: var(--clr-text); font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; min-height: 100vh; }
+
+    /* Nav */
+    .topnav { background: #2c1405; color: #fff; display: flex; align-items: center; padding: 0 24px; height: 52px; gap: 8px; }
+    .topnav a { color: #d4b896; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 14px; }
+    .topnav a:hover { background: rgba(255,255,255,.1); color: #fff; }
+    .topnav .brand { font-weight: 800; font-size: 15px; color: var(--clr-gold-mid); margin-right: 20px; letter-spacing:.02em; }
+    .topnav .breadcrumb { display: flex; align-items: center; gap: 4px; font-size: 13px; color: #9a8070; }
+    .topnav .breadcrumb a { color: #9a8070; }
+    .topnav-right { margin-left: auto; }
+
+    /* Client header */
+    .client-header { background: linear-gradient(135deg,#2c1405 0%,#5c3317 100%); color: #fff; padding: 20px 24px; }
+    .client-header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .client-avatar { width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; }
+    .client-name { font-size: 22px; font-weight: 700; }
+    .client-id { font-size: 12px; color: rgba(255,255,255,.6); margin-top: 2px; }
+    .client-meta { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+    .client-meta-item { display: flex; align-items: center; gap: 5px; font-size: 13px; color: rgba(255,255,255,.8); }
+    .client-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+    .action-btn { display: flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.1); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; transition: all .15s; }
+    .action-btn:hover { background: rgba(255,255,255,.25); }
+    .action-btn.green  { background: rgba(22,163,74,.7); border-color: rgba(22,163,74,.7); }
+    .action-btn.blue   { background: rgba(92,51,23,.7); border-color: rgba(92,51,23,.6); }
+    .action-btn.accent { background: rgba(184,134,11,.85); border-color: rgba(184,134,11,.8); }
+
+    /* Badges */
+    .badge { display: inline-block; padding: 2px 9px; border-radius: 12px; font-size: 11.5px; font-weight: 600; }
+    .badge-new       { background: #bae6fd; color: #075985; }
+    .badge-verified  { background: #bbf7d0; color: #065f46; }
+    .badge-active    { background: #a7f3d0; color: #047857; }
+    .badge-inactive  { background: #f3f4f6; color: #6b7280; }
+    .badge-blacklisted { background: #fecaca; color: #991b1b; }
+    .badge-draft     { background: #f3f4f6; color: #374151; }
+    .badge-open      { background: #dbeafe; color: #1e40af; }
+    .badge-closed    { background: #dcfce7; color: #166534; }
+    .badge-paused    { background: #fef3c7; color: #92400e; }
+    .badge-lost      { background: #fee2e2; color: #991b1b; }
+    .badge-archived  { background: #f3f4f6; color: #6b7280; }
+
+    /* Tags */
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; margin: 2px; }
+
+    /* Score ring */
+    .score-ring { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; border: 3px solid; }
+    .score-ring.high { border-color: #16a34a; color: #16a34a; }
+    .score-ring.mid  { border-color: #d97706; color: #d97706; }
+    .score-ring.low  { border-color: #dc2626; color: #dc2626; }
+
+    /* Transaction type badges */
+    .txn-type-badge { padding: 3px 10px; border-radius: 14px; font-size: 12px; font-weight: 600; }
+    .type-purchase { background: #dbeafe; color: #1e40af; }
+    .type-sale { background: #d1fae5; color: #065f46; }
+    .type-rent { background: #fef3c7; color: #92400e; }
+    .type-rentout { background: #fce7f3; color: #9d174d; }
+    .type-lease { background: #ede9fe; color: #5b21b6; }
+    .type-leaseout { background: #f0fdf4; color: #166534; }
+
+    /* Pipeline bar */
+    .pipeline-bar { display: flex; gap: 2px; margin: 10px 0 4px; }
+    .pipeline-step { flex: 1; height: 4px; border-radius: 2px; background: #e2e8f0; }
+    .pipeline-step.done  { background: #b8860b; }
+    .pipeline-step.current { background: #f59e0b; }
+    .pipeline-label { font-size: 11px; color: #64748b; display: flex; justify-content: space-between; }
+    .pipeline-current-label { font-size: 11px; font-weight: 700; color: #f59e0b; }
+
+    /* ─── WORKSPACE LAYOUT ─────────────────────────────────────────── */
+    .workspace-body { display: grid; grid-template-columns: 1fr 280px; gap: 0; min-height: calc(100vh - 52px - 145px); }
+    .needs-col { padding: 20px 24px; overflow-y: auto; }
+    .info-col  { background: #fff; border-left: 1px solid var(--clr-border); padding: 16px; overflow-y: auto; }
+
+    /* Section headers */
+    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--clr-text-light); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .section-title button { font-size: 11px; font-weight: 600; color: var(--clr-primary); background: var(--clr-primary-soft); border: none; cursor: pointer; padding: 3px 10px; border-radius: 6px; }
+
+    /* ─── NEED CARD ──────────────────────────────────────────────────── */
+    .need-group { margin-bottom: 24px; }
+    .need-group-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--clr-border); }
+    .need-group-header .txn-id { font-size: 11px; color: #94a3b8; }
+
+    .need-card { background: #fff; border: 1px solid var(--clr-border); border-radius: 12px; margin-bottom: 14px; overflow: hidden; box-shadow: var(--shadow); transition: box-shadow .15s; }
+    .need-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+    .need-card-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 16px 18px 12px; border-bottom: 1px solid #f1f5f9; }
+    .need-card-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .need-card-id { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .need-card-score { text-align: center; flex-shrink: 0; }
+    .need-card-score-label { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+
+    .need-card-body { padding: 14px 18px; }
+    .need-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* Known / To Discover columns */
+    .known-section, .discover-section { border-radius: 8px; padding: 10px 12px; }
+    .known-section { background: #f0fdf4; border: 1px solid #bbf7d0; }
+    .discover-section { background: #fffbeb; border: 1px solid #fde68a; }
+    .kd-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+    .known-section .kd-title { color: #16a34a; }
+    .discover-section .kd-title { color: #d97706; }
+
+    .kd-item { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; margin-bottom: 4px; cursor: default; }
+    .kd-item:last-child { margin-bottom: 0; }
+    .kd-icon { font-size: 11px; flex-shrink: 0; }
+    .kd-label { color: var(--clr-text-light); font-size: 11px; min-width: 68px; }
+    .kd-value { font-weight: 600; color: var(--clr-text); }
+    .kd-item.editable:hover .kd-value { text-decoration: underline; cursor: pointer; color: var(--clr-primary); }
+
+    /* Next Questions */
+    .next-qs { padding: 10px 14px; background: var(--clr-gold-soft); border: 1px solid #e8d07a; border-radius: 8px; margin-top: 12px; }
+    .next-qs-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--clr-gold); margin-bottom: 6px; }
+    .next-q-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; padding: 4px 0; border-bottom: 1px solid rgba(184,134,11,.15); }
+    .next-q-item:last-child { border-bottom: none; }
+    .next-q-item .q-text { flex: 1; color: #5c3317; font-weight: 500; }
+    .next-q-btn { font-size: 11px; padding: 3px 10px; background: var(--clr-primary); color: #fff; border: none; border-radius: 5px; cursor: pointer; white-space: nowrap; font-weight: 600; }
+    .next-qs-loading { font-size: 12px; color: #64748b; font-style: italic; }
+
+    /* Need card actions */
+    .need-card-footer { display: flex; gap: 8px; padding: 10px 18px; background: #f8fafc; border-top: 1px solid var(--clr-border); flex-wrap: wrap; }
+    .need-action-btn { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 6px; cursor: pointer; border: 1px solid; transition: all .15s; }
+    .need-action-btn.primary { background: var(--clr-gold); color: #fff; border-color: var(--clr-gold); }
+    .need-action-btn.primary:hover { background: var(--clr-gold-mid); }
+    .need-action-btn.ghost { background: #fff; color: var(--clr-primary); border-color: var(--clr-border); }
+    .need-action-btn.ghost:hover { background: var(--clr-primary-soft); }
+    .need-action-btn.danger { background: #fff; color: var(--clr-danger); border-color: #fca5a5; }
+    .need-action-btn.danger:hover { background: #fee2e2; }
+
+    /* Stage badge */
+    .stage-badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #f0fdf4; color: #166534; }
+
+    /* Cards (shared) */
+    .card { background: var(--clr-card); border: 1px solid var(--clr-border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow); }
+    .card-title { font-size: 11px; font-weight: 700; color: var(--clr-text-light); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 10px; }
+
+    /* Activity feed */
+    .activity-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--clr-gold); flex-shrink: 0; margin-top: 5px; }
+    .activity-type { font-size: 11px; font-weight: 600; color: var(--clr-gold); }
+    .activity-note { font-size: 12.5px; margin-top: 1px; }
+    .activity-time { font-size: 11px; color: var(--clr-text-light); margin-top: 1px; }
+
+    /* Followup */
+    .followup-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f1f5f9; font-size: 12.5px; }
+    .followup-item:last-child { border-bottom: none; }
+    .followup-due { font-size: 11px; font-weight: 700; color: var(--clr-gold); min-width: 72px; }
+
+    /* Timeline */
+    .timeline-item { display: flex; gap: 10px; padding: 8px 0; position: relative; }
+    .timeline-line { position: absolute; left: 8px; top: 24px; bottom: -8px; width: 1px; background: var(--clr-border); }
+    .timeline-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--clr-gold-soft); border: 2px solid var(--clr-gold); flex-shrink: 0; }
+    .timeline-content { flex: 1; }
+    .timeline-title { font-size: 13px; font-weight: 600; }
+    .timeline-meta { font-size: 11.5px; color: var(--clr-text-light); margin-top: 2px; }
+
+    /* Buttons */
+    .btn { padding: 7px 16px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid; transition: all .15s; }
+    .btn-primary { background: var(--clr-gold); color: #fff; border-color: var(--clr-gold); }
+    .btn-primary:hover { background: var(--clr-gold-mid); }
+    .btn-ghost { background: transparent; color: var(--clr-primary); border-color: var(--clr-primary); }
+    .btn-ghost:hover { background: var(--clr-primary-soft); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; display: flex; align-items: center; justify-content: center; }
+    .modal-overlay.hidden { display: none; }
+    .modal { background: #fff; border-radius: 12px; width: 560px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,.18); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--clr-border); }
+    .modal-title { font-size: 17px; font-weight: 700; }
+    .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--clr-text-light); }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--clr-border); display: flex; justify-content: flex-end; gap: 10px; }
+
+    /* Form */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group.full { grid-column: 1/-1; }
+    label { font-size: 12px; font-weight: 600; color: var(--clr-text-light); text-transform: uppercase; letter-spacing: .04em; }
+    input, select, textarea { border: 1px solid var(--clr-border); border-radius: 7px; padding: 8px 11px; font-size: 13.5px; outline: none; font-family: inherit; width: 100%; }
+    input:focus, select:focus, textarea:focus { border-color: var(--clr-gold); box-shadow: 0 0 0 3px rgba(184,134,11,.12); }
+    .form-error { color: #dc2626; font-size: 12px; margin-top: 4px; }
+
+    /* Location rows */
+    .location-row { display: flex; gap: 6px; margin-bottom: 6px; }
+    .location-row input { flex: 1; }
+    .location-row button { padding: 0 10px; background: none; border: 1px solid #fca5a5; border-radius: 6px; cursor: pointer; color: #dc2626; font-size: 16px; flex-shrink: 0; }
+    .add-location-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--clr-primary); cursor: pointer; background: none; border: none; padding: 2px 0; }
+
+    /* Inline edit overlay */
+    .inline-edit-popup { position: fixed; z-index: 300; background: #fff; border: 1px solid var(--clr-border); border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,.14); padding: 16px 18px; width: 320px; max-width: 95vw; }
+    .inline-edit-popup h4 { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+    .inline-edit-popup .inline-actions { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
+
+    /* Details section (secondary) */
+    .details-accordion { border-top: 2px solid var(--clr-border); background: #fff; }
+    .details-toggle { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--clr-text-light); user-select: none; }
+    .details-toggle:hover { background: #f8fafc; }
+    .details-toggle .arrow { font-size: 12px; transition: transform .2s; }
+    .details-toggle.open .arrow { transform: rotate(180deg); }
+    .details-inner { display: none; }
+    .details-inner.open { display: block; }
+
+    /* Tabs (in details section) */
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--clr-border); padding: 0 24px; background: #fff; overflow-x: auto; }
+    .tab { padding: 11px 14px; font-size: 13px; font-weight: 500; color: var(--clr-text-light); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; }
+    .tab.active { color: var(--clr-primary); border-bottom-color: var(--clr-primary); font-weight: 600; }
+    .tab-content { padding: 20px 24px; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Loader / error */
+    .loader { text-align: center; padding: 48px; color: var(--clr-text-light); font-size: 14px; }
+    .error-state { text-align: center; padding: 48px; color: #dc2626; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--clr-text-light); }
+    .empty-state .empty-icon { font-size: 36px; margin-bottom: 10px; }
+    .empty-state p { font-size: 14px; margin-bottom: 14px; }
+
+    /* Sidebar profile rows */
+    .sidebar-row { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 1px solid #f1f5f9; font-size: 12.5px; }
+    .sidebar-row:last-child { border-bottom: none; }
+    .sidebar-label { color: var(--clr-text-light); font-size: 11px; }
+    .sidebar-value { font-weight: 500; font-size: 12.5px; text-align: right; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Transaction cards (in details) */
+    .txn-card { background: #fff; border: 1px solid var(--clr-border); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+    .txn-card-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; background: #f8fafc; border-bottom: 1px solid var(--clr-border); }
+    .txn-card-body { padding: 12px 16px; }
+    .req-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: #f8fafc; margin-bottom: 6px; border: 1px solid var(--clr-border); }
+    .req-row-left { flex: 1; min-width: 0; }
+    .req-id { font-size: 11px; color: var(--clr-text-light); }
+    .req-summary { font-size: 13px; font-weight: 600; margin-top: 1px; }
+    .req-meta { font-size: 11px; color: var(--clr-text-light); margin-top: 1px; }
+    .req-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+    /* ─── KPI STRIP ─────────────────────────────────────────────────── */
+    .kpi-strip { display: flex; gap: 10px; padding: 14px 24px; background: #fff; border-bottom: 1px solid var(--clr-border); flex-wrap: wrap; }
+    .kpi-card { flex: 1; min-width: 80px; background: var(--clr-gold-soft); border: 1px solid #e8d07a; border-radius: 10px; padding: 10px 12px; text-align: center; }
+    .kpi-value { font-size: 24px; font-weight: 800; color: var(--clr-primary); line-height: 1; }
+    .kpi-label { font-size: 9.5px; font-weight: 700; color: var(--clr-text-light); text-transform: uppercase; letter-spacing: .06em; margin-top: 5px; }
+
+    /* ─── SITE VISIT / DEAL CARDS ────────────────────────────────────── */
+    .sv-card { background: #fff; border: 1px solid var(--clr-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .sv-prop  { font-size: 13px; font-weight: 700; }
+    .sv-meta  { font-size: 11.5px; color: var(--clr-text-light); margin-top: 3px; }
+    .deal-card { background: #fff; border: 1px solid var(--clr-border); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; }
+    .deal-id  { font-size: 13px; font-weight: 700; color: var(--clr-primary); }
+    .deal-meta { font-size: 11.5px; color: var(--clr-text-light); margin-top: 3px; }
+    .deal-commission { font-size: 12px; color: var(--clr-success); font-weight: 600; margin-top: 4px; }
+
+    @media (max-width: 900px) {
+      .workspace-body { grid-template-columns: 1fr; }
+      .info-col { border-left: none; border-top: 1px solid var(--clr-border); order: -1; padding: 12px 16px; }
+    }
+    @media (max-width: 640px) {
+      .client-actions { flex-wrap: wrap; }
+      .need-two-col { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: 1; }
+      .kpi-card { min-width: 70px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand" style="display:inline-flex;align-items:center;gap:8px"><img src="/assets/signature-mark.svg" alt="logo" style="width:26px;height:26px;border-radius:50%;object-fit:cover" />Signature Properties</span>
+  <div class="breadcrumb">
+    <a href="/clients">Clients</a>
+    <span>›</span>
+    <span id="nav-client-name">Loading…</span>
+  </div>
+  <div class="topnav-right">
+    <a href="/clients" style="color:#94a3b8;font-size:13px;">← All Clients</a>
+  </div>
+</nav>
+
+<div id="workspace-loader" class="loader">Loading client workspace…</div>
+<div id="workspace-error" class="error-state" style="display:none"></div>
+
+<div id="workspace" style="display:none">
+
+  <!-- ── CLIENT HEADER ──────────────────────────────────────────────────── -->
+  <div class="client-header">
+    <div class="client-header-top">
+      <div style="display:flex;gap:14px;align-items:center;flex:1;min-width:0">
+        <div class="client-avatar" id="avatar-initials">—</div>
+        <div>
+          <div class="client-name" id="client-name">—</div>
+          <div class="client-id" id="client-id">—</div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap">
+            <span class="badge" id="client-status-badge">—</span>
+            <span style="font-size:12px;color:rgba(255,255,255,.6)" id="client-lifecycle">—</span>
+            <div id="client-score-badge"></div>
+          </div>
+        </div>
+      </div>
+      <div class="client-actions">
+        <a class="action-btn" id="btn-call" href="#" onclick="return callClient()">📞 Call</a>
+        <a class="action-btn green" id="btn-whatsapp" href="#" onclick="return openWhatsAppAction()">💬 WhatsApp</a>
+        <button class="action-btn accent" onclick="openAddNeedModal()">＋ New Requirement</button>
+        <button class="action-btn" id="btn-mark-lost" onclick="openLeadLostModal()">🚫 Mark Lost</button>
+        <button class="action-btn" id="btn-reactivate-lead" onclick="reactivateLead()" style="display:none">♻️ Reactivate</button>
+        <button class="action-btn" onclick="openEditModal()">✏️ Edit</button>
+      </div>
+    </div>
+    <div class="client-meta">
+      <div class="client-meta-item" id="meta-phone">📱 —</div>
+      <div class="client-meta-item" id="meta-email">✉️ —</div>
+      <div class="client-meta-item" id="meta-source">🏷️ —</div>
+      <div class="client-meta-item" id="meta-agent">👤 —</div>
+    </div>
+    <div style="margin-top:8px" id="client-tags"></div>
+  </div>
+
+  <!-- ── KPI STRIP ─────────────────────────────────────────────────────── -->
+  <div class="kpi-strip" id="kpi-strip">
+    <div class="kpi-card"><div class="kpi-value" id="kpi-reqs">—</div><div class="kpi-label">Requirements</div></div>
+    <div class="kpi-card"><div class="kpi-value" id="kpi-active">—</div><div class="kpi-label">Active</div></div>
+    <div class="kpi-card"><div class="kpi-value" id="kpi-visits">—</div><div class="kpi-label">Site Visits</div></div>
+    <div class="kpi-card"><div class="kpi-value" id="kpi-negs">—</div><div class="kpi-label">Negotiations</div></div>
+    <div class="kpi-card"><div class="kpi-value" id="kpi-deals">—</div><div class="kpi-label">Deals</div></div>
+    <div class="kpi-card"><div class="kpi-value" id="kpi-followups">—</div><div class="kpi-label">Follow-ups</div></div>
+    <div class="kpi-card"><div class="kpi-value" id="kpi-score">—</div><div class="kpi-label">Client Score</div></div>
+  </div>
+
+  <!-- ── NEEDS-FIRST BODY ───────────────────────────────────────────────── -->
+  <div class="workspace-body">
+
+    <!-- Left: Active Needs + Recent Activity -->
+    <div class="needs-col">
+
+      <!-- Active Needs -->
+      <div style="margin-bottom:20px">
+        <div class="section-title">
+          <span>Requirements</span>
+          <button onclick="openAddNeedModal()">＋ New Requirement</button>
+        </div>
+        <div id="needs-list">
+          <div class="loader">Loading requirements…</div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div>
+        <div class="section-title">
+          <span>Recent Activity</span>
+          <button onclick="openAddActivityModal()">Log Activity</button>
+        </div>
+        <div id="recent-activity"><div class="loader" style="padding:16px">—</div></div>
+      </div>
+
+    </div>
+
+    <!-- Right: Client Info Sidebar -->
+    <div class="info-col">
+
+      <div class="card">
+        <div class="card-title">Client Details</div>
+        <div id="sidebar-profile"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Summary</div>
+        <div id="sidebar-summary"></div>
+      </div>
+
+      <div class="card" id="sidebar-followups-card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Upcoming Follow-ups</span>
+          <button onclick="openAddFollowupModal()" style="background:none;border:none;cursor:pointer;color:var(--clr-primary);font-size:11px;font-weight:600">+ Add</button>
+        </div>
+        <div id="sidebar-followups"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── DETAILS ACCORDION ─────────────────────────────────────────────── -->
+  <div class="details-accordion">
+    <div class="details-toggle" id="details-toggle" onclick="toggleDetails()">
+      <span>📋 Details — Transactions, Activities, Follow-ups, Timeline</span>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="details-inner" id="details-inner">
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-tab="transactions">Transactions</div>
+        <div class="tab" data-tab="activities">Activities</div>
+        <div class="tab" data-tab="followups">Follow-ups</div>
+        <div class="tab" data-tab="timeline">Timeline</div>
+        <div class="tab" data-tab="site-visits">Site Visits</div>
+        <div class="tab" data-tab="deals">Deals &amp; Commission</div>
+      </div>
+      <div class="tab-content">
+        <div class="tab-pane active" id="tab-transactions">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+            <button class="btn btn-primary btn-sm" onclick="openAddTxnModal()">＋ Add Transaction</button>
+          </div>
+          <div id="transactions-list">—</div>
+        </div>
+        <div class="tab-pane" id="tab-activities">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+            <button class="btn btn-primary btn-sm" onclick="openAddActivityModal()">＋ Log Activity</button>
+          </div>
+          <div id="activities-list">—</div>
+        </div>
+        <div class="tab-pane" id="tab-followups">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+            <button class="btn btn-primary btn-sm" onclick="openAddFollowupModal()">＋ Add Follow-up</button>
+          </div>
+          <div id="followups-list">—</div>
+        </div>
+        <div class="tab-pane" id="tab-timeline">
+          <div id="timeline-list">—</div>
+        </div>
+        <div class="tab-pane" id="tab-site-visits">
+          <div id="site-visits-list">—</div>
+        </div>
+        <div class="tab-pane" id="tab-deals">
+          <div id="deals-list">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── INLINE EDIT POPUP ────────────────────────────────────────────────── -->
+<div id="inline-edit-popup" class="inline-edit-popup" style="display:none">
+  <h4 id="inline-edit-title">Edit Field</h4>
+  <div id="inline-edit-body"></div>
+  <div class="inline-actions">
+    <button class="btn btn-ghost btn-sm" onclick="closeInlineEdit()">Cancel</button>
+    <button class="btn btn-primary btn-sm" onclick="saveInlineEdit()">Save</button>
+  </div>
+  <div id="inline-edit-error" class="form-error"></div>
+</div>
+<div id="inline-backdrop" style="display:none;position:fixed;inset:0;z-index:250" onclick="closeInlineEdit()"></div>
+
+<!-- ── EDIT CLIENT MODAL ────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Edit Client</span><button class="modal-close" onclick="closeModal('edit-modal')">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Client Name</label><input id="edit-name" type="text" /></div>
+        <div class="form-group"><label>Primary Mobile</label><input id="edit-mobile" type="tel" /></div>
+        <div class="form-group"><label>Alternate Mobile</label><input id="edit-alt-mobile" type="tel" /></div>
+        <div class="form-group"><label>WhatsApp</label><input id="edit-whatsapp" type="tel" /></div>
+        <div class="form-group"><label>Email</label><input id="edit-email" type="email" /></div>
+        <div class="form-group"><label>City</label><input id="edit-city" type="text" /></div>
+        <div class="form-group"><label>Lead Status</label>
+          <select id="edit-status" onchange="toggleEditLostFields()">
+            <option>New</option><option>Contacted</option><option>Follow-up</option><option>Qualified</option>
+            <option>Requirement Created</option><option>Site Visit</option><option>Negotiation</option><option>Won</option><option>Lost</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Lifecycle</label>
+          <select id="edit-lifecycle">
+            <option>Prospect</option><option>Client</option><option>Past Client</option><option>Inactive</option><option>Blacklisted</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Source</label><select id="edit-source"></select></div>
+        <div class="form-group full" id="edit-lost-reason-wrap" style="display:none">
+          <label>Lost Reason *</label>
+          <input id="edit-lost-reason" type="text" placeholder="Reason for losing this lead" />
+        </div>
+        <div class="form-group full" id="edit-lost-note-wrap" style="display:none">
+          <label>Lost Note</label>
+          <textarea id="edit-lost-note" rows="2" placeholder="Additional context"></textarea>
+        </div>
+        <div class="form-group full"><label>Notes</label><textarea id="edit-notes" rows="3"></textarea></div>
+      </div>
+      <div id="edit-error" class="form-error"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('edit-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="lead-lost-modal">
+  <div class="modal" style="width:480px">
+    <div class="modal-header"><span class="modal-title" style="color:#991b1b">Mark Lead Lost</span><button class="modal-close" onclick="closeModal('lead-lost-modal')">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Lost Reason *</label>
+        <input id="lead-lost-reason" type="text" placeholder="Reason for losing this lead" />
+      </div>
+      <div class="form-group" style="margin-top:10px">
+        <label>Lost Note</label>
+        <textarea id="lead-lost-note" rows="3" placeholder="Additional context"></textarea>
+      </div>
+      <div id="lead-lost-error" class="form-error"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('lead-lost-modal')">Cancel</button>
+      <button class="btn btn-primary" style="background:#dc2626;border-color:#dc2626" onclick="saveLeadLost()">Confirm Lost</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD NEED MODAL (Fully Dynamic Requirement Form) ─────────────────── -->
+<div class="modal-overlay hidden" id="add-need-modal">
+  <div class="modal" style="width:820px;max-height:92vh;overflow-y:auto">
+    <div class="modal-header">
+      <span class="modal-title">New Requirement</span>
+      <button class="modal-close" data-testid="close-need-modal" onclick="closeModal('add-need-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Transaction Type *</label>
+          <select id="need-txn-type" data-testid="need-txn-type" onchange="needLoadDynamicForm()">
+            <option>Purchase</option><option>Sale</option><option>Rent</option>
+            <option>Rent Out</option><option>Lease</option><option>Lease Out</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <select id="need-category" data-testid="need-category" onchange="updateNeedSubcats(); needLoadDynamicForm()">
+            <option value="">Select…</option>
+            <option>Residential</option><option>Commercial</option><option>Land</option><option>Industrial</option><option>Agriculture</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sub Category</label>
+          <select id="need-subcategory" data-testid="need-subcategory" onchange="needLoadDynamicForm()"><option value="">Not sure yet</option></select>
+        </div>
+      </div>
+      <!-- Fully dynamic fields render here based on V2FormRegistry -->
+      <div id="need-dynamic-fields" style="margin-top:16px"></div>
+      <div id="add-need-error" class="form-error" style="margin-top:10px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-testid="cancel-need-btn" onclick="closeModal('add-need-modal')">Cancel</button>
+      <button class="btn btn-primary" data-testid="save-need-btn" onclick="saveAddNeed()" id="need-save-btn">Add Requirement</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD TRANSACTION MODAL (standalone, kept for compat) ──────────────── -->
+<div class="modal-overlay hidden" id="txn-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Add Transaction</span><button class="modal-close" onclick="closeModal('txn-modal')">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Transaction Type *</label>
+          <select id="txn-type">
+            <option>Purchase</option><option>Sale</option><option>Rent</option>
+            <option>Rent Out</option><option>Lease</option><option>Lease Out</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Status</label>
+          <select id="txn-status"><option>Open</option><option>Active</option></select>
+        </div>
+        <div class="form-group"><label>Pipeline Stage</label>
+          <select id="txn-stage">
+            <option>New</option><option>Matching</option><option>Shortlisted</option>
+            <option>Site Visit</option><option>Negotiation</option><option>Token</option><option>Deal</option>
+          </select>
+        </div>
+        <div class="form-group full"><label>Notes</label><textarea id="txn-notes" rows="2"></textarea></div>
+      </div>
+      <div id="txn-error" class="form-error"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('txn-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTransaction()">Add Transaction</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD REQUIREMENT MODAL (standalone, kept for compat) ──────────────── -->
+<div class="modal-overlay hidden" id="req-modal">
+  <div class="modal" style="width:620px">
+    <div class="modal-header"><span class="modal-title">Add Requirement</span><button class="modal-close" onclick="closeModal('req-modal')">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Transaction</label>
+          <select id="req-txn-id" onchange="loadFormConfig()"></select>
+        </div>
+        <div class="form-group"><label>Category *</label>
+          <select id="req-category" onchange="loadFormConfig()">
+            <option value="">Select…</option>
+            <option>Residential</option><option>Commercial</option><option>Land</option><option>Industrial</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Sub Category</label>
+          <select id="req-subcategory" onchange="loadFormConfig()">
+            <option value="">Select…</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Budget Min (₹)</label><input id="req-budget-min" type="number" placeholder="e.g. 5000000" /></div>
+        <div class="form-group"><label>Budget Max (₹)</label><input id="req-budget-max" type="number" placeholder="e.g. 10000000" /></div>
+        <div class="form-group"><label>Primary Location</label><input id="req-location1" type="text" /></div>
+        <div class="form-group"><label>Secondary Location</label><input id="req-location2" type="text" /></div>
+        <div class="form-group"><label>Urgency</label>
+          <select id="req-urgency"><option value="">—</option><option>High</option><option>Medium</option><option>Low</option><option>Immediate</option></select>
+        </div>
+        <div class="form-group"><label>Possession</label>
+          <select id="req-possession">
+            <option value="">Any</option>
+            <option>Ready to Move</option><option>0-6 Months</option><option>6-12 Months</option>
+            <option>1-2 Years</option><option>2-3 Years</option><option>3+ Years</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Status</label>
+          <select id="req-status"><option>Draft</option><option>Active</option></select>
+        </div>
+      </div>
+      <div id="dynamic-fields" style="margin-top:14px"></div>
+      <div id="req-error" class="form-error"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('req-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRequirement()">Add Requirement</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MARK LOST MODAL ───────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="mark-lost-modal">
+  <div class="modal" style="width:480px">
+    <div class="modal-header">
+      <span class="modal-title" style="color:#991b1b">Mark Requirement Lost</span>
+      <button class="modal-close" onclick="closeModal('mark-lost-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--clr-text-light);margin-bottom:16px">
+        Mark this requirement as lost. The <strong>client remains active</strong> — only this requirement will be closed.
+      </p>
+      <div id="lost-req-label" style="background:#faf7f2;border:1px solid var(--clr-border);border-radius:7px;padding:10px 14px;font-size:13px;font-weight:600;color:var(--clr-brown);margin-bottom:16px"></div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Reason *</label>
+          <select id="lost-reason">
+            <option value="">— Select reason —</option>
+            <option>Bought Elsewhere</option>
+            <option>Budget Mismatch</option>
+            <option>Location Mismatch</option>
+            <option>Requirement Cancelled</option>
+            <option>Not Responding</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Notes <span style="font-weight:400;text-transform:none">(optional)</span></label>
+          <textarea id="lost-notes" rows="3" placeholder="Any additional context…"></textarea>
+        </div>
+      </div>
+      <div id="lost-error" class="form-error" style="margin-top:8px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('mark-lost-modal')">Cancel</button>
+      <button class="btn btn-primary" style="background:#dc2626;border-color:#dc2626" onclick="saveMarkLost()">Confirm Lost</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ACTIVITY MODAL ────────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="activity-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title" id="activity-modal-title">Log Activity</span><button class="modal-close" onclick="closeModal('activity-modal')">&times;</button></div>
+    <div class="modal-body">
+      <div id="act-context" class="card hidden" style="margin-bottom:12px;padding:10px 12px;font-size:12.5px;color:var(--clr-text-light)"></div>
+      <div class="form-grid">
+        <div class="form-group"><label>Activity Type</label>
+          <select id="act-type">
+            <option value="CALL">Call</option><option value="WHATSAPP">WhatsApp</option><option value="NOTE">Note</option>
+            <option value="EMAIL">Email</option><option value="MEETING">Meeting</option><option value="SITE_VISIT">Site Visit</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Transaction (optional)</label><select id="act-txn"></select></div>
+        <div class="form-group"><label>Requirement (optional)</label><select id="act-req"></select></div>
+        <div class="form-group"><label>Outcome (optional)</label><input id="act-outcome" type="text" placeholder="Connected / voicemail / message drafted" /></div>
+        <div class="form-group"><label>Next Action (optional)</label><input id="act-next-action" type="text" placeholder="Call again tomorrow" /></div>
+        <div class="form-group"><label>Follow-up Date (optional)</label><input id="act-followup-date" type="date" /></div>
+        <div class="form-group"><label>Follow-up Time (optional)</label><input id="act-followup-time" type="time" /></div>
+        <div class="form-group full"><label>Notes</label><textarea id="act-notes" rows="3" placeholder="What happened…"></textarea></div>
+      </div>
+      <div id="act-error" class="form-error"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('activity-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveActivity()">Log Activity</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOLLOW-UP MODAL ───────────────────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="followup-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Add Follow-up</span><button class="modal-close" onclick="closeModal('followup-modal')">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Type</label>
+          <select id="fu-type"><option>Call</option><option>Email</option><option>WhatsApp</option><option>Meeting</option><option>Visit</option><option>Other</option></select>
+        </div>
+        <div class="form-group"><label>Priority</label>
+          <select id="fu-priority"><option>High</option><option>Medium</option><option>Low</option></select>
+        </div>
+        <div class="form-group"><label>Due Date</label><input id="fu-date" type="date" /></div>
+        <div class="form-group"><label>Due Time</label><input id="fu-time" type="time" /></div>
+        <div class="form-group full"><label>Notes</label><textarea id="fu-notes" rows="2"></textarea></div>
+      </div>
+      <div id="fu-error" class="form-error"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('followup-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveFollowup()">Add Follow-up</button>
+    </div>
+  </div>
+</div>
+
+<!-- Broker Network Share Modal -->
+<div id="net-share-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:310;align-items:center;justify-content:center;padding:12px" data-testid="net-share-modal">
+  <div style="background:#fff;border-radius:12px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.35)">
+    <div style="background:#5c3317;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-radius:12px 12px 0 0">
+      <div style="font-weight:800;font-size:16px">👥 Share with Broker Network</div>
+      <button onclick="closeNetworkShareModal()" data-testid="net-close" style="background:transparent;border:none;color:#fff;font-size:22px;cursor:pointer">×</button>
+    </div>
+    <div style="padding:16px 20px">
+      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#78350f">🔒 Client ke naam, phone, aur email brokers ko <b>NAHI</b> dikhenge. Sirf requirement specs (BHK, budget, location, timeline) share honge.</div>
+      <div style="font-size:12px;font-weight:700;color:var(--clr-brown);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Select Brokers</div>
+      <div id="net-broker-list" style="max-height:280px;overflow-y:auto;margin-bottom:12px;border:1px solid var(--clr-border);border-radius:8px;padding:6px">Loading...</div>
+      <div style="font-size:12px;font-weight:700;color:var(--clr-brown);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Optional Message</div>
+      <textarea id="net-message" rows="2" placeholder="e.g. Urgent - client this week finalize karega" style="width:100%;padding:8px;border:1px solid var(--clr-border);border-radius:8px;font-family:inherit;font-size:13px;margin-bottom:12px"></textarea>
+      <div id="net-links-out" style="display:none;background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#166534"></div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--clr-border);text-align:right;background:#fdf8ec;border-radius:0 0 12px 12px">
+      <a href="/broker-network" target="_blank" style="color:var(--clr-brown);font-size:12.5px;font-weight:600;margin-right:12px;text-decoration:none">+ Manage Brokers</a>
+      <button class="need-action-btn ghost" onclick="closeNetworkShareModal()">Close</button>
+      <button class="need-action-btn primary" data-testid="net-send" onclick="sendNetworkShare()" style="background:#5c3317;color:#fff">📤 Send via WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<div id="schedule-visit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center" data-testid="schedule-visit-modal">
+  <div style="background:#fff;border-radius:12px;padding:0;width:min(560px,92vw);max-height:90vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.3)">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--clr-border);display:flex;justify-content:space-between;align-items:center;background:#0f766e;color:#fff;border-radius:12px 12px 0 0">
+      <div style="font-size:16px;font-weight:700">🏠 Schedule Site Visit</div>
+      <button onclick="closeScheduleVisitModal()" style="background:transparent;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1" data-testid="sv-modal-close">×</button>
+    </div>
+    <div style="padding:16px 20px">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:#0f766e;margin-bottom:8px;letter-spacing:.03em">Properties to visit</div>
+      <div id="sv-prop-list" style="max-height:200px;overflow-y:auto;margin-bottom:16px"></div>
+
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:#0f766e;margin-bottom:8px;letter-spacing:.03em">Visit slot</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div>
+          <label style="display:block;font-size:11.5px;color:#4b5563;margin-bottom:4px;font-weight:600">Date</label>
+          <input id="sv-date" type="date" data-testid="sv-date" style="width:100%;padding:8px;border:1px solid var(--clr-border);border-radius:6px;font-size:13px;font-family:inherit" />
+        </div>
+        <div>
+          <label style="display:block;font-size:11.5px;color:#4b5563;margin-bottom:4px;font-weight:600">Time</label>
+          <input id="sv-time" type="time" data-testid="sv-time" style="width:100%;padding:8px;border:1px solid var(--clr-border);border-radius:6px;font-size:13px;font-family:inherit" />
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;font-size:11.5px;color:#4b5563;margin-bottom:4px;font-weight:600">Duration</label>
+        <select id="sv-duration" data-testid="sv-duration" style="width:100%;padding:8px;border:1px solid var(--clr-border);border-radius:6px;font-size:13px;font-family:inherit">
+          <option>30 mins</option><option>60 mins</option><option selected>90 mins</option><option>2 hrs</option><option>Half day</option>
+        </select>
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;font-size:11.5px;color:#4b5563;margin-bottom:4px;font-weight:600">Meeting Point</label>
+        <input id="sv-meeting" type="text" data-testid="sv-meeting" placeholder="e.g. Vesu Char Rasta, first property gate…" style="width:100%;padding:8px;border:1px solid var(--clr-border);border-radius:6px;font-size:13px;font-family:inherit" />
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="display:block;font-size:11.5px;color:#4b5563;margin-bottom:4px;font-weight:600">Notes</label>
+        <textarea id="sv-notes" rows="2" data-testid="sv-notes" placeholder="Route plan, client preferences…" style="width:100%;padding:8px;border:1px solid var(--clr-border);border-radius:6px;font-size:13px;font-family:inherit;resize:vertical"></textarea>
+      </div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--clr-border);display:flex;justify-content:flex-end;gap:8px">
+      <button onclick="closeScheduleVisitModal()" style="padding:9px 16px;border:1px solid var(--clr-border);border-radius:8px;background:#fff;color:#4b5563;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>
+      <button id="sv-submit-btn" onclick="submitScheduleVisit()" data-testid="sv-submit-btn" style="padding:9px 16px;border:none;border-radius:8px;background:#0f766e;color:#fff;font-size:13px;font-weight:700;cursor:pointer">Confirm Booking</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const LEAD_ID = new URLSearchParams(location.search).get('id');
+  let workspace = null;
+  let currentTxnId = null;
+  let _inlineReqId = null;
+  let _inlineField  = null;
+
+  const PIPELINE_STAGES = ['New','Matching','Shortlisted','Site Visit','Negotiation','Token','Deal'];
+
+  const SUBCATS = {
+    Residential: ['Flat','Villa','Row House','Bungalow','Penthouse','Studio'],
+    Commercial:  ['Office','Shop','Showroom','Warehouse'],
+    Land:        ['Residential Plot','Commercial Plot','Agricultural Land'],
+    Industrial:  ['Factory','Warehouse'],
+    Agriculture: ['Farm Land','Agricultural Plot']
+  };
+
+  const SOURCES = ['Walk-in','Phone Enquiry','Website','Social Media','Facebook Ads','Google Ads','Referral',
+    'Agent Referral','Builder Referral','Property Portal','99acres','MagicBricks','Housing.com',
+    'NoBroker','WhatsApp','SMS Campaign','Email Campaign','Exhibition','Manual','Other'];
+
+  // Field display labels for KNOWN / TO DISCOVER
+  const FIELD_LABELS = {
+    BudgetMin:'Budget Min', BudgetMax:'Budget Max', Location1:'Location 1', Location2:'Location 2',
+    Location3:'Location 3', BHKMin:'BHK Min', BHKMax:'BHK Max', Possession:'Possession',
+    Urgency:'Urgency', Furnishing:'Furnishing', Parking:'Parking', Facing:'Facing',
+    AreaMin:'Area Min', AreaMax:'Area Max', TenantType:'Tenant Type', BusinessType:'Business Type',
+    PowerLoad:'Power Load', FloorMin:'Floor Min', FloorMax:'Floor Max', TransactionType:'Type',
+    Category:'Category', SubCategory:'Sub Category', Deposit:'Deposit'
+  };
+
+  const DEP_STATE_RANK = { NOT_RELEVANT: 1, HIDDEN: 2, RELEVANT: 3, VISIBLE: 4 };
+  const dynamicFormState = {
+    need: { config: null, rules: [], values: {}, prefix: 'need-fld-', containerId: 'need-dynamic-fields' },
+    req:  { config: null, rules: [], values: {}, prefix: 'dyn-', containerId: 'dynamic-fields' }
+  };
+
+  function normalizeRequirementValue(value) {
+    if (value == null) return null;
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      if (value.state === 'KNOWN') return value.value ?? null;
+      if ('value' in value) return value.value ?? null;
+      return null;
+    }
+    return value;
+  }
+
+  function getRequirementValue(source, key) {
+    if (!source) return null;
+    if (source[key] !== undefined && source[key] !== null && source[key] !== '') return source[key];
+    const lower = key.charAt(0).toLowerCase() + key.slice(1);
+    if (source[lower] !== undefined && source[lower] !== null && source[lower] !== '') return source[lower];
+    const fields = source.Fields || {};
+    if (fields[key] !== undefined) return normalizeRequirementValue(fields[key]);
+    if (fields[lower] !== undefined) return normalizeRequirementValue(fields[lower]);
+    return null;
+  }
+
+  function getLeadRequirementPrefill(txnType, category, subCategory) {
+    const lead = workspace?.lead || {};
+    const profile = lead.RequirementProfile || lead.requirementProfile || lead.PreferenceProfile || lead.preferenceProfile || {};
+    const read = (...keys) => {
+      for (const key of keys) {
+        const value = profile[key] ?? lead[key];
+        if (value !== undefined && value !== null && value !== '') return value;
+      }
+      return null;
+    };
+    return {
+      TransactionType: read('TransactionType', 'transactionType', 'RequirementType', 'requirementType') || txnType || null,
+      Category: read('Category', 'category') || category || null,
+      SubCategory: read('SubCategory', 'subCategory', 'PropertyType', 'propertyType') || subCategory || null,
+      PropertyType: read('PropertyType', 'propertyType', 'SubCategory', 'subCategory') || subCategory || null,
+      BudgetMin: read('BudgetMin', 'budgetMin'),
+      BudgetMax: read('BudgetMax', 'budgetMax', 'Budget'),
+      Location1: read('Location1', 'location1', 'Location', 'location', 'PreferredLocation', 'preferredLocation'),
+      Location2: read('Location2', 'location2'),
+      Location3: read('Location3', 'location3'),
+      ContactMobile: read('ContactMobile', 'contactMobile', 'PrimaryMobile', 'primaryMobile', 'Phone', 'phone', 'WhatsApp', 'whatsapp'),
+      ContactEmail: read('ContactEmail', 'contactEmail', 'Email', 'email'),
+      WhoIsSpeaking: read('WhoIsSpeaking', 'whoIsSpeaking', 'ClientName', 'clientName')
+    };
+  }
+
+  function toCanonicalFollowUp(row) {
+    if (!row) return null;
+    let dueAt = row.dueAt || row.DueAt || null;
+    if (!dueAt && row.DueDate) {
+      const parsed = new Date(`${row.DueDate}${row.Time ? `T${row.Time}` : 'T00:00'}:00`);
+      if (Number.isFinite(parsed.getTime())) dueAt = parsed.toISOString();
+    }
+    const statusRaw = String(row.status || row.Status || 'PENDING').toUpperCase();
+    const isClosed = statusRaw === 'COMPLETED' || statusRaw === 'CANCELLED';
+    const isOverdue = !!(dueAt && !isClosed && new Date(dueAt).getTime() < Date.now());
+    const status = isOverdue ? 'OVERDUE' : statusRaw;
+    return {
+      id: row.id || row.FollowUpID,
+      dueAt,
+      activityType: row.activityType || row.ActivityType || row.Type || 'Call',
+      priority: row.priority || row.Priority || 'Medium',
+      status,
+      notes: row.notes || row.Notes || '',
+      assignedUser: row.assignedUser || row.AssignedUser || row.AssignedTo || 'system'
+    };
+  }
+
+  function asArray(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function asObject(value) {
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  }
+
+  function normalizeWorkspaceData(raw) {
+    const data = asObject(raw);
+    return {
+      ...data,
+      lead: asObject(data.lead),
+      summary: asObject(data.summary),
+      transactions: asArray(data.transactions),
+      requirements: asArray(data.requirements),
+      activities: asArray(data.activities),
+      followUps: asArray(data.followUps),
+      timeline: asArray(data.timeline),
+      matching: asArray(data.matching),
+      shortlist: asArray(data.shortlist),
+      siteVisits: asArray(data.siteVisits),
+      negotiations: asArray(data.negotiations),
+      deals: asArray(data.deals),
+      commissions: asArray(data.commissions),
+      payments: asArray(data.payments),
+      documents: asArray(data.documents)
+    };
+  }
+
+  function followUpDueParts(fu) {
+    if (!fu?.dueAt) return { dateLabel: '—', timeLabel: '' };
+    const due = new Date(fu.dueAt);
+    return {
+      dateLabel: due.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      timeLabel: due.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+    };
+  }
+
+  function followUpStatusUi(fu) {
+    const status = String(fu?.status || '').toUpperCase();
+    if (status === 'COMPLETED') return { label: '✓ Completed', style: 'background:#dcfce7;color:#166534' };
+    if (status === 'CANCELLED') return { label: 'Cancelled', style: 'background:#fee2e2;color:#991b1b' };
+    if (status === 'OVERDUE') return { label: '🔴 Overdue', style: 'background:#fee2e2;color:#991b1b' };
+    return { label: '🟡 Upcoming', style: 'background:#fef3c7;color:#92400e' };
+  }
+
+  async function fetchSubcategories(category, txnType) {
+    if (!category) return [];
+    try {
+      const res = await fetch(`/api/v2/config/subcategories?category=${enc(category)}${txnType ? `&transactionType=${enc(txnType)}` : ''}`).then(r => r.json());
+      return Array.isArray(res.data) ? res.data.map(item => item.value || item.label).filter(Boolean) : (SUBCATS[category] || []);
+    } catch(_) {
+      return SUBCATS[category] || [];
+    }
+  }
+
+  function collectDynamicValues(mode) {
+    const state = dynamicFormState[mode];
+    if (!state) return {};
+    const values = { ...(state.values || {}) };
+    const root = document.getElementById(state.containerId);
+    if (!root) return values;
+    root.querySelectorAll('[data-field-key]').forEach(el => {
+      const key = el.dataset.fieldKey;
+      if (!key) return;
+      if (el.tagName === 'SELECT' && el.multiple) {
+        values[key] = Array.from(el.selectedOptions).map(o => o.value).filter(Boolean);
+        return;
+      }
+      let value = el.value;
+      if (typeof value === 'string') value = value.trim();
+      if (value === '') {
+        delete values[key];
+        return;
+      }
+      if (el.type === 'number') value = Number(value);
+      if (value === 'true') value = true;
+      if (value === 'false') value = false;
+      values[key] = value;
+    });
+    root.querySelectorAll('.field-priority').forEach(el => {
+      const key = el.dataset.priorityFor;
+      if (!key) return;
+      if (el.value) values[`__priority__${key}`] = el.value;
+      else delete values[`__priority__${key}`];
+    });
+    state.values = values;
+    return values;
+  }
+
+  function extractFieldPrioritiesFromValues(values) {
+    const out = {};
+    Object.entries(values || {}).forEach(([key, value]) => {
+      if (key.startsWith('__priority__') && value) out[key.replace('__priority__', '')] = value;
+    });
+    return out;
+  }
+
+  function buildEvaluationFields(values) {
+    const fields = {};
+    Object.entries(values || {}).forEach(([key, value]) => {
+      if (key.startsWith('__priority__')) return;
+      if (value === undefined || value === null || value === '') return;
+      fields[key] = { state: 'KNOWN', value };
+    });
+    return fields;
+  }
+
+  function evaluateDependencyOperator(entry, operator, expected) {
+    const state = entry ? entry.state : 'UNKNOWN';
+    const value = entry ? entry.value : undefined;
+    const isKnown = state === 'KNOWN';
+    switch (operator) {
+      case 'EXISTS': return isKnown && value !== null && value !== undefined && value !== '';
+      case 'NOT_EXISTS': return !isKnown || value === null || value === undefined || value === '';
+      case 'EQUALS': return isKnown && String(value) === String(expected);
+      case 'NOT_EQUALS': return isKnown && String(value) !== String(expected);
+      case 'IN': return isKnown && (Array.isArray(expected) ? expected.map(String) : [String(expected)]).includes(String(value));
+      case 'NOT_IN': return isKnown && !(Array.isArray(expected) ? expected.map(String) : [String(expected)]).includes(String(value));
+      case 'GREATER_THAN': return isKnown && Number(value) > Number(expected);
+      case 'GREATER_THAN_OR_EQUAL': return isKnown && Number(value) >= Number(expected);
+      case 'LESS_THAN': return isKnown && Number(value) < Number(expected);
+      case 'LESS_THAN_OR_EQUAL': return isKnown && Number(value) <= Number(expected);
+      case 'CONTAINS': return isKnown && String(value).includes(String(expected));
+      case 'NOT_CONTAINS': return isKnown && !String(value).includes(String(expected));
+      default: return false;
+    }
+  }
+
+  function evaluateFieldVisibility(config, rules, values) {
+    const defaultState = {};
+    const fieldKeys = new Set(asArray(config?.fields).map(f => f?.FieldKey).filter(Boolean));
+    fieldKeys.forEach(key => { defaultState[key] = 'RELEVANT'; });
+    const ctxFields = buildEvaluationFields(values);
+    const groupedRules = {};
+    (rules || []).forEach(rule => {
+      if (!groupedRules[rule.TargetField]) groupedRules[rule.TargetField] = [];
+      groupedRules[rule.TargetField].push(rule);
+    });
+    Object.entries(groupedRules).forEach(([targetField, targetRules]) => {
+      const fired = targetRules.flatMap(rule => {
+        if (!rule.SourceField) return [{ state: rule.ResultState, priority: rule.Priority || 50 }];
+        const source = ctxFields[rule.SourceField] || null;
+        return evaluateDependencyOperator(source, rule.Operator, rule.ExpectedValue)
+          ? [{ state: rule.ResultState, priority: rule.Priority || 50 }]
+          : [];
+      });
+      if (!fired.length) {
+        if (!(targetField in defaultState)) defaultState[targetField] = 'NOT_RELEVANT';
+        return;
+      }
+      fired.sort((a, b) => (DEP_STATE_RANK[a.state] || 99) - (DEP_STATE_RANK[b.state] || 99) || (a.priority || 99) - (b.priority || 99));
+      defaultState[targetField] = fired[0].state;
+    });
+    return defaultState;
+  }
+
+  function attachDynamicFieldListeners(mode) {
+    const state = dynamicFormState[mode];
+    const root = document.getElementById(state.containerId);
+    if (!root) return;
+    root.querySelectorAll('[data-field-key], .field-priority').forEach(el => {
+      el.onchange = () => rerenderDynamicForm(mode);
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.oninput = () => collectDynamicValues(mode);
+    });
+  }
+
+  function renderDynamicFieldInput(f, prefix, values) {
+    const fk   = f.FieldKey;
+    const id   = `${prefix}${fk}`;
+    const typ  = f.FieldType;
+    const lbl  = f.FieldLabel;
+    const opts = f.Options || [];
+    const hint = f.Placeholder || lbl;
+    const help = f.HelpText || '';
+    const value = values?.[fk];
+    const priorityValue = values?.[`__priority__${fk}`] || '';
+    const isFull = typ === 'Textarea' || typ === 'MultiSelect' || fk === 'SocietyName' || fk === 'RERANumber' || fk === 'AvoidLocations' || fk === 'Preferences' || fk === 'GujaratRERA' || fk === 'ExistingBusiness' || fk === 'ExistingCrops' || fk === 'TPScheme';
+    const groupClass = isFull ? 'form-group full' : 'form-group';
+    let input = '';
+    if (typ === 'Select' && opts.length) {
+      input = `<select id="${escAttr(id)}" data-field-key="${escAttr(fk)}"><option value="">—</option>${opts.map(o => `<option value="${escAttr(o)}" ${String(value ?? '') === String(o) ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+    } else if (typ === 'MultiSelect' && opts.length) {
+      const selected = new Set(Array.isArray(value) ? value.map(String) : []);
+      input = `<select id="${escAttr(id)}" data-field-key="${escAttr(fk)}" multiple size="3">${opts.map(o => `<option value="${escAttr(o)}" ${selected.has(String(o)) ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+    } else if (typ === 'Boolean') {
+      input = `<select id="${escAttr(id)}" data-field-key="${escAttr(fk)}"><option value="">—</option><option value="true" ${value === true ? 'selected' : ''}>Yes</option><option value="false" ${value === false ? 'selected' : ''}>No</option></select>`;
+    } else if (typ === 'Number' || typ === 'Area') {
+      input = `<input id="${escAttr(id)}" data-field-key="${escAttr(fk)}" type="number" placeholder="${escAttr(hint)}" value="${escAttr(value ?? '')}" />`;
+    } else if (typ === 'Date') {
+      input = `<input id="${escAttr(id)}" data-field-key="${escAttr(fk)}" type="date" value="${escAttr(value ?? '')}" />`;
+    } else if (typ === 'Textarea') {
+      input = `<textarea id="${escAttr(id)}" data-field-key="${escAttr(fk)}" rows="2" placeholder="${escAttr(hint)}">${esc(value ?? '')}</textarea>`;
+    } else if (typ === 'Autocomplete' && opts.length) {
+      input = `<input id="${escAttr(id)}" data-field-key="${escAttr(fk)}" list="${escAttr(prefix)}dl-${escAttr(fk)}" type="text" placeholder="${escAttr(hint)}" autocomplete="off" value="${escAttr(value ?? '')}" />`;
+    } else {
+      input = `<input id="${escAttr(id)}" data-field-key="${escAttr(fk)}" type="text" placeholder="${escAttr(hint)}" value="${escAttr(value ?? '')}" />`;
+    }
+    const tierBadge = f.Tier === 'CORE' ? '<span style="color:#dc2626;font-size:10px;margin-left:4px">*</span>' : '';
+    const priority = `<select class="field-priority" data-priority-for="${escAttr(fk)}" style="margin-top:6px"><option value="">Normal Priority</option><option value="MUST_HAVE" ${priorityValue==='MUST_HAVE'?'selected':''}>Must Have</option><option value="PREFERRED" ${priorityValue==='PREFERRED'?'selected':''}>Preferred</option><option value="FLEXIBLE" ${priorityValue==='FLEXIBLE'?'selected':''}>Flexible</option></select>`;
+    return `<div class="${groupClass}"><label>${esc(lbl)}${tierBadge}</label>${input}${priority}${help ? `<span style="font-size:11px;color:#7a6355;margin-top:2px;display:block">${esc(help)}</span>` : ''}</div>`;
+  }
+
+  function rerenderDynamicForm(mode) {
+    const state = dynamicFormState[mode];
+    if (!state?.config) return;
+    const values = collectDynamicValues(mode);
+    const visibleStates = evaluateFieldVisibility(state.config, state.rules, values);
+    const fields = asArray(state.config.fields).filter(f => {
+      if (!f) return false;
+      const depState = visibleStates[f.FieldKey] || 'RELEVANT';
+      return depState === 'RELEVANT' || depState === 'VISIBLE' || values[f.FieldKey] !== undefined;
+    });
+    const bySection = {};
+    fields.forEach(f => {
+      const section = f.Section || 'Details';
+      if (!bySection[section]) bySection[section] = [];
+      bySection[section].push(f);
+    });
+    const order = ['Budget','Location','Property','Legal','Client','Details'];
+    let html = '';
+    Object.keys(bySection).sort((a, b) => (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) - (order.indexOf(b) === -1 ? 99 : order.indexOf(b))).forEach(section => {
+      html += `<div style="margin-top:10px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#7a6355;margin:6px 0 8px;padding-bottom:4px;border-bottom:1px solid #e8ddd0">${esc(section)}</div><div class="form-grid">`;
+      bySection[section].forEach(f => { html += renderDynamicFieldInput(f, state.prefix, values); });
+      html += '</div></div>';
+    });
+    html += asArray(state.config.fields).filter(f => f && f.FieldType === 'Autocomplete' && Array.isArray(f.Options) && f.Options.length)
+      .map(f => `<datalist id="${escAttr(state.prefix)}dl-${escAttr(f.FieldKey)}">${f.Options.map(o => `<option value="${escAttr(o)}">`).join('')}</datalist>`).join('');
+    document.getElementById(state.containerId).innerHTML = html || '<div style="padding:12px;color:#7a6355;font-size:13px">No additional questions for this requirement yet.</div>';
+    attachDynamicFieldListeners(mode);
+  }
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  async function init() {
+    if (!LEAD_ID) { showError('No client ID provided'); return; }
+    buildSourceSelects();
+    await loadWorkspace();
+    setupTabs();
+  }
+
+  async function loadWorkspace() {
+    try {
+      // Fetch canonical V2 workspace and merge legacy-only collections.
+      const [v2Res, legacyRes] = await Promise.all([
+        fetch(`/api/v2/clients/${encodeURIComponent(LEAD_ID)}/workspace`).then(r => r.json()),
+        fetch(`/api/leads/${encodeURIComponent(LEAD_ID)}/workspace`).then(r => r.json()).catch(() => ({ ok: false }))
+      ]);
+      if (!v2Res.ok) { showError(v2Res.error || 'Client not found'); return; }
+      workspace = normalizeWorkspaceData(v2Res.data);
+      // Merge extra collections from legacy workspace
+      if (legacyRes.ok && legacyRes.data) {
+        const leg = normalizeWorkspaceData(legacyRes.data);
+        workspace.siteVisits   = asArray(workspace.siteVisits);
+        workspace.negotiations = leg.negotiations;
+        workspace.deals        = leg.deals;
+        workspace.commissions  = leg.commissions;
+        workspace.payments     = leg.payments;
+      } else {
+        workspace.siteVisits   = asArray(workspace.siteVisits);
+        workspace.negotiations = asArray(workspace.negotiations);
+        workspace.deals        = asArray(workspace.deals);
+        workspace.commissions  = asArray(workspace.commissions);
+        workspace.payments     = asArray(workspace.payments);
+      }
+      renderAll();
+      document.getElementById('workspace-loader').style.display = 'none';
+      document.getElementById('workspace').style.display       = 'block';
+    } catch(e) { showError('Failed to load workspace: ' + e.message); }
+  }
+
+  function renderAll() {
+    const lead = workspace.lead;
+    document.title = `${lead.ClientName||'Client'} — Signature Properties`;
+    document.getElementById('nav-client-name').textContent = lead.ClientName || lead.LeadID;
+
+    // Header
+    const initials = (lead.ClientName||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    document.getElementById('avatar-initials').textContent = initials;
+    document.getElementById('client-name').textContent = lead.ClientName || '—';
+    document.getElementById('client-id').textContent   = lead.LeadID;
+
+    const status = lead.ClientStatus || lead.LeadStatus || 'New';
+    const sb = document.getElementById('client-status-badge');
+    sb.textContent = status;
+    sb.className = `badge badge-${status.toLowerCase().replace(/\s/g,'')}`;
+
+    document.getElementById('client-lifecycle').textContent = lead.ClientLifecycle || '—';
+    document.getElementById('btn-mark-lost').style.display = status === 'Lost' ? 'none' : '';
+    document.getElementById('btn-reactivate-lead').style.display = status === 'Lost' ? '' : 'none';
+
+    const score = typeof lead.ClientScore === 'object' ? lead.ClientScore?.total : lead.ClientScore;
+    if (score != null) {
+      const cls = score >= 70 ? 'high' : score >= 40 ? 'mid' : 'low';
+      document.getElementById('client-score-badge').innerHTML =
+        `<div class="score-ring ${cls}" title="Client Score: ${score}/100">${score}</div>`;
+    }
+
+    document.getElementById('meta-phone').innerHTML  = `📱 ${esc(lead.PrimaryMobile||lead.Phone||'—')}`;
+    document.getElementById('meta-email').innerHTML  = `✉️ ${esc(lead.Email||'—')}`;
+    document.getElementById('meta-source').innerHTML = `🏷️ ${esc(lead.Source||lead.LeadSource||'—')}`;
+    document.getElementById('meta-agent').innerHTML  = `👤 ${esc(lead.AssignedAgentID||'—')}`;
+
+    const phone = (lead.PrimaryMobile||lead.Phone||'').replace(/\D/g,'');
+    const waPhone = String(lead.WhatsApp || lead.PrimaryMobile || lead.Phone || '').replace(/\D/g,'');
+    document.getElementById('btn-call').dataset.phone = phone;
+    document.getElementById('btn-whatsapp').dataset.phone = waPhone;
+
+    const tags = (lead.Tags||[]).map(t => `<span class="tag" style="background:#e0e7ff;color:#3730a3">${esc(t)}</span>`).join(' ');
+    document.getElementById('client-tags').innerHTML = tags;
+
+    renderKpiStrip();
+    renderNeedsFirst();
+    renderSidebar();
+    renderRecentActivity();
+    renderTransactions();
+    renderActivities();
+    renderFollowups();
+    renderTimeline();
+    renderSiteVisitsTab();
+    renderDealsTab();
+  }
+
+  // ── KPI STRIP ─────────────────────────────────────────────────────────────────
+  function renderKpiStrip() {
+    const reqs  = workspace.requirements || [];
+    const fus   = asArray(workspace.followUps).map(toCanonicalFollowUp).filter(Boolean);
+    const svs   = workspace.siteVisits   || [];
+    const negs  = workspace.negotiations || [];
+    const deals = workspace.deals        || [];
+    const lead  = workspace.lead;
+
+    const activeReqs  = reqs.filter(r => !['Lost','Closed','Archived'].includes(r.RequirementStatus||r.Status));
+    const openFollowups = fus.filter(f => !['COMPLETED','CANCELLED'].includes(f.status));
+    const openNegs    = negs.filter(n => !['Closed','Won','Lost'].includes(n.Status||n.NegotiationStatus));
+    const score       = typeof lead.ClientScore === 'object' ? lead.ClientScore?.total : lead.ClientScore;
+
+    document.getElementById('kpi-reqs').textContent    = reqs.length;
+    document.getElementById('kpi-active').textContent  = activeReqs.length;
+    document.getElementById('kpi-visits').textContent  = svs.length;
+    document.getElementById('kpi-negs').textContent    = openNegs.length;
+    document.getElementById('kpi-deals').textContent   = deals.length;
+    document.getElementById('kpi-followups').textContent = openFollowups.length;
+    document.getElementById('kpi-score').textContent   = score != null ? score : '—';
+  }
+
+  // ── REQUIREMENTS SECTION ─────────────────────────────────────────────────────
+  function renderNeedsFirst() {
+    const txns = workspace.transactions || [];
+    const reqs = workspace.requirements || [];
+    const container = document.getElementById('needs-list');
+
+    if (!reqs.length && !txns.length) {
+      container.innerHTML = `<div class="empty-state">
+        <div class="empty-icon">🏠</div>
+        <p>No requirements yet.<br>Start by capturing the client's first requirement.</p>
+        <button class="btn btn-primary" onclick="openAddNeedModal()">＋ Add First Requirement</button>
+      </div>`;
+      return;
+    }
+
+    // Helper to find parent transaction
+    const findTxn = r => txns.find(t => t.TransactionID === r.TransactionID) || { TransactionType: r.TransactionType };
+
+    // Split active vs. closed/lost
+    const activeReqs = reqs.filter(r => !['Lost','Closed','Archived'].includes(r.RequirementStatus||r.Status));
+    const closedReqs = reqs.filter(r =>  ['Lost','Closed','Archived'].includes(r.RequirementStatus||r.Status));
+
+    let html = '';
+
+    if (!activeReqs.length && closedReqs.length) {
+      html += `<div class="empty-state" style="padding:20px 0">
+        <p style="font-size:13px;color:var(--clr-text-light)">No active requirements.</p>
+      </div>`;
+    }
+
+    // Active requirements — shown directly (no group wrappers)
+    html += activeReqs.map(r => needCard(findTxn(r), r)).join('');
+
+    // Closed / Lost requirements — compact collapsed section
+    if (closedReqs.length) {
+      html += `<details style="margin-top:20px">
+        <summary style="cursor:pointer;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--clr-text-light);border-top:1px solid var(--clr-border);padding-top:14px;list-style:none;display:flex;align-items:center;gap:6px">
+          <span style="font-size:14px">›</span> Past / Lost (${closedReqs.length})
+        </summary>
+        <div style="margin-top:10px">
+          ${closedReqs.map(r => lostReqCard(findTxn(r), r)).join('')}
+        </div>
+      </details>`;
+    }
+
+    container.innerHTML = html;
+
+    // Load next-questions async for active requirements
+    for (const req of activeReqs) {
+      loadNextQuestionsForCard(req.RequirementID);
+    }
+  }
+
+  function lostReqCard(txn, r) {
+    const titleParts = [txn.TransactionType||r.TransactionType, r.Category, r.SubCategory].filter(Boolean);
+    const budgetStr  = formatBudget(r.BudgetMin, r.BudgetMax);
+    const lostReason = r.LostReason || r.RequirementStatus || '';
+    return `<div style="background:#fff;border:1px solid #fecaca;border-radius:8px;padding:11px 15px;margin-bottom:8px;opacity:.82">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:700;color:#991b1b">${titleParts.map(esc).join(' • ')||'Requirement'}</span>
+        <span style="font-size:11px;color:#b0a0a0">${esc(r.RequirementID)}</span>
+        <span style="background:#fee2e2;color:#991b1b;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px">${esc(lostReason)}</span>
+        ${budgetStr && budgetStr!=='—' ? `<span style="font-size:12px;color:#9ca3af">${esc(budgetStr)}</span>` : ''}
+        ${r.LostNotes ? `<span style="font-size:11px;color:#b0a0a0;font-style:italic">${esc(r.LostNotes)}</span>` : ''}
+      </div>
+    </div>`;
+  }
+
+  function needCard(txn, r) {
+    const reqId  = r.RequirementID;
+    const score  = typeof r.RequirementScore === 'object' ? r.RequirementScore?.total : r.RequirementScore;
+    const scoreCls = score == null ? '' : score >= 70 ? 'high' : score >= 40 ? 'mid' : 'low';
+    const stage  = txn.PipelineStage || r.PipelineStage || 'New';
+
+    const knownFields   = extractKnownFields(r);
+    const unknownFields = extractUnknownFields(r);
+
+    const titleParts = [
+      txn.TransactionType || r.TransactionType || null,
+      r.Category || null,
+      r.SubCategory || null,
+    ].filter(Boolean);
+    const budgetStr = formatBudget(r.BudgetMin, r.BudgetMax);
+    if (budgetStr && budgetStr !== '—') titleParts.push(budgetStr);
+
+    return `<div class="need-card" data-req-id="${esc(reqId)}">
+      <div class="need-card-header">
+        <div style="flex:1;min-width:0">
+          <div class="need-card-title">
+            ${titleParts.map(esc).join(' · ')||'<span style="color:#94a3b8">Requirement</span>'}
+          </div>
+          <div class="need-card-id">${esc(reqId)}</div>
+          ${pipelineBar(stage)}
+        </div>
+        ${score != null ? `<div class="need-card-score">
+          <div class="score-ring ${scoreCls}" title="Requirement score — click to see breakdown" onclick="viewScoreBreakdown('${esc(reqId)}')" style="cursor:pointer">${score}</div>
+          <div class="need-card-score-label">Score</div>
+        </div>` : ''}
+      </div>
+
+      <div class="need-card-body">
+        <div class="need-two-col">
+          ${knownSection(knownFields, reqId)}
+          ${discoverSection(unknownFields)}
+        </div>
+
+        <!-- Next Questions — loaded async -->
+        <div id="nq-${esc(reqId)}" class="next-qs" style="display:none">
+          <div class="next-qs-title">💡 Next Questions to Ask</div>
+          <div id="nq-content-${esc(reqId)}" class="next-qs-loading">Loading…</div>
+        </div>
+
+        <!-- Smart Matches — loaded async -->
+        <div id="mm-${esc(reqId)}" class="smart-matches" style="display:none;margin-top:12px;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid var(--clr-border)">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--clr-brown);margin-bottom:8px" id="mm-title-${esc(reqId)}">🎯 Smart Matches</div>
+          <div id="mm-content-${esc(reqId)}" style="font-size:12.5px;color:#6b7280">Loading…</div>
+        </div>
+
+        <!-- Shortlist — inline compare view for this requirement -->
+        <div id="sl-${esc(reqId)}" class="shortlist-panel" data-testid="shortlist-panel-${esc(reqId)}" style="display:none;margin-top:12px;padding:12px;background:#fffbeb;border-radius:8px;border:1px solid #fde68a">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#92400e" id="sl-title-${esc(reqId)}">⭐ Shortlist</div>
+            <button class="need-action-btn ghost" style="padding:4px 10px;font-size:11px" onclick="toggleShortlist('${esc(reqId)}')" data-testid="sl-close-${esc(reqId)}">Hide</button>
+          </div>
+          <div id="sl-content-${esc(reqId)}" style="font-size:12.5px;color:#6b7280">Loading…</div>
+        </div>
+      </div>
+
+      <div class="need-card-footer">
+        <button class="need-action-btn primary" data-testid="req-update-${esc(reqId)}" onclick="openUpdateNeedModal('${esc(reqId)}')">✏️ Update</button>
+        <button class="need-action-btn ghost"   data-testid="req-matches-${esc(reqId)}" onclick="toggleSmartMatches('${esc(reqId)}')">🎯 Smart Match</button>
+        <button class="need-action-btn ghost"   data-testid="req-shortlist-${esc(reqId)}" onclick="toggleShortlist('${esc(reqId)}')">⭐ Shortlist</button>
+        <button class="need-action-btn ghost"   data-testid="req-share-${esc(reqId)}" onclick="openNetworkShareModal('${esc(reqId)}')">👥 Share with Network</button>
+        <button class="need-action-btn ghost"   onclick="openSiteVisitsContext('${esc(reqId)}')">🏠 Site Visits</button>
+        <button class="need-action-btn ghost"   onclick="showNextQuestionsSection('${esc(reqId)}')">💬 Ask</button>
+        <button class="need-action-btn danger"  onclick="markLostReq('${esc(reqId)}')">✗ Lost</button>
+      </div>
+    </div>`;
+  }
+
+  function pipelineBar(stage) {
+    const idx = PIPELINE_STAGES.indexOf(stage);
+    const bars = PIPELINE_STAGES.map((s, i) => {
+      const cls = i < idx ? 'done' : i === idx ? 'current' : '';
+      return `<div class="pipeline-step ${cls}" title="${s}"></div>`;
+    }).join('');
+    return `<div style="margin-top:8px">
+      <div class="pipeline-bar">${bars}</div>
+      <div class="pipeline-label">
+        <span>New</span>
+        <span class="pipeline-current-label">● ${esc(stage)}</span>
+        <span>Deal</span>
+      </div>
+    </div>`;
+  }
+
+  function knownSection(fields, reqId) {
+    if (!fields.length) {
+      return `<div class="known-section">
+        <div class="kd-title">✓ Known</div>
+        <div style="font-size:12px;color:#6b7280;font-style:italic">Nothing captured yet</div>
+      </div>`;
+    }
+    const items = fields.slice(0, 6).map(f =>
+      `<div class="kd-item editable" onclick="openInlineEdit('${esc(reqId)}', '${esc(f.key)}', '${esc(f.label)}', '${esc(f.value)}')" title="Click to edit">
+        <span class="kd-icon">✓</span>
+        <span class="kd-label">${esc(f.label)}</span>
+        <span class="kd-value">${esc(f.display)}</span>
+      </div>`
+    ).join('');
+    return `<div class="known-section">
+      <div class="kd-title">✓ Known (${fields.length})</div>
+      ${items}
+      ${fields.length > 6 ? `<div style="font-size:11px;color:#6b7280;margin-top:4px">+${fields.length-6} more…</div>` : ''}
+    </div>`;
+  }
+
+  function discoverSection(fields) {
+    if (!fields.length) {
+      return `<div class="discover-section">
+        <div class="kd-title">? To Discover</div>
+        <div style="font-size:12px;color:#6b7280;font-style:italic">All key info captured! 🎉</div>
+      </div>`;
+    }
+    const items = fields.slice(0, 5).map(f =>
+      `<div class="kd-item">
+        <span class="kd-icon" style="color:#d97706">?</span>
+        <span class="kd-label">${esc(f.label)}</span>
+        <span style="color:#d97706;font-size:11px;font-style:italic">unknown</span>
+      </div>`
+    ).join('');
+    return `<div class="discover-section">
+      <div class="kd-title">? To Discover (${fields.length})</div>
+      ${items}
+      ${fields.length > 5 ? `<div style="font-size:11px;color:#92400e;margin-top:4px">+${fields.length-5} more…</div>` : ''}
+    </div>`;
+  }
+
+  // Extract KNOWN fields from requirement (Fields map + flat fields)
+  function extractKnownFields(r) {
+    const known = [];
+    const fields = r.Fields || {};
+
+    // Budget (flat fields take priority)
+    if (r.BudgetMin != null || r.BudgetMax != null) {
+      known.push({ key:'budget', label:'Budget', value:'', display: formatBudget(r.BudgetMin, r.BudgetMax) });
+    } else {
+      const bmin = fields.BudgetMin, bmax = fields.BudgetMax;
+      if (bmin?.state === 'KNOWN' || bmax?.state === 'KNOWN') {
+        known.push({ key:'budget', label:'Budget', value:'', display: formatBudget(bmin?.value, bmax?.value) });
+      }
+    }
+
+    // Locations
+    const locKeys = ['Location1','Location2','Location3'];
+    const locs = [];
+    for (const k of locKeys) {
+      const flat = r[k], fv = fields[k];
+      if (flat) locs.push(flat);
+      else if (fv?.state === 'KNOWN' && fv.value) locs.push(String(fv.value));
+    }
+    if (locs.length) known.push({ key:'Location1', label:'Location', value: locs[0], display: locs.join(' / ') });
+
+    // Other configured KNOWN fields from Fields map
+    const PRIORITY_FIELDS = ['BHKMin','BHKMax','Possession','Urgency','Furnishing','Parking',
+      'Facing','AreaMin','AreaMax','TenantType','BusinessType','PowerLoad','Deposit','TotalFloors'];
+    for (const fk of PRIORITY_FIELDS) {
+      const fv = fields[fk];
+      if (!fv || fv.state !== 'KNOWN' || fv.value == null) continue;
+      const label = FIELD_LABELS[fk] || fk;
+      let display = String(fv.value);
+      if (fk === 'BHKMin') {
+        const bmax = fields.BHKMax;
+        display = bmax?.state === 'KNOWN' && bmax.value && bmax.value !== fv.value
+          ? `${fv.value}–${bmax.value} BHK` : `${fv.value} BHK`;
+        known.push({ key: fk, label: 'BHK', value: String(fv.value), display });
+        continue;
+      }
+      if (fk === 'BHKMax' && known.find(k => k.key === 'BHKMin')) continue; // already merged
+      known.push({ key: fk, label, value: String(fv.value), display });
+    }
+
+    return known;
+  }
+
+  // Extract UNKNOWN (not NOT_APPLICABLE) fields from Fields map
+  function extractUnknownFields(r) {
+    const fields = r.Fields || {};
+    const unknown = [];
+    const SHOW_UNKNOWN = ['BudgetMax','BudgetMin','Location1','BHKMin','Possession','Urgency',
+      'Furnishing','Parking','Facing','AreaMin','TenantType','BusinessType','PowerLoad'];
+    const knownKeys = new Set(extractKnownFields(r).map(f => f.key));
+
+    for (const fk of SHOW_UNKNOWN) {
+      if (knownKeys.has(fk)) continue;
+      const fv = fields[fk];
+      // Only UNKNOWN (not NOT_APPLICABLE, not absent without a Fields entry)
+      if (fv && fv.state === 'NOT_APPLICABLE') continue;
+      if (fv && fv.state === 'KNOWN') continue;
+      // If field exists in map as UNKNOWN, or is a key field that's simply missing
+      if (fv?.state === 'UNKNOWN' || (fv == null && SHOW_UNKNOWN.includes(fk))) {
+        // Only show if it makes sense for the category
+        if ((fk === 'BHKMin' || fk === 'Facing') && r.Category !== 'Residential') continue;
+        if (fk === 'TenantType' && (r.TransactionType !== 'Rent' && r.TransactionType !== 'Rent Out')) continue;
+        if (fk === 'BusinessType' && r.Category !== 'Commercial') continue;
+        if (fk === 'PowerLoad' && !['Commercial','Industrial'].includes(r.Category)) continue;
+        const label = FIELD_LABELS[fk] || fk;
+        unknown.push({ key: fk, label });
+      }
+    }
+    return unknown;
+  }
+
+  // ── Next Questions (read-only, async) ─────────────────────────────────────────
+  async function loadNextQuestionsForCard(reqId) {
+    try {
+      const res = await fetch(`/api/v2/requirements/${encodeURIComponent(reqId)}/next-questions?limit=3`).then(r => r.json());
+      const container = document.getElementById(`nq-content-${reqId}`);
+      const wrapper   = document.getElementById(`nq-${reqId}`);
+      if (!res.ok || !res.questions || !res.questions.length) return;
+      wrapper.style.display = 'block';
+      container.innerHTML = res.questions.slice(0,3).map((q,i) =>
+        `<div class="next-q-item">
+          <span style="color:#1e3a8a;font-size:11px;min-width:14px">${i+1}.</span>
+          <span class="q-text">${esc(q.label || q.fieldKey || q.question || '')}</span>
+          <button class="next-q-btn" onclick="openInlineEdit('${esc(reqId)}', '${esc(q.fieldKey)}', '${esc(q.label||q.fieldKey)}', '')">Ask</button>
+        </div>`
+      ).join('');
+    } catch(_) { /* silently ignore — read-only fetch */ }
+  }
+
+  function showNextQuestionsSection(reqId) {
+    const wrapper = document.getElementById(`nq-${reqId}`);
+    if (wrapper) {
+      wrapper.style.display = 'block';
+      wrapper.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }
+  }
+
+  // ── Inline edit (PATCH same RequirementID) ────────────────────────────────────
+  function openInlineEdit(reqId, fieldKey, fieldLabel, currentValue) {
+    _inlineReqId = reqId;
+    _inlineField  = fieldKey;
+    document.getElementById('inline-edit-title').textContent = `Update: ${fieldLabel}`;
+    document.getElementById('inline-edit-error').textContent = '';
+
+    let inputHtml = '';
+    if (fieldKey === 'budget' || fieldKey === 'BudgetMin' || fieldKey === 'BudgetMax') {
+      const req = (workspace.requirements||[]).find(r => r.RequirementID === reqId);
+      const bmin = req?.BudgetMin ?? (req?.Fields?.BudgetMin?.state === 'KNOWN' ? req.Fields.BudgetMin.value : '');
+      const bmax = req?.BudgetMax ?? (req?.Fields?.BudgetMax?.state === 'KNOWN' ? req.Fields.BudgetMax.value : '');
+      _inlineField = 'budget_range';
+      inputHtml = `<div class="form-grid" style="grid-template-columns:1fr 1fr;gap:8px">
+        <div class="form-group"><label>Min (₹)</label><input id="ie-budget-min" type="number" value="${esc(String(bmin||''))}" /></div>
+        <div class="form-group"><label>Max (₹)</label><input id="ie-budget-max" type="number" value="${esc(String(bmax||''))}" /></div>
+      </div>`;
+    } else if (fieldKey === 'Location1') {
+      const req = (workspace.requirements||[]).find(r => r.RequirementID === reqId);
+      const loc1 = req?.Location1 || req?.Fields?.Location1?.value || '';
+      const loc2 = req?.Location2 || req?.Fields?.Location2?.value || '';
+      const loc3 = req?.Location3 || req?.Fields?.Location3?.value || '';
+      _inlineField = 'locations';
+      inputHtml = `<label style="font-size:12px;font-weight:600;color:#64748b;display:block;margin-bottom:6px">Locations</label>
+        <input id="ie-loc1" type="text" placeholder="Location 1" value="${esc(String(loc1||''))}" style="margin-bottom:6px" />
+        <input id="ie-loc2" type="text" placeholder="Location 2 (optional)" value="${esc(String(loc2||''))}" style="margin-bottom:6px" />
+        <input id="ie-loc3" type="text" placeholder="Location 3 (optional)" value="${esc(String(loc3||''))}" />`;
+    } else if (fieldKey === 'Possession') {
+      inputHtml = `<select id="ie-value"><option value="">Any</option>
+        <option ${currentValue==='Ready to Move'?'selected':''}>Ready to Move</option>
+        <option ${currentValue==='0-6 Months'?'selected':''}>0-6 Months</option>
+        <option ${currentValue==='6-12 Months'?'selected':''}>6-12 Months</option>
+        <option ${currentValue==='1-2 Years'?'selected':''}>1-2 Years</option>
+        <option ${currentValue==='2-3 Years'?'selected':''}>2-3 Years</option>
+        <option ${currentValue==='3+ Years'?'selected':''}>3+ Years</option></select>`;
+    } else if (fieldKey === 'Urgency') {
+      inputHtml = `<select id="ie-value"><option value="">—</option>
+        <option ${currentValue==='Immediate'?'selected':''}>Immediate</option>
+        <option ${currentValue==='High'?'selected':''}>High</option>
+        <option ${currentValue==='Medium'?'selected':''}>Medium</option>
+        <option ${currentValue==='Low'?'selected':''}>Low</option></select>`;
+    } else if (fieldKey === 'Furnishing') {
+      inputHtml = `<select id="ie-value"><option value="">—</option>
+        <option ${currentValue==='Unfurnished'?'selected':''}>Unfurnished</option>
+        <option ${currentValue==='Semi-Furnished'?'selected':''}>Semi-Furnished</option>
+        <option ${currentValue==='Fully Furnished'?'selected':''}>Fully Furnished</option></select>`;
+    } else if (['BHKMin','BHKMax','Parking','AreaMin','AreaMax','PowerLoad','Deposit'].includes(fieldKey)) {
+      inputHtml = `<input id="ie-value" type="number" placeholder="${esc(fieldLabel)}" value="${esc(currentValue||'')}" />`;
+    } else {
+      inputHtml = `<input id="ie-value" type="text" placeholder="${esc(fieldLabel)}" value="${esc(currentValue||'')}" />`;
+    }
+
+    document.getElementById('inline-edit-body').innerHTML = inputHtml;
+
+    // Position popup centred for simplicity
+    const popup = document.getElementById('inline-edit-popup');
+    popup.style.display = 'block';
+    popup.style.top  = '50%';
+    popup.style.left = '50%';
+    popup.style.transform = 'translate(-50%, -50%)';
+    document.getElementById('inline-backdrop').style.display = 'block';
+  }
+
+  async function saveInlineEdit() {
+    const reqId = _inlineReqId;
+    if (!reqId) return;
+
+    let payload = {};
+    if (_inlineField === 'budget_range') {
+      const bmin = numOrNull(document.getElementById('ie-budget-min')?.value);
+      const bmax = numOrNull(document.getElementById('ie-budget-max')?.value);
+      if (bmin !== null) payload.BudgetMin = bmin;
+      if (bmax !== null) payload.BudgetMax = bmax;
+    } else if (_inlineField === 'locations') {
+      const l1 = document.getElementById('ie-loc1')?.value.trim();
+      const l2 = document.getElementById('ie-loc2')?.value.trim();
+      const l3 = document.getElementById('ie-loc3')?.value.trim();
+      if (l1) payload.Location1 = l1;
+      if (l2) payload.Location2 = l2;
+      if (l3) payload.Location3 = l3;
+    } else {
+      const val = document.getElementById('ie-value')?.value;
+      if (val !== undefined && val !== '') {
+        // Numeric fields
+        if (['BHKMin','BHKMax','Parking','AreaMin','AreaMax','PowerLoad','Deposit'].includes(_inlineField)) {
+          payload[_inlineField] = Number(val);
+        } else {
+          payload[_inlineField] = val;
+        }
+      }
+    }
+
+    if (!Object.keys(payload).length) { closeInlineEdit(); return; }
+
+    document.getElementById('inline-edit-error').textContent = '';
+    try {
+      const res = await fetch(`/api/requirements/${encodeURIComponent(reqId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(r => r.json());
+
+      if (res.ok) {
+        closeInlineEdit();
+        await loadWorkspace();
+      } else {
+        document.getElementById('inline-edit-error').textContent = res.error || 'Failed to update';
+      }
+    } catch(e) {
+      document.getElementById('inline-edit-error').textContent = e.message;
+    }
+  }
+
+  function closeInlineEdit() {
+    document.getElementById('inline-edit-popup').style.display = 'none';
+    document.getElementById('inline-backdrop').style.display   = 'none';
+    _inlineReqId = null;
+    _inlineField  = null;
+  }
+
+  // ── Mark Lost ─────────────────────────────────────────────────────────────────
+  let _markLostReqId = null;
+
+  function markLostReq(reqId) {
+    _markLostReqId = reqId;
+    const req = (workspace.requirements||[]).find(r => r.RequirementID === reqId);
+    const txn = (workspace.transactions||[]).find(t => t.TransactionID === req?.TransactionID) || {};
+    const label = [txn.TransactionType||req?.TransactionType, req?.Category, req?.SubCategory].filter(Boolean).join(' • ') || reqId;
+    document.getElementById('lost-req-label').textContent = label + ' — ' + reqId;
+    document.getElementById('lost-reason').value = '';
+    document.getElementById('lost-notes').value  = '';
+    document.getElementById('lost-error').textContent = '';
+    document.getElementById('mark-lost-modal').classList.remove('hidden');
+  }
+
+  async function saveMarkLost() {
+    const reason = document.getElementById('lost-reason').value;
+    if (!reason) { document.getElementById('lost-error').textContent = 'Please select a reason'; return; }
+    const notes  = document.getElementById('lost-notes').value.trim();
+    try {
+      const res = await fetch(`/api/requirements/${encodeURIComponent(_markLostReqId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ RequirementStatus: 'Lost', LostReason: reason, LostNotes: notes || null })
+      }).then(r => r.json());
+      if (res.ok) {
+        closeModal('mark-lost-modal');
+        await loadWorkspace();
+      } else {
+        document.getElementById('lost-error').textContent = res.error || 'Failed to mark lost';
+      }
+    } catch(e) {
+      document.getElementById('lost-error').textContent = e.message;
+    }
+  }
+
+  // ── Score breakdown ───────────────────────────────────────────────────────────
+  async function viewScoreBreakdown(reqId) {
+    try {
+      const res = await fetch(`/api/v2/requirements/${encodeURIComponent(reqId)}/score`).then(r => r.json());
+      if (!res.ok) { alert('Could not load score breakdown'); return; }
+      const pos = (res.positiveContributions||[]).map(f => `✓ ${f.label||f.field}: +${f.contribution}`).join('\n');
+      const unk = (res.unknownFactors||[]).map(f => `? ${f.label||f.field}`).join('\n');
+      alert(`Requirement Score: ${res.score}/100 (${res.band})\n\nKnown factors:\n${pos||'—'}\n\nTo discover (affects score if answered):\n${unk||'—'}`);
+    } catch(e) { alert('Could not load score breakdown'); }
+  }
+
+  // ── Open "Update Requirement" (pre-filled) ────────────────────────────────────
+  async function openUpdateNeedModal(reqId) {
+    const req = (workspace.requirements||[]).find(r => r.RequirementID === reqId);
+    if (!req) return;
+    currentTxnId = req.TransactionID;
+    document.getElementById('req-error').textContent = '';
+    document.getElementById('dynamic-fields').innerHTML = '';
+
+    // Txn select
+    const txns = workspace.transactions || [];
+    const sel = document.getElementById('req-txn-id');
+    sel.innerHTML = txns.map(t => `<option value="${enc(t.TransactionID)}" ${t.TransactionID===req.TransactionID?'selected':''}>${esc(t.TransactionType||t.Type||'—')}</option>`).join('');
+
+    // Category
+    document.getElementById('req-category').value = req.Category || '';
+
+    // Subcategory — rebuild options so loadFormConfig can read the value properly
+    const sub  = req.SubCategory || '';
+    const txnForReq = txns.find(t => t.TransactionID === req.TransactionID);
+    const subs = await fetchSubcategories(req.Category || '', txnForReq?.TransactionType || txnForReq?.Type || req.TransactionType || '');
+    document.getElementById('req-subcategory').innerHTML =
+      `<option value="">Select…</option>` + subs.map(s => `<option ${s===sub?'selected':''}>${esc(s)}</option>`).join('');
+    document.getElementById('req-subcategory').value = sub;
+
+    // Core flat fields
+    document.getElementById('req-budget-min').value = req.BudgetMin  != null ? req.BudgetMin : '';
+    document.getElementById('req-budget-max').value = req.BudgetMax  != null ? req.BudgetMax : '';
+    document.getElementById('req-location1').value  = req.Location1  || '';
+    document.getElementById('req-location2').value  = req.Location2  || '';
+    document.getElementById('req-urgency').value    = req.Urgency    || '';
+    document.getElementById('req-possession').value = req.Possession || '';
+    document.getElementById('req-status').value     = req.RequirementStatus || req.Status || 'Active';
+
+    // Modal title / button
+    document.querySelector('#req-modal .modal-title').textContent = 'Update Requirement';
+    const saveBtn = document.querySelector('#req-modal .btn-primary[onclick="saveRequirement()"]');
+    if (saveBtn) { saveBtn.textContent = 'Save Changes'; saveBtn.onclick = () => saveRequirementPatch(reqId); }
+
+    // Load dynamic fields then pre-fill them from existing requirement
+    if (req.Category && sub) {
+      await loadFormConfig();
+      const values = {};
+      Object.keys(req.Fields || {}).forEach((key) => {
+        const value = getRequirementValue(req, key);
+        if (value !== null && value !== undefined) values[key] = value;
+        const priority = req.Fields?.[key]?.priority;
+        if (priority) values[`__priority__${key}`] = priority;
+      });
+      dynamicFormState.req.values = { ...dynamicFormState.req.values, ...values };
+      rerenderDynamicForm('req');
+    }
+
+    document.getElementById('req-modal').classList.remove('hidden');
+  }
+
+  async function saveRequirementPatch(reqId) {
+    const cat = document.getElementById('req-category').value;
+    if (!cat) { document.getElementById('req-error').textContent = 'Category is required'; return; }
+    const payload = {
+      Category:    cat,
+      SubCategory: document.getElementById('req-subcategory').value || null,
+      BudgetMin:   numOrNull(document.getElementById('req-budget-min').value),
+      BudgetMax:   numOrNull(document.getElementById('req-budget-max').value),
+      Location1:   document.getElementById('req-location1').value.trim() || null,
+      Location2:   document.getElementById('req-location2').value.trim() || null,
+      Urgency:     document.getElementById('req-urgency').value || null,
+      Possession:  document.getElementById('req-possession').value || null,
+      RequirementStatus: document.getElementById('req-status').value
+    };
+    const dynamicValues = collectDynamicValues('req');
+    const fieldPriorities = extractFieldPrioritiesFromValues(dynamicValues);
+    Object.entries(dynamicValues).forEach(([key, val]) => {
+      if (key.startsWith('__priority__')) return;
+      if (val === '' || val == null || (Array.isArray(val) && !val.length)) return;
+      payload[key] = val;
+    });
+    if (Object.keys(fieldPriorities).length) payload.FieldPriorities = fieldPriorities;
+    try {
+      const res = await fetch(`/api/requirements/${encodeURIComponent(reqId)}`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      }).then(r => r.json());
+      if (res.ok) {
+        closeModal('req-modal');
+        // Reset modal title and button
+        document.querySelector('#req-modal .modal-title').textContent = 'Add Requirement';
+        const saveBtn = document.querySelector('#req-modal .btn-primary');
+        if (saveBtn) { saveBtn.textContent = 'Add Requirement'; saveBtn.onclick = saveRequirement; }
+        await loadWorkspace();
+      } else {
+        document.getElementById('req-error').textContent = res.error || 'Failed to update';
+      }
+    } catch(e) { document.getElementById('req-error').textContent = e.message; }
+  }
+
+  // ── Add Need modal (Quick: Transaction + Requirement) ─────────────────────────
+  // ── Surat area presets (autocomplete datalist) ────────────────────────────
+  const SURAT_AREAS_WS = ['Adajan','Althan','Anand Mahal Road','Athwa','Bhatar','Bhimrad','Causeway Road','City Light','Dumas Road','Ghod Dod Road','Jahangirpura','Kadodara','Kamrej','Katargam','LP Savani Road','Magdalla','Nanpura','New Textile Market','Nikol','Pal','Palanpur Patiya','Parle Point','Piplod','Puna','Rander','Rustampura','Salabatpura','Sarthana','Singanpore','Tapi Road','Udhna','Umra','Varachha','Vesu','VIP Road'];
+
+  async function openAddNeedModal() {
+    document.getElementById('add-need-error').textContent = '';
+    document.getElementById('need-txn-type').value = 'Purchase';
+    document.getElementById('need-category').value = '';
+    document.getElementById('need-subcategory').innerHTML = '<option value="">Not sure yet</option>';
+    document.getElementById('need-dynamic-fields').innerHTML = '<div style="padding:20px;text-align:center;color:#7a6355;font-size:13px">Select Transaction + Category to load fields</div>';
+    dynamicFormState.need = { ...dynamicFormState.need, config: null, rules: [], values: {} };
+    document.getElementById('add-need-modal').classList.remove('hidden');
+  }
+
+  async function updateNeedSubcats() {
+    const cat  = document.getElementById('need-category').value;
+    const txnType = document.getElementById('need-txn-type').value;
+    const subs = await fetchSubcategories(cat, txnType);
+    document.getElementById('need-subcategory').innerHTML =
+      '<option value="">Not sure yet</option>' + subs.map(s => `<option>${esc(s)}</option>`).join('');
+  }
+
+  // ── Fully-dynamic form loading (uses /api/v2/form-config — 154 fields) ────
+  async function needLoadDynamicForm() {
+    const txnType = document.getElementById('need-txn-type').value;
+    const cat     = document.getElementById('need-category').value;
+    const sub     = document.getElementById('need-subcategory').value || '';
+    const dyn     = document.getElementById('need-dynamic-fields');
+    if (!txnType || !cat) { dyn.innerHTML = '<div style="padding:20px;text-align:center;color:#7a6355;font-size:13px">Select Transaction + Category to load fields</div>'; return; }
+    try {
+      const url = `/api/v2/form-config?transactionType=${encodeURIComponent(txnType)}&category=${encodeURIComponent(cat)}${sub ? '&subCategory='+encodeURIComponent(sub) : ''}`;
+      const [res, depRes] = await Promise.all([
+        fetch(url).then(r => r.json()),
+        fetch(`/api/v2/dependencies?transactionType=${encodeURIComponent(txnType)}&category=${encodeURIComponent(cat)}${sub ? '&subCategory=' + encodeURIComponent(sub) : ''}`).then(r => r.json())
+      ]);
+      if (!res.ok || !res.data) { dyn.innerHTML = needBasicFields(); return; }
+      const HEADER = new Set(['TransactionType','Category','SubCategory','LeadSource','ClientName','PrimaryMobile','Email','City']);
+      const fields = asArray(res.data.fields).filter(f => f && f.Active !== false && !HEADER.has(f.FieldKey));
+      const prefill = getLeadRequirementPrefill(txnType, cat, sub);
+      dynamicFormState.need = {
+        ...dynamicFormState.need,
+        config: { ...res.data, fields },
+        rules: depRes.ok ? asArray(depRes.data) : [],
+        values: { ...prefill, ...collectDynamicValues('need') }
+      };
+      rerenderDynamicForm('need');
+    } catch(e) {
+      dyn.innerHTML = needBasicFields();
+    }
+  }
+
+  function needBasicFields() {
+    return `<div class="form-grid">
+      <div class="form-group"><label>Budget Max (₹)</label><input id="need-fld-BudgetMax" data-field-key="BudgetMax" type="number" placeholder="e.g. 8000000" /></div>
+      <div class="form-group"><label>Primary Location</label><input id="need-fld-Location1" data-field-key="Location1" list="need-dl-Location1" type="text" placeholder="e.g. Vesu" autocomplete="off" /></div>
+    </div><datalist id="need-dl-Location1">${SURAT_AREAS_WS.map(a => `<option value="${a}">`).join('')}</datalist>`;
+  }
+
+  function needBuildDatalists(fields) {
+    return fields.filter(f => f.FieldType === 'Autocomplete' && Array.isArray(f.Options) && f.Options.length)
+      .map(f => `<datalist id="need-dl-${esc(f.FieldKey)}">${f.Options.map(o => `<option value="${esc(o)}">`).join('')}</datalist>`)
+      .join('');
+  }
+
+  function needRenderField(f) {
+    const fk   = f.FieldKey;
+    const id   = `need-fld-${fk}`;
+    const typ  = f.FieldType;
+    const lbl  = f.FieldLabel;
+    const opts = f.Options || [];
+    const hint = f.Placeholder || lbl;
+    const help = f.HelpText || '';
+    const testId = `need-req-field-${fk}`;
+    const isFull = typ === 'Textarea' || typ === 'MultiSelect' || fk === 'SocietyName' || fk === 'RERANumber' || fk === 'AvoidLocations' || fk === 'Preferences' || fk === 'GujaratRERA' || fk === 'ExistingBusiness' || fk === 'ExistingCrops' || fk === 'TPScheme';
+    const groupClass = isFull ? 'form-group full' : 'form-group';
+    let input;
+    if (typ === 'Select' && opts.length)
+      input = `<select id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}"><option value="">—</option>${opts.map(o => `<option>${esc(o)}</option>`).join('')}</select>`;
+    else if (typ === 'MultiSelect' && opts.length)
+      input = `<select id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}" multiple size="3">${opts.map(o => `<option>${esc(o)}</option>`).join('')}</select>`;
+    else if (typ === 'Boolean')
+      input = `<select id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}"><option value="">—</option><option value="true">Yes</option><option value="false">No</option></select>`;
+    else if (typ === 'Number' || typ === 'Area')
+      input = `<input id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}" type="number" placeholder="${esc(hint)}" />`;
+    else if (typ === 'Date')
+      input = `<input id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}" type="date" />`;
+    else if (typ === 'Textarea')
+      input = `<textarea id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}" rows="2" placeholder="${esc(hint)}"></textarea>`;
+    else if (typ === 'Autocomplete' && opts.length)
+      input = `<input id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}" list="need-dl-${esc(fk)}" type="text" placeholder="${esc(hint)}" autocomplete="off" />`;
+    else
+      input = `<input id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}" type="text" placeholder="${esc(hint)}" />`;
+    const tierBadge = f.Tier === 'CORE' ? '<span style="color:#dc2626;font-size:10px;margin-left:4px">*</span>' : '';
+    return `<div class="${groupClass}"><label>${esc(lbl)}${tierBadge}</label>${input}${help ? `<span style="font-size:11px;color:#7a6355;margin-top:2px;display:block">${esc(help)}</span>` : ''}</div>`;
+  }
+
+  async function saveAddNeed() {
+    const cat = document.getElementById('need-category').value;
+    if (!cat) { document.getElementById('add-need-error').textContent = 'Category is required'; return; }
+    const txnType = document.getElementById('need-txn-type').value;
+    if (!txnType) { document.getElementById('add-need-error').textContent = 'Transaction type is required'; return; }
+
+    const btn = document.getElementById('need-save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    document.getElementById('add-need-error').textContent = '';
+
+    try {
+      // Step 1: Create Transaction
+      const txnRes = await fetch(`/api/leads/${encodeURIComponent(LEAD_ID)}/transactions`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ TransactionType: txnType })
+      }).then(r => r.json());
+
+      if (!txnRes.ok) {
+        document.getElementById('add-need-error').textContent = txnRes.error || 'Failed to create transaction';
+        return;
+      }
+      const txnId = txnRes.data.TransactionID;
+
+      // Step 2: Build requirement payload with ALL dynamic fields
+      const sub  = document.getElementById('need-subcategory').value || null;
+      const reqPayload = {
+        LeadID:      LEAD_ID,
+        Category:    cat,
+        SubCategory: sub || null,
+        TransactionType: txnType,
+        RequirementStatus: 'Active'
+      };
+      const dynamicValues = collectDynamicValues('need');
+      const fieldPriorities = extractFieldPrioritiesFromValues(dynamicValues);
+      Object.entries(dynamicValues).forEach(([key, val]) => {
+        if (key.startsWith('__priority__')) return;
+        if (val === '' || val == null || (Array.isArray(val) && !val.length)) return;
+        reqPayload[key] = val;
+      });
+      if (Object.keys(fieldPriorities).length) reqPayload.FieldPriorities = fieldPriorities;
+
+      // Step 3: Create Requirement
+      const reqRes = await fetch(`/api/transactions/${encodeURIComponent(txnId)}/requirements`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(reqPayload)
+      }).then(r => r.json());
+
+      if (!reqRes.ok) {
+        document.getElementById('add-need-error').textContent = reqRes.error || 'Failed to create requirement';
+        return;
+      }
+
+      closeModal('add-need-modal');
+      await loadWorkspace();
+    } catch(e) {
+      document.getElementById('add-need-error').textContent = e.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Add Requirement';
+    }
+  }
+
+  // ── Sidebar ───────────────────────────────────────────────────────────────────
+  function renderSidebar() {
+    const lead = workspace.lead;
+    const ws   = workspace;
+    const txns = ws.transactions || [];
+    const reqs = ws.requirements || [];
+
+    // Profile
+    const rows = [
+      ['ID',        lead.LeadID],
+      ['Phone',     lead.PrimaryMobile || lead.Phone || '—'],
+      ['WhatsApp',  lead.WhatsApp || '—'],
+      ['Email',     lead.Email || '—'],
+      ['City',      lead.City || '—'],
+      ['Source',    lead.Source || lead.LeadSource || '—'],
+      ['Agent',     lead.AssignedAgentID || '—'],
+      ['Created',   lead.CreatedAt ? new Date(lead.CreatedAt).toLocaleDateString('en-IN') : '—']
+    ];
+    document.getElementById('sidebar-profile').innerHTML =
+      rows.map(([l,v]) => `<div class="sidebar-row"><span class="sidebar-label">${esc(l)}</span><span class="sidebar-value" title="${esc(String(v))}">${esc(String(v||'—'))}</span></div>`).join('');
+
+    // Summary
+    const s    = ws.summary || {};
+    const svs  = ws.siteVisits   || [];
+    const negs = ws.negotiations  || [];
+    const dels = ws.deals         || [];
+    const activeReqCount  = reqs.filter(r => !['Lost','Closed','Archived'].includes(r.RequirementStatus||r.Status)).length;
+    const openNegCount    = negs.filter(n => !['Closed','Won','Lost'].includes(n.Status||n.NegotiationStatus)).length;
+    const openFuCount     = asArray(ws.followUps).map(toCanonicalFollowUp).filter(f => f && !['COMPLETED','CANCELLED'].includes(f.status)).length;
+    document.getElementById('sidebar-summary').innerHTML = `
+      <div class="sidebar-row"><span class="sidebar-label">Transactions</span><span class="sidebar-value" style="font-weight:700;color:var(--clr-primary)">${txns.length}</span></div>
+      <div class="sidebar-row"><span class="sidebar-label">Requirements</span><span class="sidebar-value" style="font-weight:700;color:var(--clr-primary)">${reqs.length}</span></div>
+      <div class="sidebar-row"><span class="sidebar-label">Active Reqs</span><span class="sidebar-value">${activeReqCount}</span></div>
+      <div class="sidebar-row"><span class="sidebar-label">Site Visits</span><span class="sidebar-value">${svs.length}</span></div>
+      <div class="sidebar-row"><span class="sidebar-label">Open Negotiations</span><span class="sidebar-value">${openNegCount}</span></div>
+      <div class="sidebar-row"><span class="sidebar-label">Deals</span><span class="sidebar-value">${dels.length}</span></div>
+      <div class="sidebar-row"><span class="sidebar-label">Open Follow-ups</span><span class="sidebar-value">${openFuCount}</span></div>`;
+
+    // Upcoming follow-ups
+    const fus = asArray(ws.followUps).map(toCanonicalFollowUp).filter(f => f && !['COMPLETED','CANCELLED'].includes(f.status)).slice(0, 4);
+    document.getElementById('sidebar-followups').innerHTML = fus.length
+      ? fus.map(f => `<div class="followup-item">
+          <div class="followup-due">${esc(followUpDueParts(f).dateLabel)}</div>
+          <span style="font-size:11px;background:#eff6ff;color:#1d4ed8;padding:2px 7px;border-radius:8px;font-weight:600">${esc(f.activityType||'Call')}</span>
+          <div style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((f.notes||'').slice(0,30))}</div>
+        </div>`).join('')
+      : `<div style="font-size:12.5px;color:#64748b;font-style:italic">No upcoming follow-ups</div>`;
+  }
+
+  function renderRecentActivity() {
+    const acts = (workspace.activities||[]).slice(0, 4);
+    document.getElementById('recent-activity').innerHTML = acts.length
+      ? `<div class="card">${acts.map(a => `<div class="activity-item">
+          <div class="activity-dot"></div>
+          <div>
+            <div class="activity-type">${esc(a.ActivityType||'Note')}</div>
+            <div class="activity-note">${esc((a.Notes||'—').slice(0,80))}</div>
+            <div class="activity-time">${timeAgo(a.CreatedAt)}</div>
+          </div>
+        </div>`).join('')}</div>`
+      : `<div class="empty-state" style="padding:16px">
+          <p style="font-size:13px">No activities yet.</p>
+          <button class="btn btn-ghost btn-sm" onclick="openAddActivityModal()">Log First Activity</button>
+        </div>`;
+  }
+
+  // ── Details section toggle ────────────────────────────────────────────────────
+  function toggleDetails() {
+    const inner  = document.getElementById('details-inner');
+    const toggle = document.getElementById('details-toggle');
+    const open   = inner.classList.toggle('open');
+    toggle.classList.toggle('open', open);
+  }
+
+  // ── Transactions (details tab) ────────────────────────────────────────────────
+  function renderTransactions() {
+    const txns = workspace.transactions || [];
+    const reqs = workspace.requirements || [];
+    const html = txns.length ? txns.map(txn => {
+      const txnReqs = reqs.filter(r => r.TransactionID === txn.TransactionID);
+      const typeCls  = 'type-' + (txn.TransactionType||txn.Type||'').toLowerCase().replace(/[\s]/g,'');
+      return `<div class="txn-card">
+        <div class="txn-card-header" onclick="toggleTxn('${esc(txn.TransactionID)}')">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="txn-type-badge ${typeCls}">${esc(txn.TransactionType||txn.Type)}</span>
+            <span style="font-size:13px;font-weight:600">${esc(txn.TransactionID)}</span>
+            <span class="badge badge-${(txn.TransactionStatus||txn.Status||'').toLowerCase()}">${esc(txn.TransactionStatus||txn.Status||'—')}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="stage-badge">${esc(txn.PipelineStage||'New')}</span>
+            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openAddReqModal('${esc(txn.TransactionID)}')">＋ Req</button>
+            <span style="color:#94a3b8" id="txn-arrow-${esc(txn.TransactionID)}">▾</span>
+          </div>
+        </div>
+        <div class="txn-card-body" id="txn-body-${esc(txn.TransactionID)}">
+          ${txnReqs.map(r => reqRow(r)).join('') || '<div style="color:#64748b;font-size:13px;padding:4px 0">No requirements.</div>'}
+        </div>
+      </div>`;
+    }).join('') : '<div style="color:#64748b;font-size:13px;padding:20px 0">No transactions yet.</div>';
+    document.getElementById('transactions-list').innerHTML = html;
+  }
+
+  function toggleTxn(id) {
+    const body  = document.getElementById(`txn-body-${id}`);
+    const arrow = document.getElementById(`txn-arrow-${id}`);
+    if (!body) return;
+    const hidden = body.style.display === 'none';
+    body.style.display  = hidden ? '' : 'none';
+    arrow.textContent   = hidden ? '▾' : '▸';
+  }
+
+  function reqRow(r) {
+    const status = r.RequirementStatus || r.Status || '—';
+    const budget = formatBudget(r.BudgetMin, r.BudgetMax);
+    const loc    = r.Location1 || '';
+    const score  = typeof r.RequirementScore === 'object' ? r.RequirementScore?.total : r.RequirementScore;
+    return `<div class="req-row">
+      <div class="req-row-left">
+        <div class="req-id">${esc(r.RequirementID)}</div>
+        <div class="req-summary">${esc(r.Category||'—')} ${r.SubCategory?'· '+esc(r.SubCategory):''}</div>
+        <div class="req-meta">${esc(budget)} ${loc?'· '+esc(loc):''}</div>
+      </div>
+      <div class="req-right">
+        <span class="badge badge-${status.toLowerCase()}">${esc(status)}</span>
+        ${score != null ? `<span style="font-size:11px;color:#64748b">⭐${score}</span>` : ''}
+        <button class="need-action-btn ghost" style="font-size:11px;padding:3px 8px" onclick="openUpdateNeedModal('${esc(r.RequirementID)}')">Edit</button>
+      </div>
+    </div>`;
+  }
+
+  // ── Activities / Follow-ups / Timeline ────────────────────────────────────────
+  function renderActivities() {
+    const acts = workspace.activities || [];
+    const html = acts.length
+      ? `<div class="card">${acts.map(a => `<div class="activity-item">
+          <div class="activity-dot"></div>
+          <div>
+            <div class="activity-type">${esc(a.ActivityType||'Note')}</div>
+            <div class="activity-note">${esc(a.Summary||a.Notes||'—')}</div>
+            ${(a.Details || a.Outcome || a.NextAction || a.Notes) ? `<div class="activity-time" style="margin-top:2px">${esc([a.Details || a.Notes, a.Outcome ? `Outcome: ${a.Outcome}` : '', a.NextAction ? `Next: ${a.NextAction}` : ''].filter(Boolean).join(' · '))}</div>` : ''}
+            <div class="activity-time">${timeAgo(a.CreatedAt)}</div>
+          </div>
+        </div>`).join('')}</div>`
+      : '<div style="color:#64748b;font-size:13px;padding:20px 0">No activities logged yet.</div>';
+    document.getElementById('activities-list').innerHTML = html;
+  }
+
+  function renderFollowups() {
+    const fus = asArray(workspace.followUps).map(toCanonicalFollowUp).filter(Boolean);
+    const html = fus.length
+      ? `<div class="card">${fus.map(f => `<div class="followup-item">
+          <div class="followup-due">${esc(followUpDueParts(f).dateLabel)}${followUpDueParts(f).timeLabel ? `<div style="font-size:10px;color:#64748b;font-weight:500">${esc(followUpDueParts(f).timeLabel)}</div>` : ''}</div>
+          <span style="font-size:11px;background:#eff6ff;color:#1d4ed8;padding:2px 7px;border-radius:8px;font-weight:600">${esc(f.activityType||'Call')}</span>
+          <div style="flex:1;font-size:12.5px">${esc(f.notes||'—')}</div>
+          <span class="badge" style="${followUpStatusUi(f).style}">${esc(followUpStatusUi(f).label)}</span>
+        </div>`).join('')}</div>`
+      : '<div style="color:#64748b;font-size:13px;padding:20px 0">No follow-ups scheduled.</div>';
+    document.getElementById('followups-list').innerHTML = html;
+  }
+
+  function renderTimeline() {
+    const items = workspace.timeline || [];
+    const html = items.length
+      ? `<div class="card">${items.slice(0,50).map((t,i) => `<div class="timeline-item">
+          ${i < items.length-1 ? '<div class="timeline-line"></div>' : ''}
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">${esc(t.EventTitle||t.EventType||'Event')}</div>
+            <div class="timeline-meta">${timeAgo(t.EventDate)} · ${esc(t.EntityType||'')}</div>
+          </div>
+        </div>`).join('')}</div>`
+      : '<div style="color:#64748b;font-size:13px;padding:20px 0">No timeline events yet.</div>';
+    document.getElementById('timeline-list').innerHTML = html;
+  }
+
+  // ── Modals (existing, kept for backward compat) ───────────────────────────────
+  function openEditModal() {
+    const lead = workspace.lead;
+    document.getElementById('edit-name').value       = lead.ClientName||'';
+    document.getElementById('edit-mobile').value     = lead.PrimaryMobile||lead.Phone||'';
+    document.getElementById('edit-alt-mobile').value = lead.AlternateMobile||'';
+    document.getElementById('edit-whatsapp').value   = lead.WhatsApp||'';
+    document.getElementById('edit-email').value      = lead.Email||'';
+    document.getElementById('edit-city').value       = lead.City||'';
+    document.getElementById('edit-status').value     = lead.ClientStatus||lead.LeadStatus||'New';
+    document.getElementById('edit-lifecycle').value  = lead.ClientLifecycle||'Prospect';
+    document.getElementById('edit-source').value     = lead.Source||lead.LeadSource||'Manual';
+    document.getElementById('edit-lost-reason').value = lead.LostReason || '';
+    document.getElementById('edit-lost-note').value = lead.LostNote || '';
+    document.getElementById('edit-notes').value      = lead.Notes||'';
+    toggleEditLostFields();
+    document.getElementById('edit-error').textContent = '';
+    document.getElementById('edit-modal').classList.remove('hidden');
+  }
+
+  function toggleEditLostFields() {
+    const isLost = document.getElementById('edit-status').value === 'Lost';
+    document.getElementById('edit-lost-reason-wrap').style.display = isLost ? '' : 'none';
+    document.getElementById('edit-lost-note-wrap').style.display = isLost ? '' : 'none';
+  }
+
+  async function saveEdit() {
+    const payload = {
+      ClientName:     document.getElementById('edit-name').value.trim(),
+      PrimaryMobile:  document.getElementById('edit-mobile').value.trim(),
+      AlternateMobile:document.getElementById('edit-alt-mobile').value.trim()||null,
+      WhatsApp:       document.getElementById('edit-whatsapp').value.trim()||null,
+      Email:          document.getElementById('edit-email').value.trim()||null,
+      City:           document.getElementById('edit-city').value.trim()||null,
+      ClientStatus:   document.getElementById('edit-status').value,
+      ClientLifecycle:document.getElementById('edit-lifecycle').value,
+      Source:         document.getElementById('edit-source').value,
+      LostReason:     document.getElementById('edit-status').value === 'Lost' ? document.getElementById('edit-lost-reason').value.trim() : null,
+      LostNote:       document.getElementById('edit-status').value === 'Lost' ? document.getElementById('edit-lost-note').value.trim() : null,
+      Notes:          document.getElementById('edit-notes').value.trim()
+    };
+    if (payload.ClientStatus === 'Lost' && !payload.LostReason) {
+      document.getElementById('edit-error').textContent = 'Lost reason is required';
+      return;
+    }
+    try {
+      const res = await fetch(`/api/v2/clients/${encodeURIComponent(LEAD_ID)}`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      }).then(r => r.json());
+      if (res.ok) { closeModal('edit-modal'); await loadWorkspace(); }
+      else document.getElementById('edit-error').textContent = res.error||'Failed to save';
+    } catch(e) { document.getElementById('edit-error').textContent = e.message; }
+  }
+
+  function openAddTxnModal() {
+    document.getElementById('txn-error').textContent = '';
+    document.getElementById('txn-modal').classList.remove('hidden');
+  }
+
+  async function saveTransaction() {
+    const payload = {
+      TransactionType:   document.getElementById('txn-type').value,
+      TransactionStatus: document.getElementById('txn-status').value,
+      PipelineStage:     document.getElementById('txn-stage').value,
+      Notes:             document.getElementById('txn-notes').value.trim()
+    };
+    try {
+      const res = await fetch(`/api/leads/${encodeURIComponent(LEAD_ID)}/transactions`, {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      }).then(r => r.json());
+      if (res.ok) { closeModal('txn-modal'); await loadWorkspace(); }
+      else document.getElementById('txn-error').textContent = res.error||'Failed';
+    } catch(e) { document.getElementById('txn-error').textContent = e.message; }
+  }
+
+  function openAddReqModal(txnId) {
+    currentTxnId = txnId;
+    document.getElementById('req-error').textContent = '';
+    document.getElementById('dynamic-fields').innerHTML = '';
+    // Reset modal title/button
+    document.querySelector('#req-modal .modal-title').textContent = 'Add Requirement';
+    const saveBtn = document.querySelector('#req-modal .btn-primary');
+    if (saveBtn) { saveBtn.textContent = 'Add Requirement'; saveBtn.onclick = saveRequirement; }
+    const txns = workspace.transactions || [];
+    const sel  = document.getElementById('req-txn-id');
+    sel.innerHTML = txns.map(t => `<option value="${enc(t.TransactionID)}" ${t.TransactionID===txnId?'selected':''}>${esc(t.TransactionType||t.Type)} — ${esc(t.TransactionID)}</option>`).join('');
+    document.getElementById('req-modal').classList.remove('hidden');
+  }
+
+  async function loadFormConfig() {
+    const txnId   = document.getElementById('req-txn-id').value;
+    const cat     = document.getElementById('req-category').value;
+    const sub     = document.getElementById('req-subcategory').value;
+    const txn     = (workspace.transactions||[]).find(t => t.TransactionID === txnId);
+    const txnType = txn ? (txn.TransactionType||txn.Type||'Purchase') : 'Purchase';
+    const subs    = await fetchSubcategories(cat, txnType);
+    document.getElementById('req-subcategory').innerHTML = `<option value="">Select…</option>` + subs.map(s => `<option ${s===sub?'selected':''}>${esc(s)}</option>`).join('');
+    if (!cat || !sub) { document.getElementById('dynamic-fields').innerHTML = ''; return; }
+    try {
+      const [res, depRes] = await Promise.all([
+        fetch(`/api/v2/form-config?transactionType=${enc(txnType)}&category=${enc(cat)}&subCategory=${enc(sub)}`).then(r => r.json()),
+        fetch(`/api/v2/dependencies?transactionType=${enc(txnType)}&category=${enc(cat)}&subCategory=${enc(sub)}`).then(r => r.json())
+      ]);
+      if (!res.ok || !res.data) return;
+      const skipKeys = new Set(['budgetMin','BudgetMin','budgetMax','BudgetMax',
+        'Location1','location1','Location2','location2','Location3','location3',
+        'Possession','possession','Urgency','urgency']);
+      dynamicFormState.req = {
+        ...dynamicFormState.req,
+        config: { ...res.data, fields: asArray(res.data.fields).filter(f => f && !skipKeys.has(f.FieldKey) && f.Active !== false) },
+        rules: depRes.ok ? asArray(depRes.data) : [],
+        values: { ...getLeadRequirementPrefill(txnType, cat, sub), ...collectDynamicValues('req') }
+      };
+      rerenderDynamicForm('req');
+    } catch(_) {}
+  }
+
+  async function saveRequirement() {
+    const txnId = document.getElementById('req-txn-id').value;
+    if (!txnId) { document.getElementById('req-error').textContent = 'Select a transaction'; return; }
+    const cat = document.getElementById('req-category').value;
+    if (!cat) { document.getElementById('req-error').textContent = 'Category is required'; return; }
+    const txn = (workspace.transactions||[]).find(t => t.TransactionID === txnId);
+    const txnType = txn ? (txn.TransactionType||txn.Type||'Purchase') : 'Purchase';
+    const payload = {
+      LeadID: LEAD_ID, TransactionType: txnType, Category: cat,
+      SubCategory:     document.getElementById('req-subcategory').value||null,
+      BudgetMin:       numOrNull(document.getElementById('req-budget-min').value),
+      BudgetMax:       numOrNull(document.getElementById('req-budget-max').value),
+      Location1:       document.getElementById('req-location1').value.trim()||null,
+      Location2:       document.getElementById('req-location2').value.trim()||null,
+      Urgency:         document.getElementById('req-urgency').value||null,
+      Possession:      document.getElementById('req-possession').value||null,
+      RequirementStatus: document.getElementById('req-status').value
+    };
+    const dynamicValues = collectDynamicValues('req');
+    const fieldPriorities = extractFieldPrioritiesFromValues(dynamicValues);
+    Object.entries(dynamicValues).forEach(([key, val]) => {
+      if (key.startsWith('__priority__')) return;
+      if (val === '' || val == null || (Array.isArray(val) && !val.length)) return;
+      payload[key] = val;
+    });
+    if (Object.keys(fieldPriorities).length) payload.FieldPriorities = fieldPriorities;
+    try {
+      const res = await fetch(`/api/transactions/${encodeURIComponent(txnId)}/requirements`, {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      }).then(r => r.json());
+      if (res.ok) { closeModal('req-modal'); await loadWorkspace(); }
+      else document.getElementById('req-error').textContent = res.error||'Failed to create requirement';
+    } catch(e) { document.getElementById('req-error').textContent = e.message; }
+  }
+
+  function populateActivitySelectors(selectedTxn = '', selectedReq = '') {
+    const txns = asArray(workspace.transactions);
+    const reqs = asArray(workspace.requirements);
+    document.getElementById('act-txn').innerHTML = `<option value="">None</option>` + txns.map(t => `<option value="${enc(t.TransactionID)}">${esc(t.TransactionType||t.Type)} — ${esc(t.TransactionID)}</option>`).join('');
+    document.getElementById('act-req').innerHTML = `<option value="">None</option>` + reqs.map(r => `<option value="${enc(r.RequirementID)}">${esc(r.RequirementCode||r.RequirementID)} — ${esc(r.Category||'Requirement')}</option>`).join('');
+    document.getElementById('act-txn').value = selectedTxn || '';
+    document.getElementById('act-req').value = selectedReq || '';
+  }
+
+  function combineActivityFollowUpAt(dateValue, timeValue) {
+    if (!dateValue) return null;
+    const value = new Date(`${dateValue}T${timeValue || '00:00'}:00`);
+    if (!Number.isFinite(value.getTime())) return null;
+    return value.toISOString();
+  }
+
+  function openAddActivityModal(options = {}) {
+    const modal = document.getElementById('activity-modal');
+    modal.dataset.activityId = options.activityId || '';
+    modal.dataset.summary = options.summary || '';
+    modal.dataset.mode = options.mode || 'manual';
+    document.getElementById('activity-modal-title').textContent = options.title || (options.mode === 'interaction' ? 'Update Interaction' : 'Log Activity');
+    populateActivitySelectors(options.transactionId || '', options.requirementId || '');
+    document.getElementById('act-type').value = options.type || 'NOTE';
+    document.getElementById('act-outcome').value = options.outcome || '';
+    document.getElementById('act-next-action').value = options.nextAction || '';
+    document.getElementById('act-notes').value = options.notes || '';
+    document.getElementById('act-followup-date').value = options.followUpDate || '';
+    document.getElementById('act-followup-time').value = options.followUpTime || '';
+    const context = document.getElementById('act-context');
+    context.textContent = options.context || '';
+    context.classList.toggle('hidden', !options.context);
+    document.getElementById('act-error').textContent = '';
+    modal.classList.remove('hidden');
+  }
+
+  async function saveActivity() {
+    const modal = document.getElementById('activity-modal');
+    const followUpAt = combineActivityFollowUpAt(
+      document.getElementById('act-followup-date').value,
+      document.getElementById('act-followup-time').value
+    );
+    const activityType = document.getElementById('act-type').value || 'NOTE';
+    const transactionId = document.getElementById('act-txn').value || null;
+    const requirementId = document.getElementById('act-req').value || null;
+    const notes = document.getElementById('act-notes').value.trim();
+    const outcome = document.getElementById('act-outcome').value.trim();
+    const nextAction = document.getElementById('act-next-action').value.trim();
+    const basePayload = {
+      LeadID: LEAD_ID,
+      ActivityType: activityType,
+      TransactionID: transactionId,
+      RequirementID: requirementId,
+      Outcome: outcome || null,
+      NextAction: nextAction || null,
+      FollowUpDate: followUpAt || null
+    };
+    const isInteraction = modal.dataset.mode === 'interaction';
+    const summary = modal.dataset.summary || (isInteraction
+      ? `${activityType === 'CALL' ? 'Call' : 'WhatsApp'} initiated`
+      : `${activityType.replace(/_/g, ' ')} logged`);
+    const payload = modal.dataset.activityId
+      ? { ...basePayload, Summary: summary }
+      : { ...basePayload, Summary: summary, Notes: notes };
+    if (modal.dataset.activityId) {
+      payload.Notes = notes;
+    }
+    try {
+      let res;
+      if (modal.dataset.activityId) {
+        res = await fetch(`/api/v2/activities/${encodeURIComponent(modal.dataset.activityId)}`, {
+          method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        }).then(r => r.json());
+      } else {
+        res = await fetch('/api/v2/activities', {
+          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        }).then(r => r.json());
+      }
+      if (!res.ok) {
+        document.getElementById('act-error').textContent = res.error || 'Failed';
+        return;
+      }
+      if (followUpAt) {
+        const fuRes = await fetch('/api/v2/followups', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            LeadID: LEAD_ID,
+            TransactionID: transactionId,
+            RequirementID: requirementId,
+            ActivityType: activityType,
+            DueAt: followUpAt,
+            Notes: nextAction || notes || outcome || `${activityType.replace(/_/g, ' ')} follow-up`,
+            Priority: 'Medium'
+          })
+        }).then(r => r.json());
+        if (!fuRes.ok) {
+          document.getElementById('act-error').textContent = fuRes.error || 'Failed to create follow-up';
+          return;
+        }
+      }
+      closeModal('activity-modal');
+      await loadWorkspace();
+    } catch(e) { document.getElementById('act-error').textContent = e.message; }
+  }
+
+  function openAddFollowupModal() {
+    document.getElementById('fu-error').textContent = '';
+    document.getElementById('fu-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('fu-time').value = '10:00';
+    document.getElementById('followup-modal').classList.remove('hidden');
+  }
+
+  async function saveFollowup() {
+    const dueDate = document.getElementById('fu-date').value;
+    const dueTime = document.getElementById('fu-time').value || '00:00';
+    if (!dueDate) {
+      document.getElementById('fu-error').textContent = 'Due Date is required';
+      return;
+    }
+    const payload = {
+      LeadID: LEAD_ID, ActivityType: document.getElementById('fu-type').value,
+      Priority: document.getElementById('fu-priority').value,
+      DueAt: new Date(`${dueDate}T${dueTime}:00`).toISOString(),
+      Notes: document.getElementById('fu-notes').value.trim()
+    };
+    try {
+      const res = await fetch('/api/v2/followups', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      }).then(r => r.json());
+      if (res.ok) { closeModal('followup-modal'); await loadWorkspace(); }
+      else document.getElementById('fu-error').textContent = res.error||'Failed';
+    } catch(e) { document.getElementById('fu-error').textContent = e.message; }
+  }
+
+  function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+  function openLeadLostModal() {
+    document.getElementById('lead-lost-reason').value = '';
+    document.getElementById('lead-lost-note').value = '';
+    document.getElementById('lead-lost-error').textContent = '';
+    document.getElementById('lead-lost-modal').classList.remove('hidden');
+  }
+
+  async function saveLeadLost() {
+    const lostReason = document.getElementById('lead-lost-reason').value.trim();
+    const lostNote = document.getElementById('lead-lost-note').value.trim();
+    if (!lostReason) {
+      document.getElementById('lead-lost-error').textContent = 'Lost reason is required';
+      return;
+    }
+    try {
+      const res = await fetch(`/api/v2/clients/${encodeURIComponent(LEAD_ID)}/lost`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ LostReason: lostReason, LostNote: lostNote || null })
+      }).then(r => r.json());
+      if (res.ok) {
+        closeModal('lead-lost-modal');
+        await loadWorkspace();
+        return;
+      }
+      document.getElementById('lead-lost-error').textContent = res.error || 'Failed';
+    } catch (e) {
+      document.getElementById('lead-lost-error').textContent = e.message;
+    }
+  }
+
+  async function reactivateLead() {
+    const res = await fetch(`/api/v2/clients/${encodeURIComponent(LEAD_ID)}/reactivate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ClientStatus: 'Contacted' })
+    }).then(r => r.json());
+    if (res.ok) await loadWorkspace();
+  }
+
+  // ── Tabs setup ────────────────────────────────────────────────────────────────
+  // ── Site Visits tab ───────────────────────────────────────────────────────────
+  function renderSiteVisitsTab() {
+    const svs  = workspace.siteVisits || [];
+    const reqs = workspace.requirements || [];
+    if (!svs.length) {
+      document.getElementById('site-visits-list').innerHTML =
+        '<div style="color:#64748b;font-size:13px;padding:20px 0">No site visits scheduled yet.</div>';
+      return;
+    }
+    const html = svs.map(sv => {
+      const req = reqs.find(r => r.RequirementID === sv.RequirementID);
+      const reqLabel = req ? `${req.Category||''}${req.SubCategory?' · '+req.SubCategory:''}` : sv.RequirementID || '';
+      const statusCls = sv.Status === 'Completed' ? 'background:#dcfce7;color:#166534'
+                      : sv.Status === 'Scheduled' ? 'background:#dbeafe;color:#1e40af'
+                      : sv.Status === 'Cancelled' ? 'background:#fee2e2;color:#991b1b'
+                      : 'background:#fef3c7;color:#92400e';
+      return `<div class="sv-card">
+        <div>
+          <div class="sv-prop">${esc(sv.PropertyID||sv.PropertyName||'Property')}</div>
+          <div class="sv-meta">
+            ${sv.RequirementID ? `<span style="font-size:11px;font-weight:600;color:var(--clr-primary)">${esc(sv.RequirementID)}</span>` : ''}
+            ${reqLabel ? ` · ${esc(reqLabel)}` : ''}
+            ${sv.VisitDate||sv.Date ? ` · 📅 ${esc(sv.VisitDate||sv.Date)}` : ''}
+            ${sv.VisitTime||sv.Time ? ` ${esc(sv.VisitTime||sv.Time)}` : ''}
+            ${sv.AssignedAgentID ? ` · 👤 ${esc(sv.AssignedAgentID)}` : ''}
+          </div>
+          ${sv.Feedback ? `<div style="font-size:11.5px;color:#64748b;margin-top:4px;font-style:italic">${esc(sv.Feedback)}</div>` : ''}
+        </div>
+        <span class="badge" style="${statusCls}">${esc(sv.Status||'Pending')}</span>
+      </div>`;
+    }).join('');
+    document.getElementById('site-visits-list').innerHTML = html;
+  }
+
+  // ── Deals & Commission tab ─────────────────────────────────────────────────────
+  function renderDealsTab() {
+    const deals = workspace.deals        || [];
+    const comms = workspace.commissions  || [];
+    const pays  = workspace.payments     || [];
+    if (!deals.length) {
+      document.getElementById('deals-list').innerHTML =
+        '<div style="color:#64748b;font-size:13px;padding:20px 0">No deals yet.</div>';
+      return;
+    }
+    const html = deals.map(d => {
+      const comm   = comms.find(c => c.DealID === d.DealID);
+      const dealPays = pays.filter(p => p.DealID === d.DealID);
+      const received = dealPays.reduce((sum,p) => sum + Number(p.Amount||0), 0);
+      const expected = comm ? Number(comm.ExpectedAmount||comm.BrokerageAmount||0) : 0;
+      const pending  = Math.max(0, expected - received);
+      const fmt = n => n >= 1e7 ? `₹${(n/1e7).toFixed(2)}Cr` : n >= 1e5 ? `₹${(n/1e5).toFixed(1)}L` : n > 0 ? `₹${n.toLocaleString('en-IN')}` : '—';
+      return `<div class="deal-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <div class="deal-id">${esc(d.DealID)}</div>
+            <div class="deal-meta">
+              ${d.PropertyID ? `Property: ${esc(d.PropertyID)}` : ''}
+              ${d.RequirementID ? ` · ${esc(d.RequirementID)}` : ''}
+              ${d.FinalPrice ? ` · Deal Value: ${fmt(Number(d.FinalPrice))}` : ''}
+            </div>
+          </div>
+          <span class="badge badge-${(d.DealStatus||d.Status||'').toLowerCase()}">${esc(d.DealStatus||d.Status||'—')}</span>
+        </div>
+        ${expected || received ? `<div class="deal-commission">
+          Commission: Expected ${fmt(expected)} · Received ${fmt(received)} · Pending ${fmt(pending)}
+        </div>` : ''}
+      </div>`;
+    }).join('');
+    document.getElementById('deals-list').innerHTML = html;
+  }
+
+  // ── Matching & Site Visit context buttons ─────────────────────────────────────
+  function openMatchingContext(reqId) {
+    // Navigate to global matching module; store context for potential future filtering
+    try { sessionStorage.setItem('matchingContext', JSON.stringify({ leadId: LEAD_ID, reqId })); } catch(_) {}
+    window.location.href = '/?module=matching';
+  }
+
+  // ── Smart Match — inline expansion showing top inventory matches ─────────
+  async function toggleSmartMatches(reqId) {
+    const wrap    = document.getElementById(`mm-${reqId}`);
+    const content = document.getElementById(`mm-content-${reqId}`);
+    const title   = document.getElementById(`mm-title-${reqId}`);
+    if (!wrap) return;
+    // Toggle visibility if already loaded
+    if (wrap.style.display !== 'none' && wrap.dataset.loaded === '1') { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    content.innerHTML = '<span style="color:#6b7280">Scanning inventory…</span>';
+    try {
+      // Prime shortlist cache so cards render correct state on first paint
+      await loadShortlistForReq(reqId, /*silent*/ true);
+      const res = await fetch(`/api/v2/requirements/${encodeURIComponent(reqId)}/matches?limit=10&minScore=40`).then(r => r.json());
+      if (!res.ok) throw new Error(res.error || 'Failed');
+      const data = asObject(res.data);
+      const matches = asArray(data.matches);
+      const total = Number.isFinite(Number(data.total)) ? Number(data.total) : matches.length;
+      const scanned = Number.isFinite(Number(data.scanned)) ? Number(data.scanned) : 0;
+      title.innerHTML = `🎯 Smart Matches <span style="color:#6b7280;font-weight:500;text-transform:none;letter-spacing:0">— ${total} of ${scanned} properties match</span>`;
+      if (!matches.length) {
+        content.innerHTML = `<div style="padding:20px;text-align:center;color:#6b7280">No matching properties in inventory yet. <a href="/inventory" style="color:var(--clr-brown);font-weight:600">Add one →</a></div>`;
+      } else {
+        content.innerHTML = matches.map(mm => smartMatchCard(mm, reqId)).join('');
+      }
+      wrap.dataset.loaded = '1';
+      // Remember last matches so we can re-render after shortlist toggles
+      workspace._lastMatches = workspace._lastMatches || {};
+      workspace._lastMatches[reqId] = matches || [];
+    } catch(e) {
+      content.innerHTML = `<div style="color:var(--clr-danger)">Error: ${esc(e.message)}</div>`;
+    }
+  }
+
+  // ── Shortlist ────────────────────────────────────────────────────────────
+  async function loadShortlistForReq(reqId, silent = false) {
+    workspace._shortlist = workspace._shortlist || {};
+    workspace._shortlistedIds = workspace._shortlistedIds || {};
+    workspace._bookings = workspace._bookings || {};
+    try {
+      const [slRes, bkRes] = await Promise.all([
+        fetch(`/api/v2/shortlist/${encodeURIComponent(reqId)}?status=Active`).then(r => r.json()),
+        fetch(`/api/v2/site-visit-bookings?requirementId=${encodeURIComponent(reqId)}`).then(r => r.json()).catch(() => ({ ok: true, data: [] }))
+      ]);
+      if (!slRes.ok) throw new Error(slRes.error || 'Failed');
+      const shortlistRows = asArray(slRes.data);
+      workspace._shortlist[reqId] = shortlistRows;
+      workspace._shortlistedIds[reqId] = new Set(shortlistRows.map(r => r?.PropertyID).filter(Boolean));
+      workspace._bookings[reqId] = (bkRes && bkRes.ok) ? asArray(bkRes.data) : [];
+      return workspace._shortlist[reqId];
+    } catch (e) {
+      if (!silent) console.warn('Shortlist load failed', e);
+      workspace._shortlist[reqId] = workspace._shortlist[reqId] || [];
+      workspace._shortlistedIds[reqId] = workspace._shortlistedIds[reqId] || new Set();
+      workspace._bookings[reqId] = workspace._bookings[reqId] || [];
+      return workspace._shortlist[reqId];
+    }
+  }
+
+  async function toggleShortlist(reqId) {
+    const wrap    = document.getElementById(`sl-${reqId}`);
+    const content = document.getElementById(`sl-content-${reqId}`);
+    if (!wrap) return;
+    if (wrap.style.display !== 'none') { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'block';
+    content.innerHTML = '<span style="color:#6b7280">Loading shortlist…</span>';
+    await loadShortlistForReq(reqId);
+    renderShortlist(reqId);
+  }
+
+  function renderShortlist(reqId) {
+    const wrap = document.getElementById(`sl-${reqId}`);
+    const content = document.getElementById(`sl-content-${reqId}`);
+    const title = document.getElementById(`sl-title-${reqId}`);
+    if (!wrap || !content) return;
+    const rows = (workspace._shortlist || {})[reqId] || [];
+    const bookings = (workspace._bookings || {})[reqId] || [];
+    const activeBookings = bookings.filter(b => b.Status !== 'Cancelled');
+    if (title) title.innerHTML = `⭐ Shortlist <span style="color:#92400e;font-weight:500;text-transform:none;letter-spacing:0">— ${rows.length} propert${rows.length === 1 ? 'y' : 'ies'}${activeBookings.length ? ` · 🏠 ${activeBookings.length} visit${activeBookings.length === 1 ? '' : 's'} booked` : ''}</span>`;
+
+    let bookingsSection = '';
+    if (bookings.length) {
+      bookingsSection = `<div style="margin-top:14px" data-testid="booked-visits-${esc(reqId)}">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#92400e;margin-bottom:8px">🏠 Booked Site Visits</div>
+        ${bookings.map(b => bookingCard(reqId, b)).join('')}
+      </div>`;
+    }
+
+    if (!rows.length) {
+      content.innerHTML = `<div style="padding:16px;text-align:center;color:#92400e;font-size:12.5px">No properties shortlisted yet. Open <b>🎯 Smart Match</b> and tap <b>☆ Shortlist</b> on any card.</div>${bookingsSection}`;
+      return;
+    }
+    // Side-by-side compare table (horizontal scroll on small screens)
+    const attrs = [
+      { label: 'Price',        val: (p) => fmtInrShort(p.AskingPrice, p.ListingFor) },
+      { label: 'Rate / sqft',  val: (p) => p.AskingRatePerSqFt ? `₹${Number(p.AskingRatePerSqFt).toLocaleString('en-IN')}` : '—' },
+      { label: 'Carpet Area',  val: (p) => p.CarpetArea ? `${p.CarpetArea} sqft` : '—' },
+      { label: 'BHK',          val: (p) => p.BHK || '—' },
+      { label: 'Furnishing',   val: (p) => p.FurnishingType || '—' },
+      { label: 'Location',     val: (p) => [p.Location1, p.SocietyName].filter(Boolean).join(' • ') || '—' },
+      { label: 'Sub-category', val: (p) => p.SubCategory || '—' },
+      { label: 'Source',       val: (p) => p.InventorySource || '—' },
+      { label: 'Status',       val: (p) => p.Status || '—' }
+    ];
+    const colWidth = 220;
+    const cardsHead = rows.map(r => shortlistHead(reqId, r)).join('');
+    const attrRows = attrs.map(a => `
+      <tr>
+        <td style="padding:6px 10px;background:#fef3c7;font-weight:700;color:#92400e;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;position:sticky;left:0">${esc(a.label)}</td>
+        ${rows.map(r => `<td style="padding:6px 10px;font-size:12.5px;color:#1f2937;min-width:${colWidth}px">${esc(a.val(r.Property || {}))}</td>`).join('')}
+      </tr>`).join('');
+    const notesRow = `
+      <tr>
+        <td style="padding:6px 10px;background:#fef3c7;font-weight:700;color:#92400e;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;position:sticky;left:0">Notes</td>
+        ${rows.map(r => `<td style="padding:6px 10px;min-width:${colWidth}px">
+          <textarea data-testid="sl-notes-${esc(r.PropertyID)}" rows="2" onchange="saveShortlistNote('${esc(reqId)}','${esc(r.PropertyID)}', this.value)" placeholder="Add note..." style="width:100%;font-size:12px;padding:4px 6px;border:1px solid #fde68a;border-radius:6px;background:#fff;resize:vertical;font-family:inherit">${esc(r.Notes || '')}</textarea>
+        </td>`).join('')}
+      </tr>`;
+    content.innerHTML = `
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px">
+        <button data-testid="sl-whatsapp-${esc(reqId)}" onclick="shareShortlistOnWhatsApp('${esc(reqId)}')" style="background:#25d366;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer">📱 WhatsApp Share</button>
+        <button data-testid="sv-schedule-${esc(reqId)}" onclick="openScheduleVisitModal('${esc(reqId)}')" style="background:#0f766e;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer">🏠 Schedule Site Visit</button>
+      </div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <table style="border-collapse:separate;border-spacing:0;background:#fff;border-radius:8px;border:1px solid #fde68a;width:100%;min-width:${Math.max(600, 160 + colWidth * rows.length)}px">
+          <thead>
+            <tr>
+              <th style="padding:8px 10px;background:#fef3c7;color:#92400e;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;position:sticky;left:0;text-align:left">Property</th>
+              ${cardsHead}
+            </tr>
+          </thead>
+          <tbody>${attrRows}${notesRow}</tbody>
+        </table>
+      </div>
+      ${bookingsSection}`;
+  }
+
+  function bookingCard(reqId, b) {
+    const statusColor = b.Status === 'Completed' ? '#065f46' : b.Status === 'Cancelled' ? '#991b1b' : b.Status === 'Confirmed' ? '#0369a1' : '#92400e';
+    const statusBg = b.Status === 'Completed' ? '#d1fae5' : b.Status === 'Cancelled' ? '#fee2e2' : b.Status === 'Confirmed' ? '#dbeafe' : '#fef3c7';
+    const dt = b.VisitDate ? new Date(b.VisitDate + 'T' + (b.VisitTime || '00:00')) : null;
+    const dtStr = dt ? dt.toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }) : '—';
+    const bookingProps = asArray(b.Properties);
+    const props = bookingProps.map(p => `<span style="display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid #fde68a;padding:2px 8px;border-radius:12px;font-size:11.5px;color:#1f2937;margin:2px 3px 0 0">${esc(p.Title || p.PropertyID)}<span style="color:#94a3b8;font-size:10px">·${esc(p.Location1||'—')}</span></span>`).join('');
+    const actions = b.Status === 'Cancelled' || b.Status === 'Completed' ? '' : `
+      <button data-testid="sv-complete-${esc(b.VisitBookingID)}" onclick="completeBooking('${esc(reqId)}','${esc(b.VisitBookingID)}')" style="background:#d1fae5;color:#065f46;border:none;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">✓ Mark Complete</button>
+      <button data-testid="sv-cancel-${esc(b.VisitBookingID)}" onclick="cancelBooking('${esc(reqId)}','${esc(b.VisitBookingID)}')" style="background:#fee2e2;color:#991b1b;border:none;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">✕ Cancel</button>`;
+    const routeBtn = bookingProps.length
+      ? `<button data-testid="sv-route-${esc(b.VisitBookingID)}" onclick="openVisitRoute('${esc(reqId)}','${esc(b.VisitBookingID)}')" style="background:#e0f2fe;color:#075985;border:none;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">🗺️ Route</button>`
+      : '';
+    const remindBtn = `<button data-testid="sv-remind-${esc(b.VisitBookingID)}" onclick="sendVisitReminder('${esc(reqId)}','${esc(b.VisitBookingID)}')" style="background:#dcfce7;color:#166534;border:none;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">📱 Remind</button>`;
+    return `<div data-testid="booking-${esc(b.VisitBookingID)}" style="background:#fff;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:700;color:#1f2937;font-size:13px">📅 ${esc(dtStr)}</div>
+          <div style="font-size:11.5px;color:#6b7280;margin-top:2px">
+            ${b.MeetingPoint ? `📍 ${esc(b.MeetingPoint)} · ` : ''}${esc(b.Duration || '')}
+            ${b.ClientPhone ? ` · <a href="tel:${esc(b.ClientPhone.replace(/\D/g,''))}" style="color:#0f766e;font-weight:600">${esc(b.ClientPhone)}</a>` : ''}
+          </div>
+        </div>
+        <span style="background:${statusBg};color:${statusColor};padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em">${esc(b.Status)}</span>
+      </div>
+      <div style="margin-top:8px;line-height:1.9">${props}</div>
+      ${b.Notes ? `<div style="margin-top:6px;font-size:12px;color:#4b5563;font-style:italic">📝 ${esc(b.Notes)}</div>` : ''}
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${remindBtn}${routeBtn}${actions}</div>
+    </div>`;
+  }
+
+  function shortlistHead(reqId, r) {
+    const p = r.Property || {};
+    const photo = p.PhotoUrl;
+    const src   = p.InventorySource || 'Own';
+    const srcColor = src === 'Builder' ? '#2563eb' : src === 'Broker' ? '#7c3aed' : '#d97706';
+    const srcLabel = src === 'Builder' ? '🏗️' : src === 'Broker' ? '🤝' : '⭐';
+    const score = r.MatchScore != null ? `<span style="background:#eef2ff;color:#3730a3;padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700">${r.MatchScore} ${esc(r.MatchLevel || '')}</span>` : '';
+    return `<th style="padding:8px 10px;text-align:left;min-width:220px;background:#fff;border-bottom:1px solid #fde68a">
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <div style="flex-shrink:0;width:56px;height:44px;background:#f4ede0;border-radius:6px;overflow:hidden;position:relative">
+          ${photo ? `<img src="${esc(photo)}" style="width:100%;height:100%;object-fit:cover" />` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:18px">📷</div>'}
+          <span style="position:absolute;top:1px;right:1px;background:${srcColor};color:#fff;font-size:9px;padding:0 3px;border-radius:6px;font-weight:700">${srcLabel}</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:12.5px;color:var(--clr-brown);line-height:1.25;white-space:normal">${esc(p.Title || r.PropertyID)}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px;align-items:center">
+            ${score}
+            <button data-testid="sl-remove-${esc(r.PropertyID)}" onclick="removeFromShortlist('${esc(reqId)}','${esc(r.PropertyID)}')" style="background:#fee2e2;color:#991b1b;border:none;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">✕ Remove</button>
+          </div>
+        </div>
+      </div>
+    </th>`;
+  }
+
+  async function addToShortlist(reqId, propertyId, matchScore, matchLevel) {
+    try {
+      const res = await fetch(`/api/v2/shortlist/${encodeURIComponent(reqId)}/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propertyId, matchScore, matchLevel })
+      }).then(r => r.json());
+      if (!res.ok) throw new Error(res.error || 'Failed');
+      await loadShortlistForReq(reqId);
+      // Re-render smart match cards to reflect new state
+      const matches = (workspace._lastMatches || {})[reqId];
+      if (matches) {
+        const content = document.getElementById(`mm-content-${reqId}`);
+        if (content) content.innerHTML = matches.map(mm => smartMatchCard(mm, reqId)).join('');
+      }
+      // If shortlist panel visible, refresh
+      const slWrap = document.getElementById(`sl-${reqId}`);
+      if (slWrap && slWrap.style.display !== 'none') renderShortlist(reqId);
+    } catch (e) {
+      alert('Shortlist add failed: ' + e.message);
+    }
+  }
+
+  async function removeFromShortlist(reqId, propertyId) {
+    try {
+      const res = await fetch(`/api/v2/shortlist/${encodeURIComponent(reqId)}/remove/${encodeURIComponent(propertyId)}`, { method: 'DELETE' })
+        .then(r => r.json());
+      if (!res.ok) throw new Error(res.error || 'Failed');
+      await loadShortlistForReq(reqId);
+      const matches = (workspace._lastMatches || {})[reqId];
+      if (matches) {
+        const content = document.getElementById(`mm-content-${reqId}`);
+        if (content) content.innerHTML = matches.map(mm => smartMatchCard(mm, reqId)).join('');
+      }
+      const slWrap = document.getElementById(`sl-${reqId}`);
+      if (slWrap && slWrap.style.display !== 'none') renderShortlist(reqId);
+    } catch (e) {
+      alert('Shortlist remove failed: ' + e.message);
+    }
+  }
+
+  async function saveShortlistNote(reqId, propertyId, notes) {
+    try {
+      const res = await fetch(`/api/v2/shortlist/${encodeURIComponent(reqId)}/notes/${encodeURIComponent(propertyId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes })
+      }).then(r => r.json());
+      if (!res.ok) throw new Error(res.error || 'Failed');
+      // Update in-memory cache without re-rendering (keeps focus)
+      const rows = (workspace._shortlist || {})[reqId] || [];
+      const row = rows.find(r => r.PropertyID === propertyId);
+      if (row) row.Notes = notes;
+    } catch (e) {
+      alert('Note save failed: ' + e.message);
+    }
+  }
+
+  // ── Broker Network Share ─────────────────────────────────────────────────
+  let NET_CURRENT_REQ = null;
+  async function openNetworkShareModal(reqId) {
+    NET_CURRENT_REQ = reqId;
+    document.getElementById('net-share-modal').style.display = 'flex';
+    document.getElementById('net-links-out').style.display = 'none';
+    document.getElementById('net-message').value = '';
+    const wrap = document.getElementById('net-broker-list');
+    wrap.innerHTML = 'Loading brokers...';
+    try {
+      const r = await fetch('/api/v2/broker-network?active=true').then(r => r.json());
+      if (!r.ok) throw new Error(r.error);
+      const brokers = asArray(r.data);
+      if (!brokers.length) {
+        wrap.innerHTML = '<div style="padding:14px;text-align:center;color:#6b7280;font-size:12.5px">Koi broker abhi network me nahi hai. <a href="/broker-network" target="_blank" style="color:var(--clr-brown);font-weight:600">+ Add brokers</a> pehle.</div>';
+        return;
+      }
+      wrap.innerHTML = brokers.map(b => `<label style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--clr-border);cursor:pointer">
+        <input type="checkbox" class="net-broker-cb" value="${esc(b.NetworkBrokerID)}" data-testid="net-cb-${esc(b.NetworkBrokerID)}" data-name="${esc(b.Name)}" data-phone="${esc(b.Phone)}" checked />
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:13px">${esc(b.Name)} <span style="color:#6b7280;font-weight:500;font-size:11.5px">· ${esc(b.Phone)}</span></div>
+          <div style="font-size:11px;color:#6b7280">${esc(b.Agency||'—')} · Trust: ${esc(b.TrustLevel)} ${(b.Specializations||[]).slice(0,3).map(s => `<span style="background:#fef3c7;padding:1px 6px;border-radius:6px;margin-left:3px">${esc(s)}</span>`).join('')}</div>
+        </div>
+      </label>`).join('');
+    } catch (e) { wrap.innerHTML = `<div style="color:var(--clr-danger);padding:14px">Error: ${esc(e.message)}</div>`; }
+  }
+  function closeNetworkShareModal() { document.getElementById('net-share-modal').style.display = 'none'; }
+
+  async function sendNetworkShare() {
+    const boxes = document.querySelectorAll('.net-broker-cb:checked');
+    if (!boxes.length) { alert('Kam se kam ek broker select karo'); return; }
+    const brokerIds = Array.from(boxes).map(b => b.value);
+    const message = document.getElementById('net-message').value.trim();
+    try {
+      const r = await fetch(`/api/v2/requirements/${encodeURIComponent(NET_CURRENT_REQ)}/network-share`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brokerIds, message, expiresInDays: 30 })
+      }).then(r => r.json());
+      if (!r.ok) throw new Error(r.error);
+      const shares = r.data.shares || [];
+      const base = location.origin;
+      const links = shares.map(s => {
+        const phone = String(s.BrokerPhone || '').replace(/\D/g, '');
+        const url = `${base}/share/req/${s.Token}`;
+        const text = encodeURIComponent(`🏘️ Signature Properties\n\nHi ${s.BrokerName}, ek client ke liye property chahiye — details is secure link me hain (client ki koi PII nahi hai):\n\n${url}\n\nAgar matching maal ho to link kholke submit karo. 🙏`);
+        return { name: s.BrokerName, phone, url, waUrl: phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}` };
+      });
+      const listHtml = links.map(l => `<div style="margin-top:6px"><b>${esc(l.name)}</b> — <a href="${l.waUrl}" target="_blank" style="color:#166534;font-weight:700">📱 Send WhatsApp →</a></div>`).join('');
+      const out = document.getElementById('net-links-out');
+      out.style.display = 'block';
+      out.innerHTML = `<b>✅ ${shares.length} share link${shares.length>1?'s':''} created.</b> Har broker ko WhatsApp me bhejne ke liye click karo:${listHtml}`;
+      if (links[0]) window.open(links[0].waUrl, '_blank', 'noopener');
+    } catch (e) { alert('Share failed: ' + e.message); }
+  }
+
+  // ── WhatsApp Share (Shortlist) ───────────────────────────────────────────
+  function shareShortlistOnWhatsApp(reqId) {
+    const rows = (workspace._shortlist || {})[reqId] || [];
+    if (!rows.length) { alert('Shortlist khali hai — pehle kuch add karo'); return; }
+    const client = workspace?.lead || {};
+    const clientName = client.ClientName || client.Name || 'Client';
+    const clientPhone = String(client.PrimaryMobile || client.Phone || '').replace(/\D/g, '');
+    const brokerName  = (workspace?.agent?.Name) || 'Signature Properties';
+
+    const lines = [];
+    lines.push(`🏠 *Signature Properties* — Shortlist for *${clientName}*`);
+    lines.push('');
+    rows.forEach((r, i) => {
+      const p = r.Property || {};
+      const price = fmtInrShort(p.AskingPrice, p.ListingFor);
+      const rate = p.AskingRatePerSqFt ? ` @ ₹${Number(p.AskingRatePerSqFt).toLocaleString('en-IN')}/sqft` : '';
+      lines.push(`*${i + 1}. ${p.Title || r.PropertyID}*`);
+      const loc = [p.Location1, p.SocietyName].filter(Boolean).join(' • ');
+      if (loc) lines.push(`   📍 ${loc}`);
+      if (p.AskingPrice) lines.push(`   💰 ${price}${rate}`);
+      const specs = [];
+      if (p.BHK) specs.push(p.BHK);
+      if (p.CarpetArea) specs.push(`${p.CarpetArea} sqft carpet`);
+      if (p.FurnishingType) specs.push(p.FurnishingType);
+      if (specs.length) lines.push(`   🏘 ${specs.join(' · ')}`);
+      // RERA info if available
+      if (p.IsReraMaster && p.RERANumber) {
+        lines.push(`   🏗️ RERA: ${p.RERANumber}`);
+      }
+      if (r.Notes) lines.push(`   📝 ${r.Notes}`);
+      lines.push('');
+    });
+    lines.push(`Chalo dekh lete hain — call/visit karne ke liye reply karo 🙏`);
+    lines.push('');
+    lines.push(`— ${brokerName}`);
+
+    const text = lines.join('\n');
+    const url = clientPhone
+      ? `https://wa.me/${clientPhone}?text=${encodeURIComponent(text)}`
+      : `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'noopener');
+  }
+
+  function smartMatchCard(m, reqId) {
+    const photo = (m.Photos || [])[0]?.url;
+    const price = fmtInrShort(m.AskingPrice, m.ListingFor);
+    const src   = m.InventorySource || 'Own';
+    const srcColor = src === 'Builder' ? '#2563eb' : src === 'Broker' ? '#7c3aed' : '#d97706';
+    const srcLabel = src === 'Builder' ? '🏗️ Builder' : src === 'Broker' ? '🤝 Broker' : '⭐ Own';
+    const levelColor = m.MatchLevel === 'Excellent' ? '#16a34a' : m.MatchLevel === 'Strong' ? '#0284c7' : m.MatchLevel === 'Possible' ? '#d97706' : '#94a3b8';
+    const facts = asArray(m.Breakdown).filter(b => b && b.v > 0).slice(0, 4).map(b => `<span style="font-size:11px;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:10px;font-weight:600">${esc(b.note)}</span>`).join(' ');
+    const misses = asArray(m.Breakdown).filter(b => b && b.v === 0).slice(0, 2).map(b => `<span style="font-size:11px;background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:10px;font-weight:600">${esc(b.note)}</span>`).join(' ');
+    const isShortlisted = (workspace._shortlistedIds?.[reqId] || new Set()).has(m.PropertyID);
+    const slBtn = isShortlisted
+      ? `<button data-testid="mm-shortlist-${esc(m.PropertyID)}" onclick="removeFromShortlist('${esc(reqId)}','${esc(m.PropertyID)}')" style="background:#fef3c7;color:#92400e;border:1px solid #fbbf24;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">⭐ Shortlisted ✓</button>`
+      : `<button data-testid="mm-shortlist-${esc(m.PropertyID)}" onclick="addToShortlist('${esc(reqId)}','${esc(m.PropertyID)}',${m.Score||0},'${esc(m.MatchLevel||'')}')" style="background:#fff;color:#92400e;border:1px solid #fbbf24;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">☆ Shortlist</button>`;
+    return `<div class="mm-card" data-testid="mm-card-${esc(m.PropertyID)}" style="display:flex;gap:12px;padding:10px;background:#fff;border-radius:8px;border:1px solid var(--clr-border);margin-bottom:8px;align-items:flex-start">
+      <div style="flex-shrink:0;width:96px;height:80px;background:#f4ede0;border-radius:6px;overflow:hidden;position:relative">
+        ${photo ? `<img src="${esc(photo)}" style="width:100%;height:100%;object-fit:cover" />` : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:24px">📷</div>'}
+        <span style="position:absolute;top:2px;right:2px;background:${srcColor};color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;font-weight:700">${srcLabel}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div style="font-weight:700;font-size:13.5px;color:var(--clr-brown);line-height:1.3">
+            <a href="/inventory" style="color:inherit;text-decoration:none" onclick="event.stopPropagation()">${esc(m.Title || '—')}</a>
+          </div>
+          <div style="text-align:center;flex-shrink:0">
+            <div style="font-weight:800;font-size:15px;color:${levelColor}" data-testid="mm-score-${esc(m.PropertyID)}">${m.Score}</div>
+            <div style="font-size:9px;color:${levelColor};font-weight:700;text-transform:uppercase">${esc(m.MatchLevel)}</div>
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:#6b7280;margin:3px 0">${esc(m.SubCategory || '')} • ${esc(m.Location1 || '—')}${m.SocietyName ? ' • ' + esc(m.SocietyName) : ''} • ${esc(price)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center;justify-content:space-between">
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${facts}${misses}</div>
+          ${slBtn}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function fmtInrShort(n, forType) {
+    if (n == null || n === '') return '—';
+    n = Number(n);
+    const rentTypes = ['Rent','Lease','Rent + Sale'];
+    if (rentTypes.includes(forType)) return '₹' + n.toLocaleString('en-IN') + '/mo';
+    if (n >= 1e7) return '₹' + (n/1e7).toFixed(2) + ' Cr';
+    if (n >= 1e5) return '₹' + (n/1e5).toFixed(1) + ' L';
+    return '₹' + n.toLocaleString('en-IN');
+  }
+
+  // ── Schedule Site Visit Modal ────────────────────────────────────────────
+  function openScheduleVisitModal(reqId) {
+    const rows = (workspace._shortlist || {})[reqId] || [];
+    if (!rows.length) { alert('Shortlist ek property to karo pehle.'); return; }
+    // Default date = tomorrow, time = 11:00
+    const t = new Date(); t.setDate(t.getDate() + 1);
+    const yyyy = t.getFullYear(), mm = String(t.getMonth() + 1).padStart(2, '0'), dd = String(t.getDate()).padStart(2, '0');
+    const defaultDate = `${yyyy}-${mm}-${dd}`;
+    const propRows = rows.map(r => {
+      const p = r.Property || {};
+      const price = fmtInrShort(p.AskingPrice, p.ListingFor);
+      return `<label style="display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--clr-border);border-radius:8px;cursor:pointer;margin-bottom:6px">
+        <input type="checkbox" class="sv-prop-cb" value="${esc(r.PropertyID)}" checked data-testid="sv-prop-cb-${esc(r.PropertyID)}" />
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:13px;color:var(--clr-brown)">${esc(p.Title || r.PropertyID)}</div>
+          <div style="font-size:11.5px;color:#6b7280">${esc(p.SubCategory || '—')} · ${esc(p.Location1 || '—')} · ${esc(price)}</div>
+        </div>
+      </label>`;
+    }).join('');
+    const modal = document.getElementById('schedule-visit-modal');
+    modal.dataset.reqId = reqId;
+    modal.querySelector('#sv-date').value = defaultDate;
+    modal.querySelector('#sv-time').value = '11:00';
+    modal.querySelector('#sv-duration').value = '90 mins';
+    modal.querySelector('#sv-meeting').value = '';
+    modal.querySelector('#sv-notes').value = '';
+    modal.querySelector('#sv-prop-list').innerHTML = propRows;
+    modal.style.display = 'flex';
+  }
+
+  function closeScheduleVisitModal() {
+    document.getElementById('schedule-visit-modal').style.display = 'none';
+  }
+
+  async function submitScheduleVisit() {
+    const modal = document.getElementById('schedule-visit-modal');
+    const reqId = modal.dataset.reqId;
+    const propertyIds = Array.from(modal.querySelectorAll('.sv-prop-cb'))
+      .filter(cb => cb.checked)
+      .map(cb => cb.value);
+    if (!propertyIds.length) { alert('At least ek property select karo'); return; }
+    const visitDate = modal.querySelector('#sv-date').value;
+    const visitTime = modal.querySelector('#sv-time').value;
+    if (!visitDate || !visitTime) { alert('Date aur time daalo'); return; }
+    const body = {
+      requirementId: reqId,
+      propertyIds,
+      visitDate,
+      visitTime,
+      duration: modal.querySelector('#sv-duration').value,
+      meetingPoint: modal.querySelector('#sv-meeting').value,
+      notes: modal.querySelector('#sv-notes').value
+    };
+    try {
+      const btn = modal.querySelector('#sv-submit-btn');
+      btn.disabled = true; btn.textContent = 'Booking...';
+      const res = await fetch('/api/v2/site-visit-bookings', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(r => r.json());
+      btn.disabled = false; btn.textContent = 'Confirm Booking';
+      if (!res.ok) throw new Error(res.error || 'Failed');
+      closeScheduleVisitModal();
+      await loadWorkspace();
+      await loadShortlistForReq(reqId);
+      renderShortlist(reqId);
+    } catch (e) {
+      alert('Booking failed: ' + e.message);
+    }
+  }
+
+  async function cancelBooking(reqId, bookingId) {
+    if (!confirm('Cancel this site visit?')) return;
+    try {
+      const res = await fetch(`/api/v2/site-visit-bookings/${encodeURIComponent(bookingId)}/cancel`, { method: 'POST' }).then(r => r.json());
+      if (!res.ok) throw new Error(res.error || 'Failed');
+      await loadWorkspace();
+      await loadShortlistForReq(reqId);
+      renderShortlist(reqId);
+    } catch (e) { alert('Cancel failed: ' + e.message); }
+  }
+
+  async function completeBooking(reqId, bookingId) {
+    try {
+      const res = await fetch(`/api/v2/site-visit-bookings/${encodeURIComponent(bookingId)}/complete`, { method: 'POST' }).then(r => r.json());
+      if (!res.ok) throw new Error(res.error || 'Failed');
+      await loadWorkspace();
+      await loadShortlistForReq(reqId);
+      renderShortlist(reqId);
+    } catch (e) { alert('Complete failed: ' + e.message); }
+  }
+
+  function openVisitRoute(reqId, bookingId) {
+    const bookings = (workspace._bookings || {})[reqId] || [];
+    const b = bookings.find(x => x.VisitBookingID === bookingId);
+    const bookingProps = asArray(b?.Properties);
+    if (!b || !bookingProps.length) { alert('No properties in this visit'); return; }
+    const stops = bookingProps.map(p => [p.SocietyName, p.Location1].filter(Boolean).join(', ') + ', Surat').filter(Boolean);
+    if (!stops.length) { alert('Property addresses not available for routing'); return; }
+    const origin = b.MeetingPoint ? encodeURIComponent(b.MeetingPoint + ', Surat') : encodeURIComponent(stops[0]);
+    const destination = encodeURIComponent(stops[stops.length - 1]);
+    const waypointStops = b.MeetingPoint ? stops.slice(0, -1) : stops.slice(1, -1);
+    const waypoints = waypointStops.map(s => encodeURIComponent(s)).join('|');
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+    // optimize:true tells Google Maps to reorder these stops into the shortest driving sequence (nearest-neighbor)
+    if (waypoints) url += `&waypoints=optimize:true|${waypoints}`;
+    window.open(url, '_blank', 'noopener');
+  }
+
+  // ── WhatsApp Visit Reminder template ─────────────────────────────────────
+  function sendVisitReminder(reqId, bookingId) {
+    const bookings = (workspace._bookings || {})[reqId] || [];
+    const b = bookings.find(x => x.VisitBookingID === bookingId);
+    if (!b) { alert('Booking not found'); return; }
+    const client = workspace?.lead || {};
+    const clientName = client.ClientName || client.Name || 'ji';
+    const clientPhone = String(b.ClientPhone || client.PrimaryMobile || client.Phone || '').replace(/\D/g, '');
+    const brokerName = (workspace?.agent?.Name) || 'Signature Properties';
+    const dt = b.VisitDate ? new Date(b.VisitDate + 'T' + (b.VisitTime || '00:00')) : null;
+    const dtStr = dt ? dt.toLocaleString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hour12: true }) : '—';
+    const props = asArray(b.Properties);
+    const pinQuery = b.MeetingPoint
+      ? `${b.MeetingPoint}, Surat`
+      : [props[0]?.SocietyName, props[0]?.Location1].filter(Boolean).join(', ') + ', Surat';
+    const mapsPin = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pinQuery)}`;
+
+    const lines = [];
+    lines.push(`🏠 *Site Visit Reminder*`);
+    lines.push(`Namaste ${clientName} ji 🙏`);
+    lines.push('');
+    lines.push(`Aapki property visit confirm hai:`);
+    lines.push(`📅 ${dtStr}`);
+    if (b.MeetingPoint) lines.push(`📍 Meeting Point: ${b.MeetingPoint}`);
+    if (props.length) lines.push(`🏘️ Properties: ${props.map(p => p.Title || p.PropertyID).join(', ')}`);
+    lines.push(`🗺️ Location pin: ${mapsPin}`);
+    lines.push('');
+    lines.push(`Koi bhi change ho toh reply kar dena. Milte hain! 🙏`);
+    lines.push(`— ${brokerName}`);
+
+    const text = encodeURIComponent(lines.join('\n'));
+    const url = clientPhone ? `https://wa.me/${clientPhone}?text=${text}` : `https://wa.me/?text=${text}`;
+    window.open(url, '_blank', 'noopener');
+  }
+
+  function openSiteVisitsContext(reqId) {
+    // Open the Site Visits tab in the details accordion and highlight req visits
+    const toggle = document.getElementById('details-toggle');
+    const inner  = document.getElementById('details-inner');
+    if (!inner.classList.contains('open')) {
+      inner.classList.add('open');
+      toggle.classList.add('open');
+    }
+    // Activate the site-visits tab
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    const svTab  = document.querySelector('.tab[data-tab="site-visits"]');
+    const svPane = document.getElementById('tab-site-visits');
+    if (svTab)  svTab.classList.add('active');
+    if (svPane) svPane.classList.add('active');
+    // Filter to show only visits for this requirement (highlight)
+    const svs = workspace.siteVisits || [];
+    const reqVisits = svs.filter(sv => sv.RequirementID === reqId);
+    if (!reqVisits.length) {
+      svPane.innerHTML = `<div style="color:#64748b;font-size:13px;padding:20px 0">
+        No site visits for ${esc(reqId)} yet.
+        <br><br><a href="/?module=site-visits" style="color:var(--clr-primary);font-weight:600">Schedule a Site Visit →</a>
+      </div>`;
+    } else {
+      renderSiteVisitsTab(); // full render (already filtered by lead)
+    }
+    svPane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function setupTabs() {
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const group = tab.closest('.tabs');
+        group.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const content = tab.closest('.details-inner');
+        if (content) content.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        const pane = document.getElementById('tab-' + tab.dataset.tab);
+        if (pane) pane.classList.add('active');
+      });
+    });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────────
+  function resolveLeadPhone(preferWhatsApp = false) {
+    const lead = workspace?.lead || {};
+    const primary = String(lead.PrimaryMobile || lead.Phone || '').replace(/\D/g,'');
+    const whatsapp = String(lead.WhatsApp || '').replace(/\D/g,'');
+    const selected = preferWhatsApp ? (whatsapp || primary) : (primary || whatsapp);
+    return selected.length >= 10 ? selected : '';
+  }
+  function defaultWhatsAppMessage() {
+    const name = workspace?.lead?.ClientName || 'ji';
+    return `Namaste ${name} ji, Signature Properties se connect kar rahe hain.`;
+  }
+  function launchPhoneUri(uri) { window.location.href = uri; }
+  function launchExternalUrl(url) { window.open(url, '_blank', 'noopener'); }
+  async function startInteractionActivity(kind, phone, launch) {
+    const label = kind === 'CALL' ? 'Call' : 'WhatsApp';
+    const reqs = asArray(workspace.requirements);
+    const txns = asArray(workspace.transactions);
+    const dedupeBucket = Math.floor(Date.now() / 15000);
+    if (typeof launch === 'function') launch();
+    const res = await fetch('/api/v2/activities', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        LeadID: LEAD_ID,
+        ActivityType: kind,
+        ActivityDirection: 'OUTBOUND',
+        TransactionID: txns[0]?.TransactionID || null,
+        RequirementID: reqs[0]?.RequirementID || null,
+        Summary: `${label} initiated`,
+        Notes: `${label} initiated to ${phone}`,
+        DedupKey: `${kind}|${LEAD_ID}|${phone}|${txns[0]?.TransactionID || ''}|${reqs[0]?.RequirementID || ''}|${dedupeBucket}`
+      })
+    }).then(r => r.json());
+    if (!res.ok) throw new Error(res.error || `${label} activity log failed`);
+    openAddActivityModal({
+      mode: 'interaction',
+      activityId: res.data?.ActivityID || '',
+      type: kind,
+      title: `${label} Interaction`,
+      summary: `${label} initiated`,
+      transactionId: res.data?.TransactionID || '',
+      requirementId: res.data?.RequirementID || '',
+      context: `${label} launched to ${phone}. Add outcome, notes, or a next follow-up if needed.`
+    });
+  }
+  async function callClient() {
+    const phone = resolveLeadPhone(false);
+    if (!phone) { alert('Client call number not available'); return false; }
+    try {
+      await startInteractionActivity('CALL', phone, () => launchPhoneUri(`tel:${phone}`));
+    } catch (e) { alert(`Call logging failed: ${e.message}`); }
+    return false;
+  }
+  async function openWhatsAppAction() {
+    const phone = resolveLeadPhone(true);
+    if (!phone) { alert('Client WhatsApp number not available'); return false; }
+    const text = encodeURIComponent(defaultWhatsAppMessage());
+    const url = `https://wa.me/${phone}?text=${text}`;
+    try {
+      await startInteractionActivity('WHATSAPP', phone, () => launchExternalUrl(url));
+    } catch (e) { alert(`WhatsApp logging failed: ${e.message}`); }
+    return false;
+  }
+  function formatBudget(mn,mx) { const fmt=n=>n==null?null:n>=1e7?`₹${(n/1e7).toFixed(1)}Cr`:n>=1e5?`₹${(n/1e5).toFixed(0)}L`:`₹${n.toLocaleString('en-IN')}`; const a=fmt(mn),b=fmt(mx); return [a,b].filter(Boolean).join(' – ')||'—'; }
+  function timeAgo(iso) { if(!iso) return '—'; const d=new Date(iso); const diff=Math.floor((Date.now()-d)/1000); if(diff<60) return 'just now'; if(diff<3600) return Math.floor(diff/60)+'m ago'; if(diff<86400) return Math.floor(diff/3600)+'h ago'; if(diff<604800) return Math.floor(diff/86400)+'d ago'; return d.toLocaleDateString('en-IN'); }
+  function numOrNull(v) { const n=Number(v); return (v!==''&&v!=null&&!isNaN(n))?n:null; }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escAttr(s) { return esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+  function enc(s) { return encodeURIComponent(s||''); }
+  function showError(msg) { document.getElementById('workspace-loader').style.display='none'; const e=document.getElementById('workspace-error'); e.innerHTML=`<b>Error:</b> ${esc(msg)}<br><a href="/clients">← Back to Clients</a>`; e.style.display='block'; }
+  function buildSourceSelects() { SOURCES.forEach(s => { ['edit-source'].forEach(id => { const sel=document.getElementById(id); if(sel){const o=document.createElement('option');o.textContent=s;sel.appendChild(o);} }); }); }
+
+  init();
+</script>
+</body>
+</html>

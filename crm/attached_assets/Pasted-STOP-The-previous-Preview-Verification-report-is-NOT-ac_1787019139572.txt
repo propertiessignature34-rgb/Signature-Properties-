@@ -1,0 +1,434 @@
+STOP. The previous Preview Verification report is NOT accepted.
+
+You reported:
+
+PREVIEW: PASS
+
+But in the actual Replit Preview window, I STILL DO NOT SEE THE V2 UI.
+
+Therefore do not rely on API tests or server-side checks.
+
+I need you to verify the ACTUAL VISUAL BROWSER PREVIEW.
+
+==================================================
+PHASE 20 — ACTUAL BROWSER PREVIEW DEBUG
+==================================================
+
+IMPORTANT:
+
+DO NOT:
+
+- run migration --apply
+- enable LEAD_V2_ENABLED
+- modify production database
+- modify existing data
+- redesign V2
+- declare Preview PASS based only on API tests
+- claim a page is visible unless the browser actually renders it
+
+==================================================
+1. OPEN THE ACTUAL REPLIT PREVIEW
+==================================================
+
+Use the actual Replit Preview/browser.
+
+Do not just use curl.
+Do not just use node HTTP requests.
+Do not just inspect HTML files.
+
+Actually load the Preview URL in a browser.
+
+Record:
+
+- Preview URL
+- current page
+- HTTP status
+- page title
+- visible navigation
+- visible buttons
+- visible content
+
+==================================================
+2. FIRST SCREEN
+
+When Preview opens, tell me EXACTLY what is visible.
+
+I expect the V2 navigation to contain:
+
+CLIENT MANAGEMENT
+
+Clients
+Requirements
+
+And the application should NOT appear to be only the old legacy dashboard.
+
+If the old dashboard appears, identify why.
+
+==================================================
+3. TEST THESE EXACT URLS IN THE ACTUAL BROWSER
+
+Open each URL individually:
+
+/clients
+
+/client-workspace?id=LEAD-0001
+
+/requirements-view
+
+Do not report PASS unless the page actually renders.
+
+For each page report:
+
+URL:
+HTTP STATUS:
+PAGE LOADED:
+VISIBLE UI:
+JAVASCRIPT ERROR:
+API ERROR:
+SCREENSHOT/visual confirmation:
+
+==================================================
+4. CLIENTS PAGE
+
+The browser must visibly show:
+
+Clients
+
+Add Client
+
+Client table
+
+Expected columns such as:
+
+Client
+Mobile
+Status
+Lifecycle
+Tags
+Score
+Requirements
+Budget
+Location
+Agent
+
+Click:
+
+Add Client
+
+The modal must visibly show ONLY the intended minimal capture:
+
+Name
+Primary Mobile
+Transaction Type
+Category
+Location
+Budget
+
+Do NOT show the old 12-field form.
+
+==================================================
+5. CLIENT WORKSPACE
+
+Open:
+
+/client-workspace?id=LEAD-0001
+
+The browser must visibly show:
+
+Client name
+Client ID
+Call
+WhatsApp
+Edit
+Add Need
+
+Then:
+
+Transaction
+Requirement / Need
+Known
+To Discover
+Next Questions
+Score
+Pipeline
+Activities
+Follow-ups
+Timeline
+
+If the page is blank, old UI, loading forever, or showing an error,
+mark FAIL.
+
+==================================================
+6. REQUIREMENTS PAGE
+
+Open:
+
+/requirements-view
+
+Verify the actual rendered UI.
+
+==================================================
+7. CHECK FRONTEND JAVASCRIPT
+
+Open browser console and identify:
+
+- JavaScript exceptions
+- failed script loading
+- 404 files
+- wrong API paths
+- undefined functions
+- DOM selector errors
+- module loading errors
+- authentication redirects
+- CORS errors
+- cached old HTML/JS
+
+==================================================
+8. CHECK ACTUAL HTML SOURCE
+
+Verify that the Preview is serving the CURRENT:
+
+clients.html
+client-workspace.html
+requirements-view.html
+index.html
+app.js
+
+Do not assume the files are being served.
+
+Print the actual route-to-file mapping.
+
+==================================================
+9. CHECK ROUTING
+
+Determine whether these are handled by:
+
+- static file server
+- SPA fallback
+- server.js route
+- V2Router
+- legacy router
+
+Specifically verify whether:
+
+/clients
+
+is actually resolving to:
+
+clients.html
+
+and:
+
+/client-workspace
+
+is actually resolving to:
+
+client-workspace.html
+
+If the browser is requesting:
+
+/clients
+
+but server only serves:
+
+/clients.html
+
+then fix the routing.
+
+==================================================
+10. CHECK PORT
+
+Verify Replit Preview is connected to the SAME server instance that
+contains the latest code.
+
+Check:
+
+server port
+process ID
+working directory
+server start command
+Preview target port
+
+Make sure Preview is not pointing to an old process or wrong port.
+
+==================================================
+11. CACHE CHECK
+
+If the server and files are correct but Preview still shows old UI:
+
+- restart the development server
+- clear/reload Preview
+- verify cache headers
+- reload the actual Preview
+
+Do not modify production settings.
+
+==================================================
+12. FEATURE FLAG
+
+LEAD_V2_ENABLED may remain OFF for production safety.
+
+Do NOT enable it globally.
+
+But canonical V2 UI/API routes must still be testable in Preview.
+
+If the flag is preventing the Preview UI from rendering, identify the
+exact route causing the fallback.
+
+==================================================
+13. ACTUAL USER TEST
+
+Perform this exact browser test:
+
+1. Open Clients.
+2. Click Add Client.
+3. Enter:
+
+Name:
+Test Preview Client
+
+Phone:
+9999912345
+
+Transaction:
+Purchase
+
+Category:
+Residential
+
+Location:
+Vesu
+
+Budget:
+10000000
+
+4. Submit.
+
+5. Verify browser redirects to Client Workspace.
+
+6. Verify Transaction exists.
+
+7. Verify Requirement exists.
+
+8. Verify UNKNOWN fields / To Discover.
+
+9. Verify Next Questions.
+
+IMPORTANT:
+
+Use TEST DATA ONLY.
+
+Do not touch production database.
+
+If the Preview is connected to the production database, DO NOT perform
+the create test. Stop and report that Preview is pointing to production.
+
+==================================================
+14. ROOT CAUSE
+
+If Preview is not showing V2, DO NOT simply say "Preview PASS".
+
+Find the actual reason.
+
+Possible causes:
+
+- wrong server process
+- wrong port
+- wrong working directory
+- stale process
+- static route mismatch
+- SPA route mismatch
+- old index.html
+- old app.js
+- cached browser
+- feature flag fallback
+- authentication redirect
+- JavaScript error
+- missing V2 route
+- Preview URL points to another deployment
+
+==================================================
+15. ONLY AFTER ROOT CAUSE
+
+Make the MINIMUM necessary fix.
+
+Do not redesign any V2 functionality.
+
+Then restart Preview and verify visually again.
+
+==================================================
+FINAL REPORT
+
+Return:
+
+# ACTUAL REPLIT PREVIEW VERIFICATION
+
+PREVIEW URL:
+SERVER PORT:
+SERVER PROCESS:
+WORKING DIRECTORY:
+
+/clients:
+PASS / FAIL
+
+/client-workspace:
+PASS / FAIL
+
+/requirements-view:
+PASS / FAIL
+
+V2 NAVIGATION:
+PASS / FAIL
+
+ADD CLIENT UI:
+PASS / FAIL
+
+CLIENT WORKSPACE UI:
+PASS / FAIL
+
+REQUIREMENT UI:
+PASS / FAIL
+
+NEXT QUESTIONS UI:
+PASS / FAIL
+
+DYNAMIC FIELDS UI:
+PASS / FAIL
+
+BROWSER CONSOLE:
+PASS / FAIL
+
+FRONTEND API CONNECTION:
+PASS / FAIL
+
+ROOT CAUSE:
+<exact reason>
+
+FIX APPLIED:
+<exact files>
+
+VISUAL PREVIEW AFTER FIX:
+PASS / FAIL
+
+DATABASE MODIFIED:
+YES / NO
+
+MIGRATION APPLIED:
+YES / NO
+
+V2 PRODUCTION FLAG:
+ON / OFF
+
+TEST RESULTS:
+...
+
+CRITICAL:
+
+If you cannot actually open/verify the browser Preview,
+STATUS MUST BE:
+
+BLOCKED — BROWSER PREVIEW COULD NOT BE VERIFIED
+
+Do not claim PASS from backend/API tests alone.
+
+STOP.

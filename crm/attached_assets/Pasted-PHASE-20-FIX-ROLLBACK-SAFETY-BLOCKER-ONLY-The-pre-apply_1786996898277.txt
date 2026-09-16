@@ -1,0 +1,126 @@
+PHASE 20 — FIX ROLLBACK SAFETY BLOCKER ONLY
+
+The pre-apply gate correctly found a CRITICAL data-loss risk.
+
+DO NOT run migration --apply.
+DO NOT enable LEAD_V2_ENABLED.
+DO NOT restore any database.
+DO NOT delete the verified production safety backup.
+DO NOT modify production data.
+
+Problem:
+
+data/backups/ contains Phase 18 test artifacts using:
+
+sig-realty-db-backup-*.json
+
+The current rollback implementation selects the latest matching file,
+which can select a 1.5 KB Phase 18 fixture instead of the 101 KB production
+database.
+
+This is UNSAFE.
+
+Fix ONLY the rollback backup-selection mechanism.
+
+REQUIRED DESIGN:
+
+1. Rollback must NEVER blindly choose a backup based only on filename/date.
+
+2. Every production migration backup must contain verifiable metadata:
+   - backup timestamp
+   - source database path
+   - database size
+   - checksum if available
+   - migration/run identifier
+   - environment/context identifying it as a production backup
+
+3. Rollback must select the exact backup associated with the migration
+   being rolled back.
+
+4. Test/fixture backups must NEVER be eligible for production rollback.
+
+5. If the correct migration backup cannot be identified with certainty:
+   rollback must STOP with a clear error.
+
+6. Never silently select another backup as fallback.
+
+7. Do not use file size alone as proof of identity.
+
+8. Preserve existing Phase 18 test artifacts. Do NOT delete them as part
+   of this fix unless absolutely required; preferably make rollback
+   selection safe through metadata/manifest.
+
+9. Preserve the verified production safety backup:
+
+pre-apply-safety-gate-20260817T195840Z.json
+
+10. Do not run --apply.
+
+11. Do not enable V2.
+
+12. Do not change Lead, Transaction, Requirement, Inventory, Matching,
+    Deal, Commission, Auth/RBAC or UI functionality.
+
+TEST REQUIREMENTS:
+
+Add focused rollback-safety tests proving:
+
+A. Test fixture backup cannot be selected.
+B. Production migration backup is selected only when explicitly associated
+   with the migration.
+C. Ambiguous backup set causes rollback to STOP.
+D. Missing migration backup causes rollback to STOP.
+E. Wrong environment backup causes rollback to STOP.
+F. Existing Phase 18 tests remain passing.
+G. Existing migration dry-run remains unchanged.
+H. No database data is modified by the tests.
+
+Then run:
+
+- rollback safety tests
+- migration tests
+- full existing regression suite
+
+DO NOT perform a real rollback.
+
+DO NOT perform migration --apply.
+
+DO NOT delete production or test data.
+
+FINAL REPORT ONLY:
+
+PHASE 20 — ROLLBACK SAFETY FIX
+
+STATUS: PASS / BLOCKED
+
+ROLLBACK SELECTION:
+PASS / FAIL
+
+PRODUCTION BACKUP IDENTIFICATION:
+PASS / FAIL
+
+TEST BACKUP ISOLATION:
+PASS / FAIL
+
+AMBIGUOUS BACKUP HANDLING:
+PASS / FAIL
+
+MIGRATION DRY-RUN:
+PASS / FAIL
+
+FULL REGRESSION:
+X/X
+
+DATABASE MODIFIED:
+YES / NO
+
+V2 FLAG ENABLED:
+YES / NO
+
+FILES CHANGED:
+
+KNOWN RISKS:
+
+NEXT ACTION:
+
+STOP.

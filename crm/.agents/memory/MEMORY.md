@@ -1,0 +1,19 @@
+- [V2 Progressive Architecture](v2-progressive-architecture.md) — approved redesign: minimal creation, 3-state fields (UNKNOWN≠NO), phase-gate approval required; docs/V2-BLUEPRINT.md is authoritative
+- [Lead V2 Architecture](lead-v2-architecture.md) — V2 records in same DB collections with _v2:true marker + V2-format IDs; never separate collections
+- [V2 Body Caching Pattern](v2-body-caching.md) — readJson() in server.js caches body in req._parsedBody; V2Router pre-reads for POST/PATCH; legacy handlers must check cache
+- [V2 IdEngine Counter Overwrite Bug](v2-counter-overwrite.md) — services must re-read DB after calling idEngine.next*() or the counter write is overwritten; createRequirement was fixed this way
+- [V2 Select Option Validation](v2-select-option-validation.md) — option-membership check is string-only; numeric values (e.g. Parking:2) bypass it; missing value never errors; only bad strings rejected
+- [V2 updateRequirement Return Shape](v2-update-requirement-return.md) — returns { requirement, changedFields, history }, NOT { ...flatFields }; tests must use patch.data.requirement.FormVersion not patch.data.FormVersion
+- [V2Router Handle Return Pattern](v2router-handle-return.md) — router._ok()/_json() return { handled, statusCode, body } directly; test helpers must capture the return value: `const result = await router.handle(...); if (result?.statusCode != null) return result;`
+- [Phase 11 Next Question Engine](phase11-next-question.md) — V2NextQuestionService: read-only, consumes DependencyEngine (Phase 10) + FieldConfig; rank=CORE>IMPORTANT>OPTIONAL then DisplayOrder; never use words "inventory", "matching", "deal" in source (Suite 39 guard)
+- [Phase 13 Pending](phase13-pending.md) — Quick Capture deferred; full contract saved; do NOT implement until explicitly approved
+- [V2Router Feature Flag Gate](v2router-feature-flag.md) — /api/v2/* canonical routes must come BEFORE the isV2Enabled() gate. Fixed by changing gate to: if (!isV2Enabled() && !pathname.startsWith('/api/v2/')) return null. Shared /api/leads* routes are gated; /api/v2/* always active.
+- [Phases 14-20 Complete](phases-14-20-complete.md) — All phases + rollback safety + preview wiring done; 872/872 tests
+- [UX-UI Design Freeze](ux-ui-design-freeze.md) — Brown/gold theme applied; business model: CLIENT→REQUIREMENT only (no txn groups); REQUIREMENTS label; Mark Lost modal; nav trimmed to 10 agent modules
+- [Manual media import policy](manual-media-import.md) — Builder Project media accepts only explicit public URLs, safe validation, GridFS read-back verification, and internal asset URLs
+- [Storage signed URL ordering](storage-signed-url-ordering.md) — validate expiring bearer signatures before the legacy authenticated permission gate
+- [Query-token authentication](query-token-auth.md) — session credentials come from cookies or headers, never URL query parameters
+- [CSRF origin guard](csrf-origin-guard.md) — reject cross-site state changes using Origin/Referer and Fetch Metadata checks
+- [Broker profile mutation authorization](broker-profile-mutations.md) — public card reads are separate from protected profile edits and photo uploads
+- [Phase 0 test and fixture policy](phase0-test-fixture-policy.md) — default tests use isolated fixtures; live-data safety checks are explicit and baseline-aware
+- [Phase 1 security perimeter](phase1-security-perimeter.md) — sensitive mutations need explicit capabilities; internal storage routes are gated; scoped records fail closed

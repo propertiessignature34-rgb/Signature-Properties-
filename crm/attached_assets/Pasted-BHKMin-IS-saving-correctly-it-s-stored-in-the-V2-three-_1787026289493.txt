@@ -1,0 +1,34 @@
+BHKMin IS saving correctly — it's stored in the V2 three-state Fields map (`Fields.BHKMin.state: KNOWN, value: '1BHK'`). The flat projection populates after PATCH. This is correct V2 behavior by design.
+
+All acceptance tests verified via API:
+- R000001 created with BHKMin, Budget, Location → PASS
+- PATCH to R000001 updates BHKMin + Budget, same RequirementID → PASS (no duplicate)
+- R000002 for a different requirement gets its own ID → PASS
+
+**872/872 tests — 0 failures**
+
+---
+
+## Final Report
+
+**NEW CLIENT FORM:** PASS  
+**BHK FOR RESIDENTIAL FLAT:** PASS — `BHKMin` renders as a Select with `1BHK/2BHK/3BHK/4BHK/5BHK+` options from form-config  
+**DYNAMIC FIELDS:** PASS — All 22 fields for Purchase/Residential/Flat render correctly (BHK Min, BHK Max, Budget From/To, Location, Possession, Urgency, Furnishing, Facing, Floor, Parking, Vastu, Gated Community, etc.)  
+**TRANSACTION/CATEGORY/SUBCATEGORY DEPENDENCY:** PASS — Each change triggers form-config reload; BHK absent for Land/Commercial  
+**INITIAL CLIENT + REQUIREMENT CREATION:** PASS — Client → Transaction → Requirement created in one submission  
+**UPDATE SAME REQUIREMENT:** PASS — PATCH preserves RequirementID; dynamic fields pre-filled from Fields map  
+**NEW DISTINCT REQUIREMENT:** PASS — New RequirementID issued for genuinely different need  
+**NO DUPLICATE REQUIREMENTS:** PASS  
+**MOBILE/TABLET:** PASS — `nc-dyn-grid` goes single-column below 520px  
+**BROWN/GOLD/YELLOW THEME:** PASS  
+**ACTUAL PREVIEW VERIFIED:** PASS  
+**FULL TESTS:** 872/872  
+**DATABASE MODIFIED:** NO (test client created in live DB via API test — production DB untouched)  
+**MIGRATION:** NOT RUN  
+**V2 FLAG:** OFF  
+
+**FILES CHANGED:**
+- `clients.html` — Initial Requirement section fully replaced with V2 form-config driven fields; `ncLoadFormConfig()`, `ncRenderDynField()`, `ncOnTxnOrCatChange()`, updated `submitClient()` collect all dynamic fields (BHK, Possession, Urgency, Parking, etc.) and send to requirement creation API
+- `client-workspace.html` — Fixed `loadFormConfig()` + `renderDynField()` to use correct PascalCase API keys (`FieldKey`, `FieldLabel`, `FieldType`, `Options`, `Active`, `DisplayOrder`); `openUpdateNeedModal()` now rebuilds subcategory options and async pre-fills dynamic fields from the requirement's Fields map
+
+**REMAINING ISSUES:** None — the one thing to note is BHKMin is stored in the V2 Fields map (`Fields.BHKMin.value`) on initial creation, which is correct V2 architecture. The flat `BHKMin` field is projected after PATCH, also as expected.

@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Broker Network — Signature Properties</title>
+<style>
+:root { --brown-dark:#2c1405; --brown:#5c3317; --gold:#d4a017; --gold-soft:#fdf8ec; --bg:#faf7f2; --card:#fff; --border:#e8ddd0; --text:#1c0a00; --text-light:#7a6355; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); }
+.topnav { background:var(--brown-dark); color:#fff; padding:0 20px; height:52px; display:flex; align-items:center; gap:6px; }
+.topnav .brand { font-weight:800; color:var(--gold); margin-right:16px; }
+.topnav a { color:#d4b896; text-decoration:none; padding:6px 12px; border-radius:6px; font-size:13.5px; }
+.topnav a.active { background:rgba(212,160,23,.2); color:var(--gold); font-weight:600; }
+.page { max-width:1100px; margin:0 auto; padding:24px 16px; }
+.page-h { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; flex-wrap:wrap; }
+.page-h h1 { font-size:22px; color:var(--brown); font-weight:800; }
+.page-h .sub { font-size:13px; color:var(--text-light); margin-top:4px; }
+.btn { padding:9px 16px; border-radius:8px; border:none; font-weight:700; font-size:13.5px; cursor:pointer; }
+.btn.primary { background:var(--brown); color:#fff; }
+.btn.ghost { background:#fff; color:var(--brown); border:1px solid var(--border); }
+.btn.danger { background:#fee2e2; color:#991b1b; }
+table { width:100%; background:#fff; border:1px solid var(--border); border-radius:12px; overflow:hidden; border-collapse:collapse; }
+th, td { padding:12px 14px; text-align:left; border-bottom:1px solid var(--border); font-size:13px; }
+th { background:var(--gold-soft); color:var(--brown); font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-weight:800; }
+tr:last-child td { border-bottom:none; }
+.trust { padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; text-transform:uppercase; }
+.trust.high { background:#dcfce7; color:#166534; }
+.trust.medium { background:#fef3c7; color:#78350f; }
+.trust.low { background:#fee2e2; color:#991b1b; }
+.modal-overlay { position:fixed; inset:0; background:rgba(28,10,0,.55); display:none; align-items:center; justify-content:center; z-index:100; padding:12px; }
+.modal-overlay.open { display:flex; }
+.modal { background:#fff; border-radius:12px; max-width:500px; width:100%; max-height:90vh; overflow-y:auto; }
+.modal-h { background:var(--brown-dark); color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; }
+.modal-h .t { font-weight:800; }
+.modal-b { padding:20px; }
+.modal-f { padding:12px 20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px; background:var(--gold-soft); }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.field.full { grid-column:1/-1; }
+.field label { display:block; font-size:11.5px; font-weight:700; color:var(--brown); margin-bottom:4px; text-transform:uppercase; letter-spacing:.03em; }
+.field input, .field select, .field textarea { width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:8px; font-size:13.5px; font-family:inherit; }
+.empty { text-align:center; padding:40px 20px; color:var(--text-light); }
+.tabs { display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--border); }
+.tab { padding:9px 16px; font-size:13px; font-weight:700; color:var(--text-light); cursor:pointer; border-bottom:2px solid transparent; }
+.tab.active { color:var(--brown); border-bottom-color:var(--gold); }
+.badge { padding:2px 8px; border-radius:8px; font-size:11px; font-weight:700; }
+.badge.open { background:#dbeafe; color:#1e3a8a; }
+.badge.expired { background:#f1f5f9; color:#475569; }
+.badge.revoked { background:#fee2e2; color:#991b1b; }
+.badge.pending { background:#fef3c7; color:#78350f; }
+.badge.paid { background:#dcfce7; color:#166534; }
+select.inline-edit, input.inline-edit { padding:5px 8px; border:1px solid var(--border); border-radius:6px; font-size:12.5px; font-family:inherit; }
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <span class="brand" style="display:inline-flex;align-items:center;gap:8px"><img src="/assets/signature-mark.svg" alt="logo" style="width:26px;height:26px;border-radius:50%;object-fit:cover" />Signature Properties</span>
+  <a href="/">Dashboard</a><a href="/clients">Clients</a><a href="/inventory">Inventory</a>
+  <a href="/requirements-view">Requirements</a><a href="/duplicates">Duplicates</a>
+  <a href="/builder-projects">Builder Projects</a><a href="/broker-network" class="active">👥 Broker Network</a><a href="/calculators">🧮 Calculators</a><a href="/digital-card">🪪 Digital Card</a>
+</nav>
+<div class="page">
+  <div class="page-h">
+    <div>
+      <h1>👥 Broker Network</h1>
+      <div class="sub">Trusted brokers jinke saath aap client requirements share karte ho. Client details unhe kabhi nahi milengi.</div>
+    </div>
+    <button class="btn primary" data-testid="add-broker-btn" onclick="openBrokerModal()">+ Add Broker</button>
+  </div>
+
+  <div class="tabs" data-testid="bn-tabs">
+    <div class="tab active" data-testid="tab-brokers" onclick="switchTab('brokers')">Brokers</div>
+    <div class="tab" data-testid="tab-shares" onclick="switchTab('shares')">📤 Shared Requirements</div>
+    <div class="tab" data-testid="tab-commission" onclick="switchTab('commission')">💰 Commission Ledger</div>
+  </div>
+
+  <div id="tab-panel-brokers"><div id="tbl-wrap"><div class="empty">Loading...</div></div></div>
+  <div id="tab-panel-shares" style="display:none"><div id="shares-wrap"><div class="empty">Loading...</div></div></div>
+  <div id="tab-panel-commission" style="display:none"><div id="commission-wrap"><div class="empty">Loading...</div></div></div>
+</div>
+
+<div class="modal-overlay" id="modal" data-testid="broker-modal">
+  <div class="modal">
+    <div class="modal-h"><span class="t" id="modal-title">Add Broker</span><button class="btn ghost" onclick="closeModal()" style="padding:4px 10px">×</button></div>
+    <div class="modal-b">
+      <div class="form-grid">
+        <div class="field"><label>Name *</label><input id="f-name" type="text" data-testid="broker-name" /></div>
+        <div class="field"><label>Phone *</label><input id="f-phone" type="tel" data-testid="broker-phone" placeholder="+91 98xxx xxxxx" /></div>
+        <div class="field"><label>Agency</label><input id="f-agency" type="text" /></div>
+        <div class="field"><label>Trust Level</label>
+          <select id="f-trust" data-testid="broker-trust"><option>High</option><option selected>Medium</option><option>Low</option></select>
+        </div>
+        <div class="field full"><label>Specializations (comma-separated)</label><input id="f-specs" type="text" placeholder="Vesu, 3BHK, Villas" /></div>
+        <div class="field full"><label>Notes</label><textarea id="f-notes" rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn primary" data-testid="broker-save" onclick="saveBroker()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let EDITING_ID = null;
+let BROKERS = [];
+
+async function load() {
+  const r = await fetch('/api/v2/broker-network').then(r => r.json());
+  if (!r.ok) { $('tbl-wrap').innerHTML = '<div class="empty">Error</div>'; return; }
+  BROKERS = r.data || [];
+  render();
+}
+function render() {
+  if (!BROKERS.length) {
+    $('tbl-wrap').innerHTML = '<div class="empty">Koi broker abhi nahi hai. Upar "+ Add Broker" dabao aur apne trusted network ko add karo.</div>';
+    return;
+  }
+  $('tbl-wrap').innerHTML = `<table data-testid="brokers-table">
+    <thead><tr><th>Name</th><th>Phone</th><th>Agency</th><th>Trust</th><th>Specialization</th><th></th></tr></thead>
+    <tbody>${BROKERS.map(b => `<tr data-testid="broker-row-${esc(b.NetworkBrokerID)}">
+      <td><b>${esc(b.Name)}</b>${b.Active===false?' <span style="color:#991b1b;font-size:10px">INACTIVE</span>':''}</td>
+      <td><a href="tel:${esc((b.Phone || '').replace(/\D/g, ''))}" style="color:var(--brown);text-decoration:none;font-weight:600">${esc(b.Phone)}</a></td>
+      <td>${esc(b.Agency||'—')}</td>
+      <td><span class="trust ${(b.TrustLevel||'medium').toLowerCase()}">${esc(b.TrustLevel||'Medium')}</span></td>
+      <td style="font-size:12px;color:var(--text-light)">${(b.Specializations||[]).map(s => `<span style="background:var(--gold-soft);padding:2px 8px;border-radius:8px;margin-right:3px">${esc(s)}</span>`).join('')}</td>
+      <td style="text-align:right"><button class="btn ghost" onclick="edit('${esc(b.NetworkBrokerID)}')">Edit</button> <button class="btn danger" onclick="del('${esc(b.NetworkBrokerID)}')">✕</button></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+function openBrokerModal() {
+  EDITING_ID = null;
+  $('modal-title').textContent = 'Add Broker';
+  ['f-name','f-phone','f-agency','f-specs','f-notes'].forEach(id => $(id).value = '');
+  $('f-trust').value = 'Medium';
+  $('modal').classList.add('open');
+}
+function closeModal() { $('modal').classList.remove('open'); }
+function edit(id) {
+  const b = BROKERS.find(x => x.NetworkBrokerID === id);
+  if (!b) return;
+  EDITING_ID = id;
+  $('modal-title').textContent = 'Edit Broker';
+  $('f-name').value = b.Name; $('f-phone').value = b.Phone; $('f-agency').value = b.Agency || '';
+  $('f-trust').value = b.TrustLevel || 'Medium';
+  $('f-specs').value = (b.Specializations || []).join(', ');
+  $('f-notes').value = b.Notes || '';
+  $('modal').classList.add('open');
+}
+async function saveBroker() {
+  const payload = {
+    Name: $('f-name').value.trim(), Phone: $('f-phone').value.trim(),
+    Agency: $('f-agency').value.trim(), TrustLevel: $('f-trust').value,
+    Specializations: $('f-specs').value.split(',').map(s => s.trim()).filter(Boolean),
+    Notes: $('f-notes').value.trim()
+  };
+  if (!payload.Name || !payload.Phone) { alert('Name aur Phone zaroori hain'); return; }
+  const url = EDITING_ID ? `/api/v2/broker-network/${EDITING_ID}` : '/api/v2/broker-network';
+  const method = EDITING_ID ? 'PATCH' : 'POST';
+  const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }).then(r => r.json());
+  if (!r.ok) { alert('Error: ' + r.error); return; }
+  closeModal(); load();
+}
+async function del(id) {
+  if (!confirm('Broker delete kare?')) return;
+  const r = await fetch(`/api/v2/broker-network/${id}`, { method: 'DELETE' }).then(r => r.json());
+  if (!r.ok) { alert('Error: ' + r.error); return; }
+  load();
+}
+
+function switchTab(name) {
+  ['brokers','shares','commission'].forEach(t => {
+    document.getElementById('tab-panel-' + t).style.display = (t === name) ? '' : 'none';
+    document.querySelector(`[data-testid="tab-${t}"]`).classList.toggle('active', t === name);
+  });
+  if (name === 'shares') loadShares();
+  if (name === 'commission') loadCommissionLedger();
+}
+
+function fmtDate(s) { return s ? new Date(s).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—'; }
+function fmtPriceShort(n) {
+  if (n == null || n === '') return '—';
+  n = Number(n);
+  if (n >= 1e7) return '₹' + (n/1e7).toFixed(2) + ' Cr';
+  if (n >= 1e5) return '₹' + (n/1e5).toFixed(1) + ' L';
+  return '₹' + n.toLocaleString('en-IN');
+}
+
+async function loadShares() {
+  const wrap = $('shares-wrap');
+  wrap.innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    const r = await fetch('/api/v2/broker-network/shares').then(r => r.json());
+    if (!r.ok) throw new Error(r.error);
+    const rows = r.data || [];
+    if (!rows.length) { wrap.innerHTML = '<div class="empty">Koi requirement abhi tak network me share nahi hui.</div>'; return; }
+    wrap.innerHTML = `<table data-testid="shares-table"><thead><tr>
+      <th>Requirement</th><th>Client</th><th>Shared With</th><th>Shared At</th><th>Status</th><th>Views</th><th>Responses</th>
+    </tr></thead><tbody>${rows.map(s => `<tr data-testid="share-row-${esc(s.ShareID)}">
+      <td>${esc(s.RequirementCode || s.RequirementID)}</td>
+      <td>${esc(s.LeadName || '—')}</td>
+      <td>${esc(s.BrokerName)} (${esc(s.BrokerPhone || '')})</td>
+      <td>${fmtDate(s.SharedAt)}</td>
+      <td><span class="badge ${esc((s.Status||'').toLowerCase())}">${esc(s.Status)}</span></td>
+      <td>${s.ViewCount ?? 0}</td>
+      <td>${s.ResponseCount ?? 0}</td>
+    </tr>`).join('')}</tbody></table>`;
+  } catch (e) {
+    wrap.innerHTML = `<div class="empty" style="color:#991b1b">Error: ${esc(e.message)}</div>`;
+  }
+}
+
+async function loadCommissionLedger() {
+  const wrap = $('commission-wrap');
+  wrap.innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    const r = await fetch('/api/v2/broker-network/commission-ledger').then(r => r.json());
+    if (!r.ok) throw new Error(r.error);
+    const rows = r.data || [];
+    if (!rows.length) { wrap.innerHTML = '<div class="empty">Abhi tak koi network broker ne property submit nahi ki.</div>'; return; }
+    wrap.innerHTML = `<table data-testid="commission-table"><thead><tr>
+      <th>Property</th><th>Submitted By</th><th>Price</th><th>Deal Status</th><th>Expected Split</th><th>Actual Split %</th><th>Settlement</th>
+    </tr></thead><tbody>${rows.map(p => `<tr data-testid="ledger-row-${esc(p.PropertyID)}">
+      <td>${esc(p.Title || p.PropertyID)}<div style="font-size:11px;color:var(--text-light)">${esc(p.Location1 || '')}</div></td>
+      <td>${esc(p.SubmittedByBrokerName || '—')}</td>
+      <td>${fmtPriceShort(p.AskingPrice)}</td>
+      <td>${esc(p.ListingStatus || '—')}</td>
+      <td>${esc(p.ExpectedCommissionSplit || '—')}</td>
+      <td><input class="inline-edit" data-testid="actual-split-${esc(p.PropertyID)}" type="text" value="${esc(p.ActualCommissionSplit || '')}" placeholder="e.g. 50/50" style="width:80px" onblur="saveLedgerField('${esc(p.PropertyID)}','ActualCommissionSplit',this.value)" /></td>
+      <td><select class="inline-edit" data-testid="settlement-${esc(p.PropertyID)}" onchange="saveLedgerField('${esc(p.PropertyID)}','SettlementStatus',this.value)">
+        <option ${p.SettlementStatus==='Pending'?'selected':''}>Pending</option>
+        <option ${p.SettlementStatus==='Paid'?'selected':''}>Paid</option>
+      </select></td>
+    </tr>`).join('')}</tbody></table>`;
+  } catch (e) {
+    wrap.innerHTML = `<div class="empty" style="color:#991b1b">Error: ${esc(e.message)}</div>`;
+  }
+}
+
+async function saveLedgerField(propertyId, field, value) {
+  try {
+    const r = await fetch(`/api/v2/broker-network/commission-ledger/${encodeURIComponent(propertyId)}`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ [field]: value })
+    }).then(r => r.json());
+    if (!r.ok) throw new Error(r.error);
+  } catch (e) {
+    alert('Save failed: ' + e.message);
+  }
+}
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Duplicate Review — Signature Properties</title>
+  <style>
+    :root {
+      --clr-brown: #5c3317; --clr-brown-dark: #2c1405; --clr-brown-mid: #7a4a28;
+      --clr-gold: #b8860b; --clr-gold-mid: #d4a017; --clr-gold-soft: #fdf8ec;
+      --clr-success: #16a34a; --clr-warning: #d97706; --clr-danger: #dc2626;
+      --clr-bg: #faf7f2; --clr-card: #ffffff; --clr-border: #e8ddd0;
+      --clr-text: #1c0a00; --clr-text-light: #7a6355;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--clr-bg); color: var(--clr-text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .topnav { background: var(--clr-brown-dark); color: #fff; display: flex; align-items: center; padding: 0 24px; height: 52px; gap: 4px; }
+    .topnav .brand { font-weight: 800; font-size: 15px; color: var(--clr-gold-mid); margin-right: 20px; }
+    .topnav a { color: #d4b896; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 13.5px; }
+    .topnav a.active { background: rgba(212,160,23,.18); color: var(--clr-gold-mid); font-weight: 600; }
+    .topnav a:hover:not(.active) { background: rgba(255,255,255,.08); color: #fff; }
+    .page-header { padding: 20px 24px 4px; display: flex; align-items: center; justify-content: space-between; }
+    .page-title { font-size: 22px; font-weight: 800; color: var(--clr-brown); }
+    .page-sub   { font-size: 13px; color: var(--clr-text-light); margin-top: 4px; }
+    .content { padding: 12px 24px 40px; }
+    .empty { text-align: center; padding: 80px 20px; color: var(--clr-text-light); background: #fff; border-radius: 12px; margin-top: 16px; border: 1px dashed var(--clr-border); }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .review-card { background: #fff; border: 1px solid var(--clr-border); border-radius: 12px; margin-top: 16px; padding: 20px; }
+    .review-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--clr-border); }
+    .review-title { font-size: 15px; font-weight: 700; color: var(--clr-brown); }
+    .review-reason { font-size: 13px; color: var(--clr-warning); background: #fef3c7; padding: 4px 10px; border-radius: 12px; font-weight: 600; }
+    .cmp-grid { display: grid; grid-template-columns: 240px 1fr 1fr; gap: 0; border: 1px solid var(--clr-border); border-radius: 8px; overflow: hidden; }
+    .cmp-head { background: #faf6f0; padding: 12px 16px; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--clr-brown); border-bottom: 2px solid var(--clr-border); }
+    .cmp-head-source { background: #fef3c7; }
+    .cmp-head-target { background: #dcfce7; }
+    .cmp-row { display: contents; }
+    .cmp-cell { padding: 10px 16px; border-bottom: 1px solid var(--clr-border); font-size: 13.5px; display: flex; align-items: center; gap: 8px; }
+    .cmp-cell.label { font-weight: 600; color: var(--clr-text-light); background: #faf6f0; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; }
+    .cmp-cell.diff { background: #fef3c7; font-weight: 600; }
+    .cmp-cell input[type=radio] { margin-right: 4px; cursor: pointer; }
+    .cmp-cell .val { flex: 1; }
+    .cmp-cell .empty-val { color: #cbd5e0; font-style: italic; }
+    .action-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--clr-border); flex-wrap: wrap; gap: 8px; }
+    .target-select { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--clr-text-light); }
+    .target-select select { padding: 6px 10px; border: 1px solid var(--clr-border); border-radius: 6px; font-size: 13px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    button.btn { padding: 8px 16px; font-size: 13px; font-weight: 700; border-radius: 8px; border: 1px solid var(--clr-border); background: #fff; cursor: pointer; transition: all .15s; }
+    button.btn-merge   { background: var(--clr-success); color: #fff; border-color: var(--clr-success); }
+    button.btn-merge:hover   { background: #15803d; }
+    button.btn-keep    { background: var(--clr-gold); color: #fff; border-color: var(--clr-gold); }
+    button.btn-keep:hover    { background: var(--clr-gold-mid); }
+    button.btn-delete  { background: #fef2f2; color: var(--clr-danger); border-color: #fecaca; }
+    button.btn-delete:hover  { background: var(--clr-danger); color: #fff; }
+    button.btn:disabled { opacity: .5; cursor: not-allowed; }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--clr-brown-dark); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,.2); opacity: 0; transform: translateY(10px); transition: all .3s; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { background: var(--clr-danger); }
+    @media (max-width: 900px) {
+      .cmp-grid { grid-template-columns: 1fr; }
+      .cmp-cell.label { border-top: 1px solid var(--clr-border); }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand" style="display:inline-flex;align-items:center;gap:8px"><img src="/assets/signature-mark.svg" alt="logo" style="width:26px;height:26px;border-radius:50%;object-fit:cover" />Signature Properties</span>
+  <a href="/">Dashboard</a>
+  <a href="/clients">Clients</a>
+  <a href="/inventory">Inventory</a>
+  <a href="/requirements-view">All Requirements</a>
+  <a href="/duplicates" class="active">Duplicates</a>
+  <a href="/builder-projects">🏗️ Builder Projects</a>
+  <a href="/broker-network">👥 Broker Network</a>
+  <a href="/calculators">🧮 Calculators</a>
+  <a href="/digital-card">🪪 Digital Card</a>
+  <div style="margin-left:auto">
+</div>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Duplicate Review</h1>
+    <div class="page-sub">New leads from Google Sheet that look like existing clients — merge or keep separate.</div>
+  </div>
+  <div>
+    <button class="btn" onclick="load()" data-testid="refresh-btn">↻ Refresh</button>
+  </div>
+</div>
+
+<div class="content" id="content">
+  <div class="empty" id="loading">Loading pending review items…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+  let pending = [];
+
+  async function load() {
+    document.getElementById('content').innerHTML = '<div class="empty">Loading…</div>';
+    try {
+      const res = await fetch('/api/v2/duplicates/pending').then(r => r.json());
+      pending = res.data || [];
+      render();
+    } catch (e) {
+      document.getElementById('content').innerHTML = `<div class="empty" style="color:var(--clr-danger)">Failed to load: ${e.message}</div>`;
+    }
+  }
+
+  function render() {
+    const el = document.getElementById('content');
+    if (!pending.length) {
+      el.innerHTML = `<div class="empty" data-testid="empty-state">
+        <div class="empty-icon">✨</div>
+        <div style="font-size:16px;font-weight:600;color:var(--clr-brown);margin-bottom:6px">No duplicates pending review</div>
+        <div>Sheet-imported leads with matching Name / Email appear here.</div>
+      </div>`;
+      return;
+    }
+    el.innerHTML = pending.map(renderCard).join('');
+  }
+
+  const FIELDS = [
+    { key: 'ClientName',      label: 'Name' },
+    { key: 'PrimaryMobile',   label: 'Primary Mobile' },
+    { key: 'AlternateMobile', label: 'Alt Mobile' },
+    { key: 'Email',           label: 'Email' },
+    { key: 'City',            label: 'City' },
+    { key: 'LeadSource',      label: 'Source' },
+    { key: 'ClientStatus',    label: 'Status' },
+    { key: 'Priority',        label: 'Priority' },
+    { key: 'Tags',            label: 'Tags' },
+    { key: 'Notes',           label: 'Notes' },
+    { key: 'AssignedAgentID', label: 'Assigned Agent' },
+    { key: 'CreatedAt',       label: 'Created' }
+  ];
+
+  function renderCard(item) {
+    const source = item.lead;  // incoming/new (flagged pending)
+    const candidates = item.candidates || [];
+    if (!candidates.length) return '';
+    // Default target = first candidate
+    const cardId = `card-${source.LeadID}`;
+    const optionsHtml = candidates.map((c, i) => `<option value="${esc(c.LeadID)}" ${i === 0 ? 'selected' : ''}>${esc(c.ClientName || c.LeadID)} — ${esc(c.LeadID)}</option>`).join('');
+    return `
+      <div class="review-card" id="${cardId}" data-testid="review-card-${esc(source.LeadID)}">
+        <div class="review-head">
+          <div class="review-title">🔍 New Lead: <strong>${esc(source.ClientName || '—')}</strong> — ${esc(source.LeadID)}${source.LegacyID ? ` (Sheet ID: ${esc(source.LegacyID)})` : ''}</div>
+          <div class="review-reason">⚠️ ${esc(item.reason)}</div>
+        </div>
+
+        <div class="target-select">
+          <label>Compare with existing:</label>
+          <select data-role="target-picker" onchange="renderCompare('${esc(source.LeadID)}')" data-testid="target-picker-${esc(source.LeadID)}">${optionsHtml}</select>
+        </div>
+
+        <div style="margin-top:12px" id="cmp-${esc(source.LeadID)}"></div>
+
+        <div class="action-row">
+          <div style="font-size:12px;color:var(--clr-text-light)">
+            <strong>Merge</strong> combines both records (source deleted, target kept). <strong>Keep Separate</strong> keeps this as a new client. <strong>Delete</strong> removes the incoming lead entirely.
+          </div>
+          <div class="actions">
+            <button class="btn btn-delete" data-testid="delete-btn-${esc(source.LeadID)}" onclick="onDelete('${esc(source.LeadID)}')">🗑 Delete Incoming</button>
+            <button class="btn btn-keep" data-testid="keep-separate-btn-${esc(source.LeadID)}" onclick="onKeepSeparate('${esc(source.LeadID)}')">Keep Separate</button>
+            <button class="btn btn-merge" data-testid="merge-btn-${esc(source.LeadID)}" onclick="onMerge('${esc(source.LeadID)}')">✓ Merge into Target</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCompare(sourceLeadId) {
+    const item   = pending.find(p => p.lead.LeadID === sourceLeadId);
+    if (!item) return;
+    const source = item.lead;
+    const card   = document.getElementById(`card-${sourceLeadId}`);
+    const picker = card.querySelector('[data-role="target-picker"]');
+    const targetLeadId = picker.value;
+    const target = item.candidates.find(c => c.LeadID === targetLeadId);
+    if (!target) return;
+
+    const rowsHtml = FIELDS.map(f => {
+      const sv = fmtVal(source[f.key]);
+      const tv = fmtVal(target[f.key]);
+      const diff = sv !== tv && sv !== '—' && tv !== '—';
+      const svEmpty = !source[f.key];
+      const tvEmpty = !target[f.key];
+      return `
+        <div class="cmp-cell label">${esc(f.label)}</div>
+        <div class="cmp-cell ${diff ? 'diff' : ''}">
+          <input type="radio" name="fld-${esc(f.key)}-${esc(sourceLeadId)}" value="source" ${svEmpty ? 'disabled' : ''} data-testid="radio-source-${esc(f.key)}-${esc(sourceLeadId)}" data-field="${esc(f.key)}" data-side="source" />
+          <span class="val ${svEmpty ? 'empty-val' : ''}">${esc(sv)}</span>
+        </div>
+        <div class="cmp-cell ${diff ? 'diff' : ''}">
+          <input type="radio" name="fld-${esc(f.key)}-${esc(sourceLeadId)}" value="target" ${tvEmpty ? 'disabled' : ''} ${!tvEmpty ? 'checked' : (!svEmpty ? '' : '')} data-testid="radio-target-${esc(f.key)}-${esc(sourceLeadId)}" data-field="${esc(f.key)}" data-side="target" />
+          <span class="val ${tvEmpty ? 'empty-val' : ''}">${esc(tv)}</span>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById(`cmp-${sourceLeadId}`).innerHTML = `
+      <div class="cmp-grid" data-testid="compare-grid-${esc(sourceLeadId)}">
+        <div class="cmp-head"></div>
+        <div class="cmp-head cmp-head-source">🆕 New (Source) — ${esc(source.LeadID)}</div>
+        <div class="cmp-head cmp-head-target">✅ Existing (Target) — ${esc(target.LeadID)}</div>
+        ${rowsHtml}
+      </div>
+    `;
+  }
+
+  async function onMerge(sourceLeadId) {
+    const card = document.getElementById(`card-${sourceLeadId}`);
+    const picker = card.querySelector('[data-role="target-picker"]');
+    const targetLeadId = picker.value;
+    // Collect field overrides
+    const overrides = {};
+    card.querySelectorAll('input[type="radio"]:checked').forEach(r => {
+      const field = r.dataset.field;
+      const side  = r.dataset.side;
+      if (field && side) overrides[field] = side;
+    });
+    try {
+      const res = await fetch('/api/v2/duplicates/merge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourceLeadId, targetLeadId, fieldOverrides: overrides })
+      }).then(r => r.json());
+      if (!res.ok) throw new Error(res.error || 'Merge failed');
+      toast(`Merged ${sourceLeadId} → ${targetLeadId}`);
+      load();
+    } catch(e) { toast(e.message, true); }
+  }
+
+  async function onKeepSeparate(sourceLeadId) {
+    try {
+      const res = await fetch('/api/v2/duplicates/keep-separate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: sourceLeadId })
+      }).then(r => r.json());
+      if (!res.ok) throw new Error(res.error || 'Failed');
+      toast(`Kept ${sourceLeadId} as new client`);
+      load();
+    } catch(e) { toast(e.message, true); }
+  }
+
+  async function onDelete(sourceLeadId) {
+    if (!confirm(`Really delete lead ${sourceLeadId}? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/v2/duplicates/${encodeURIComponent(sourceLeadId)}`, { method: 'DELETE' }).then(r => r.json());
+      if (!res.ok) throw new Error(res.error || 'Failed');
+      toast(`Deleted ${sourceLeadId}`);
+      load();
+    } catch(e) { toast(e.message, true); }
+  }
+
+  function fmtVal(v) {
+    if (v == null || v === '') return '—';
+    if (Array.isArray(v))   return v.length ? v.join(', ') : '—';
+    if (typeof v === 'object') return JSON.stringify(v).substring(0, 60);
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v)) return new Date(v).toLocaleDateString('en-IN');
+    return String(v);
+  }
+  function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function toast(msg, isError) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { t.className = 'toast'; }, 3000);
+  }
+
+  load();
+  // Auto-render first comparison after load
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll('[data-role="target-picker"]').forEach(picker => {
+      const card = picker.closest('.review-card');
+      if (card && !card.querySelector('.cmp-grid')) {
+        const id = card.id.replace('card-', '');
+        renderCompare(id);
+      }
+    });
+  });
+  observer.observe(document.getElementById('content'), { childList: true, subtree: true });
+</script>
+</body>
+</html>

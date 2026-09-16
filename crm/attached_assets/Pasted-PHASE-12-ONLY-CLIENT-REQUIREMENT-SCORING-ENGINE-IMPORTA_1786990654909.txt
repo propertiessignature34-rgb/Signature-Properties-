@@ -1,0 +1,713 @@
+PHASE 12 ONLY — CLIENT + REQUIREMENT SCORING ENGINE
+
+IMPORTANT:
+Implement ONLY Phase 12.
+Do NOT redesign, rewrite, delete, or duplicate anything from Phases 1–11.
+
+Before coding:
+1. Read replit.md.
+2. Read docs/V2-BLUEPRINT.md.
+3. Inspect the actual current implementations of:
+   - v2LeadService.js
+   - v2TransactionService.js
+   - v2RequirementService.js
+   - v2DependencyService.js
+   - v2ConfigService.js
+   - v2FormRegistryService.js
+   - v2Router.js
+   - repository.js
+   - v2Config.js
+4. Verify the actual current Phase 1–11 APIs and tests.
+5. Do NOT trust old chat summaries if the code differs.
+6. Preserve all existing functionality.
+
+PHASE 12 OBJECTIVE
+
+Build a configurable, explainable scoring system for:
+
+A. ClientScore
+B. RequirementScore
+
+The scoring engine must be configuration-driven and must NOT contain hardcoded business scoring rules inside the service.
+
+The system must explain:
+- why the score is high/low
+- which factors contributed positively
+- which factors contributed negatively
+- which factors were unavailable because their values are UNKNOWN
+- which configuration version produced the score
+
+==================================================
+1. CORE PRINCIPLE
+==================================================
+
+Scoring must never treat UNKNOWN as NO.
+
+Example:
+
+Parking = UNKNOWN
+
+This must NOT reduce the score as:
+
+Parking = No
+
+UNKNOWN simply means:
+"not enough information yet."
+
+The scoring engine must distinguish:
+
+KNOWN
+UNKNOWN
+NOT_APPLICABLE
+
+Only KNOWN values should normally participate in scoring unless a scoring rule explicitly says otherwise.
+
+==================================================
+2. REQUIREMENT SCORE
+==================================================
+
+Implement:
+
+calculateRequirementScore(requirement)
+
+The calculator must consume the existing Requirement record and:
+
+1. Read Requirement.Fields.
+2. Read DependencyEngine relevance state where appropriate.
+3. Read ScoringConfig.
+4. Evaluate only applicable scoring factors.
+5. Ignore UNKNOWN fields unless configuration explicitly defines another behavior.
+6. Produce an explainable result.
+
+Required result structure:
+
+{
+  score: number,
+  band: string,
+  factors: [
+    {
+      factorId,
+      field,
+      label,
+      value,
+      contribution,
+      reason,
+      state
+    }
+  ],
+  positiveContributions: [],
+  negativeContributions: [],
+  unknownFactors: [],
+  calculationVersion,
+  calculatedAt
+}
+
+Do not expose internal implementation details unnecessarily through the UI/API.
+
+==================================================
+3. CLIENT SCORE
+==================================================
+
+Implement:
+
+calculateClientScore(lead)
+
+Client scoring must be based only on configured factors.
+
+Possible configured factors may include:
+
+- number of active transactions
+- number of active requirements
+- requirement completeness
+- response/activity signals
+- follow-up responsiveness where existing data supports it
+- client tags
+- transaction activity
+- deal history where existing data supports it
+
+DO NOT invent unavailable data.
+
+If an input is unavailable:
+
+state = UNKNOWN
+
+and it should not automatically reduce the score.
+
+==================================================
+4. CONFIGURATION
+==================================================
+
+Phase 8 introduced DB-backed configuration.
+
+Use that architecture.
+
+Scoring rules must be represented in configuration.
+
+Do NOT create a second scoring configuration system.
+
+Extend the existing configuration service/repository only where necessary.
+
+Recommended structure:
+
+ScoringConfig:
+
+{
+  configId,
+  entityType: "Client" | "Requirement",
+  factorId,
+  field,
+  label,
+  description,
+  weight,
+  operator,
+  expectedValue,
+  min,
+  max,
+  contribution,
+  scoreType,
+  applicableWhen,
+  unknownBehavior,
+  active,
+  version,
+  createdAt,
+  updatedAt
+}
+
+Use the existing configuration conventions if the repository already has an equivalent structure.
+
+Do not blindly create duplicate configuration tables.
+
+==================================================
+5. SCORE BANDS
+==================================================
+
+Score bands must also be configuration-driven.
+
+Example:
+
+0–29   = Cold
+30–49  = Warm
+50–69  = Good
+70–84  = Hot
+85–100 = Very Hot
+
+BUT:
+
+Do not assume these exact values are mandatory.
+
+Inspect the existing ScoringConfig first.
+
+If the current system already defines bands, preserve them.
+
+If missing, create sensible defaults in configuration.
+
+The service must resolve the band from configuration rather than hardcoding it.
+
+==================================================
+6. NORMALIZATION
+==================================================
+
+The final score must have a predictable range.
+
+Prefer:
+
+0–100
+
+If weighted factors are used:
+
+normalizedScore =
+  weightedContribution / maximumApplicableContribution * 100
+
+UNKNOWN factors must not artificially lower the normalized score.
+
+Example:
+
+10 scoring factors exist.
+
+Only 4 are KNOWN.
+
+Score must be calculated against the applicable 4, not automatically against all 10.
+
+==================================================
+7. EXPLAINABILITY
+==================================================
+
+Every score calculation must be explainable.
+
+Example:
+
+RequirementScore = 82
+
+Factors:
+
+Budget:
++20
+"Budget range is clearly defined."
+
+Location:
++20
+"Preferred location is specified."
+
+BHK:
++15
+"Target BHK is specified."
+
+Urgency:
++10
+"Client has an active timeline."
+
+Possession:
++7
+"Possession preference is specified."
+
+Parking:
+UNKNOWN
+"No score contribution because parking preference is not known."
+
+Do not create fake explanations.
+
+Reasons should come from configuration where practical.
+
+==================================================
+8. SCORE VERSIONING
+==================================================
+
+Every calculation must store:
+
+calculationVersion
+
+and:
+
+calculatedAt
+
+The configuration version used for calculation must be identifiable.
+
+Historical score results must not become impossible to interpret after configuration changes.
+
+Do NOT rewrite historical Requirement fields just because scoring configuration changes.
+
+==================================================
+9. REQUIREMENT PERSISTENCE
+==================================================
+
+On Requirement create:
+
+calculate RequirementScore.
+
+On Requirement PATCH:
+
+recalculate RequirementScore.
+
+Store:
+
+RequirementScore
+ScoreBreakdown
+ScoreCalculationVersion
+ScoreCalculatedAt
+
+Preserve existing fields.
+
+Do not break Phase 7 progressive PATCH.
+
+Do not convert UNKNOWN into NULL/false/No.
+
+==================================================
+10. CLIENT PERSISTENCE
+==================================================
+
+On Lead create/update, calculate ClientScore where enough information exists.
+
+Store:
+
+ClientScore
+ClientScoreBreakdown
+ClientScoreCalculationVersion
+ClientScoreCalculatedAt
+
+If the current Lead model already has compatible fields, adapt it instead of creating duplicates.
+
+Do not remove legacy fields.
+
+==================================================
+11. MANUAL RECALCULATION
+==================================================
+
+Implement service methods:
+
+calculateRequirementScore(requirement)
+calculateClientScore(lead)
+
+and:
+
+recalculateRequirementScore(requirementId)
+recalculateClientScore(leadId)
+
+Recalculation must be deterministic for the same:
+
+data + configuration version.
+
+==================================================
+12. API
+==================================================
+
+Add:
+
+GET /api/requirements/:id/score
+
+Returns:
+
+{
+  ok: true,
+  requirementId,
+  score,
+  band,
+  factors,
+  positiveContributions,
+  negativeContributions,
+  unknownFactors,
+  calculationVersion,
+  calculatedAt
+}
+
+Add:
+
+GET /api/leads/:id/score
+
+Returns the current ClientScore and explanation.
+
+Keep existing:
+
+POST /api/leads/:id/score
+
+if it already exists.
+
+That endpoint should remain the explicit recalculation endpoint.
+
+If a Requirement recalculation endpoint already exists, preserve it rather than duplicating it.
+
+==================================================
+13. SECURITY
+==================================================
+
+Do NOT weaken:
+
+- authentication
+- ADMIN_SESSION
+- x-user-id
+- x-user-role
+- RBAC
+- tenant isolation
+- ownership filtering
+
+Score endpoints must follow the same authorization model as their parent Lead/Requirement endpoints.
+
+Do not expose private client information through scoring explanations.
+
+==================================================
+14. DEPENDENCY INTEGRATION
+==================================================
+
+Use Phase 10 Dependency Engine.
+
+Example:
+
+Rent + Residential + Flat
+
+TenantType = RELEVANT
+Deposit = RELEVANT
+PropertyPreference = NOT_RELEVANT
+
+If PropertyPreference is UNKNOWN but NOT_RELEVANT:
+
+Do not penalize the Requirement.
+
+If a field is UNKNOWN + RELEVANT:
+
+Do not penalize automatically.
+
+Instead:
+
+unknownFactors should record:
+
+{
+  field: "Parking",
+  reason: "Relevant but not yet captured"
+}
+
+This information can later be consumed by Phase 11 Next Question Engine.
+
+DO NOT MODIFY PHASE 11 LOGIC.
+
+==================================================
+15. FORM REGISTRY INTEGRATION
+==================================================
+
+Use Phase 9 FormRegistry/FormConfig to obtain field metadata where needed.
+
+Do NOT hardcode:
+
+Residential fields
+Commercial fields
+Rent fields
+Agriculture fields
+
+inside the scoring service.
+
+==================================================
+16. CONFIGURATION SEEDING
+==================================================
+
+If ScoringConfig currently exists:
+
+extend it carefully.
+
+If scoring configuration is currently static:
+
+migrate only the scoring portion required for Phase 12 into the existing DB-backed configuration architecture.
+
+Do not redesign Phase 8.
+
+Use DB-first + static fallback if that is the existing pattern.
+
+No destructive migration.
+
+==================================================
+17. SCORE EXAMPLES
+==================================================
+
+Example 1:
+
+Client says:
+
+"Vesu mein 3 BHK chahiye.
+Budget 1 crore.
+Ready possession."
+
+Known:
+
+Location = Vesu
+BHK = 3
+Budget = 1 Cr
+Possession = Ready
+
+Unknown:
+
+Parking
+Furnishing
+Facing
+
+Score only the known applicable factors.
+
+Do NOT penalize for Parking/Furnishing/Facing being UNKNOWN.
+
+Example 2:
+
+Client says:
+
+"Office chahiye, Surat mein.
+Budget 50 lakh."
+
+Unknown:
+
+Area
+BusinessType
+PowerLoad
+FireNOC
+Parking
+
+Do not reject the Requirement.
+Do not give zero.
+Calculate based on available configured factors and mark remaining factors UNKNOWN.
+
+==================================================
+18. IMPORTANT — DO NOT CONFUSE SCORE WITH COMPLETENESS
+==================================================
+
+RequirementScore is NOT:
+
+"How many fields are filled?"
+
+Completeness is a separate concept.
+
+A Requirement can be:
+
+Score = 85
+Completeness = 40%
+
+because the known information may strongly indicate a serious requirement.
+
+Likewise:
+
+Completeness = 90%
+Score = 30
+
+is possible if configured business signals indicate a weak/low-priority requirement.
+
+Do not merge these concepts.
+
+==================================================
+19. TESTING
+==================================================
+
+Before declaring Phase 12 complete:
+
+Create dedicated:
+
+test/v2Phase12.test.js
+
+Cover at minimum:
+
+1. Requirement score calculation.
+2. Client score calculation.
+3. UNKNOWN does not become NO.
+4. UNKNOWN does not automatically reduce score.
+5. NOT_APPLICABLE does not reduce score.
+6. Known positive factor contributes positively.
+7. Negative factor contributes negatively where configured.
+8. Score normalization.
+9. Score band resolution.
+10. Explainable factor breakdown.
+11. Unknown factor reporting.
+12. Configuration version recorded.
+13. Calculation timestamp recorded.
+14. Requirement create calculates score.
+15. Requirement PATCH recalculates score.
+16. Lead create calculates score.
+17. Lead update recalculates score where applicable.
+18. Manual Requirement recalculation.
+19. Manual Client recalculation.
+20. Deterministic calculation.
+21. Dependency NOT_RELEVANT does not penalize.
+22. Rent-specific scoring.
+23. Residential scoring.
+24. Commercial scoring.
+25. Legacy Requirement compatibility.
+26. Legacy Lead compatibility.
+27. API GET Requirement score.
+28. API GET Lead score.
+29. Unauthorized access rejected according to existing auth model.
+30. Existing Phase 1–11 tests remain green.
+
+Do NOT modify old tests just to make them pass.
+
+If an existing test fails:
+- determine whether Phase 12 genuinely changes the contract;
+- if yes, document it;
+- otherwise fix the implementation.
+
+==================================================
+21. REGRESSION
+==================================================
+
+Run:
+
+- all existing unit tests
+- all Phase 1–11 tests
+- Phase 12 tests
+- API tests
+- integration tests
+
+If Playwright is available, run browser smoke tests.
+
+If Playwright is unavailable, report that clearly.
+Do not hide the failure.
+
+==================================================
+22. PROTECTED MODULES
+==================================================
+
+DO NOT redesign:
+
+- Inventory
+- Matching Engine
+- Site Visit
+- Negotiation
+- Token
+- Deal
+- Commission
+- Authentication
+- RBAC
+- Deployment
+- Migration
+
+Phase 12 is ONLY scoring.
+
+==================================================
+23. DATA SAFETY
+==================================================
+
+No production migration.
+
+No deletion.
+
+No rewriting legacy IDs.
+
+No Lead merging.
+
+No Requirement merging.
+
+No destructive schema migration.
+
+Existing V1 data must remain readable.
+
+==================================================
+24. PHASE GATE
+==================================================
+
+At the end STOP.
+
+Do not start Phase 13.
+
+Return:
+
+PHASE:
+Phase 12 — Client + Requirement Scoring
+
+STATUS:
+PASS / FAIL
+
+FILES CHANGED:
+exact list
+
+FUNCTIONS ADDED/MODIFIED:
+exact list
+
+DATA MODEL CHANGES:
+exact list
+
+CONFIGURATION CHANGES:
+exact list
+
+API CHANGES:
+exact list
+
+TESTS:
+exact commands + counts
+
+REGRESSION:
+PASS / FAIL
+
+BACKWARD COMPATIBILITY:
+what remained compatible
+
+PROTECTED MODULES:
+confirm untouched
+
+RISKS:
+only real remaining risks
+
+NEXT PHASE:
+Phase 13 — Quick Capture UI
+
+IMPORTANT:
+Do not claim Phase 12 complete until the tests actually pass.
+
+Do not move to Phase 13 automatically.
+
+Do not repeat Phase 1–11 work.
+
+Do not rewrite the architecture.
+
+Do not create duplicate services/config systems.
+
+Implement Phase 12 only.

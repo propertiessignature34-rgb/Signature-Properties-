@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All Requirements — Signature Properties</title>
+  <style>
+    :root {
+      --clr-brown: #5c3317; --clr-brown-dark: #2c1405;
+      --clr-gold: #b8860b; --clr-gold-mid: #d4a017; --clr-gold-soft: #fdf8ec;
+      --clr-bg: #faf7f2; --clr-card: #fff; --clr-border: #e8ddd0;
+      --clr-text: #1c0a00; --clr-text-light: #7a6355; --radius: 10px;
+      --clr-danger: #dc2626; --clr-success: #16a34a; --clr-warning: #d97706;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--clr-bg); color:var(--clr-text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+    .topnav { background:var(--clr-brown-dark); color:#fff; display:flex; align-items:center; padding:0 24px; height:52px; gap:4px; }
+    .topnav .brand { font-weight:800; font-size:15px; color:var(--clr-gold-mid); margin-right:20px; letter-spacing:.02em; }
+    .topnav a { color:#d4b896; text-decoration:none; padding:6px 12px; border-radius:6px; font-size:13.5px; }
+    .topnav a.active { background:rgba(212,160,23,.18); color:var(--clr-gold-mid); font-weight:600; }
+    .topnav a:hover:not(.active) { background:rgba(255,255,255,.08); color:#fff; }
+    .topnav-right { margin-left:auto; }
+    .page { display:flex; flex-direction:column; min-height:calc(100vh - 52px); }
+    .page-header { padding:20px 24px 0; display:flex; align-items:center; justify-content:space-between; }
+    .page-title { font-size:22px; font-weight:800; color:var(--clr-brown); }
+    .content-area { flex:1; padding:0 24px 32px; }
+    .stats-bar { display:flex; gap:14px; padding:16px 0 0; flex-wrap:wrap; margin-bottom:4px; }
+    .stat { background:#fff; border:1px solid var(--clr-border); border-radius:8px; padding:12px 18px; min-width:90px; }
+    .stat-val { font-size:22px; font-weight:800; color:var(--clr-gold); }
+    .stat-lbl { font-size:11px; color:var(--clr-text-light); text-transform:uppercase; letter-spacing:.05em; margin-top:1px; }
+    .toolbar { display:flex; align-items:center; gap:10px; padding:14px 0; flex-wrap:wrap; }
+    .search-box { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--clr-border); border-radius:8px; padding:7px 12px; min-width:220px; }
+    .search-box input { border:none; outline:none; font-size:14px; flex:1; background:transparent; color:var(--clr-text); }
+    .filter-select { border:1px solid var(--clr-border); border-radius:8px; padding:7px 12px; font-size:13.5px; background:#fff; cursor:pointer; outline:none; color:var(--clr-text-light); }
+    .filter-select:focus { border-color:var(--clr-gold); }
+    .table-wrap { background:#fff; border-radius:var(--radius); border:1px solid var(--clr-border); overflow:hidden; margin-top:4px; }
+    table { width:100%; border-collapse:collapse; font-size:13.5px; }
+    thead th { background:#faf6f0; text-align:left; padding:10px 14px; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--clr-text-light); border-bottom:1px solid var(--clr-border); white-space:nowrap; cursor:pointer; user-select:none; }
+    thead th:hover { background:#f5ede0; color:var(--clr-brown); }
+    tbody tr { border-bottom:1px solid var(--clr-border); transition:background .1s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:var(--clr-gold-soft); }
+    td { padding:11px 14px; vertical-align:middle; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:11.5px; font-weight:600; }
+    .badge-draft    { background:#f3f4f6; color:#374151; }
+    .badge-active   { background:#d1fae5; color:#065f46; }
+    .badge-paused   { background:#fef3c7; color:#92400e; }
+    .badge-closed   { background:#dcfce7; color:#166534; }
+    .badge-lost     { background:#fee2e2; color:#991b1b; }
+    .badge-archived { background:#f3f4f6; color:#6b7280; }
+    .stage-badge { padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; background:var(--clr-gold-soft); color:var(--clr-gold); border:1px solid #e8d07a; }
+    .stage-deal { background:#d1fae5; color:#065f46; }
+    .stage-negotiation { background:#fef3c7; color:#92400e; }
+    .stage-token { background:#fdf4ff; color:#701a75; }
+    .stage-sitevisit { background:#fff7ed; color:#9a3412; }
+    .score-pill { display:inline-flex; align-items:center; justify-content:center; width:34px; height:20px; border-radius:10px; font-size:11.5px; font-weight:700; }
+    .score-high { background:#d1fae5; color:#065f46; }
+    .score-mid  { background:#fef3c7; color:#92400e; }
+    .score-low  { background:#fee2e2; color:#991b1b; }
+    .link { color:var(--clr-brown); text-decoration:none; font-weight:700; }
+    .link:hover { color:var(--clr-gold); text-decoration:underline; }
+    .txn-badge { padding:2px 8px; border-radius:10px; font-size:11.5px; font-weight:600; background:var(--clr-gold-soft); color:var(--clr-gold); }
+    .loader { text-align:center; padding:48px; color:var(--clr-text-light); }
+    .pagination { display:flex; align-items:center; justify-content:flex-end; gap:6px; padding:14px 0; font-size:13px; color:var(--clr-text-light); }
+    .page-btn { width:30px; height:30px; border-radius:6px; border:1px solid var(--clr-border); background:#fff; cursor:pointer; font-size:13px; }
+    .page-btn.active { background:var(--clr-brown); color:#fff; border-color:var(--clr-brown); }
+    .urg-immediate { color:#dc2626; font-weight:700; }
+    .urg-high      { color:#ea580c; font-weight:600; }
+    .urg-medium    { color:#ca8a04; }
+    .urg-low       { color:#64748b; }
+    @media(max-width:768px) {
+      .topnav { height:auto; min-height:52px; padding:8px 12px; gap:2px; overflow-x:auto; white-space:nowrap; }
+      .topnav .brand { flex:0 0 auto; margin-right:8px; font-size:13px; }
+      .topnav a { flex:0 0 auto; padding:7px 9px; font-size:12px; }
+      .topnav-right { margin-left:0; }
+      .page-header { padding:16px 12px 0; display:block; }
+      .page-title { font-size:20px; line-height:1.25; }
+      #last-refresh { display:block; margin-top:5px; }
+      .content-area { padding:0 12px 24px; min-width:0; }
+      .stats-bar { gap:8px; overflow-x:auto; flex-wrap:nowrap; padding-top:12px; }
+      .stat { flex:0 0 92px; min-width:92px; padding:10px 12px; }
+      .stat-val { font-size:19px; }
+      .toolbar { align-items:stretch; flex-direction:column; gap:8px; padding:12px 0; }
+      .search-box { min-width:0; width:100%; }
+      .filter-select { width:100%; min-height:38px; }
+      .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+      table { min-width:620px; }
+      td:nth-child(n+5) { display:none; }
+      th:nth-child(n+5) { display:none; }
+    }
+  </style>
+</head>
+<body>
+<nav class="topnav">
+  <span class="brand" style="display:inline-flex;align-items:center;gap:8px"><img src="/assets/signature-mark.svg" alt="logo" style="width:26px;height:26px;border-radius:50%;object-fit:cover" />Signature Properties</span>
+  <a href="/">Dashboard</a>
+  <a href="/clients">Clients</a>
+  <a href="/requirements-view" class="active">All Requirements</a>
+  <a href="/inventory">Inventory</a>
+  <a href="/duplicates">Duplicates</a>
+  <a href="/builder-projects">🏗️ Builder Projects</a>
+  <a href="/broker-network">👥 Broker Network</a>
+  <a href="/calculators">🧮 Calculators</a>
+  <a href="/digital-card">🪪 Digital Card</a>
+  <div class="topnav-right">
+</div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">All Requirements</h1>
+    <span style="font-size:13px;color:var(--clr-text-light)" id="last-refresh">—</span>
+  </div>
+
+  <div class="content-area">
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat"><div class="stat-val" id="st-total">—</div><div class="stat-lbl">Total</div></div>
+      <div class="stat"><div class="stat-val" id="st-active">—</div><div class="stat-lbl">Active</div></div>
+      <div class="stat"><div class="stat-val" id="st-purchase">—</div><div class="stat-lbl">Purchase</div></div>
+      <div class="stat"><div class="stat-val" id="st-rent">—</div><div class="stat-lbl">Rent</div></div>
+      <div class="stat"><div class="stat-val" id="st-residential">—</div><div class="stat-lbl">Residential</div></div>
+      <div class="stat"><div class="stat-val" id="st-commercial">—</div><div class="stat-lbl">Commercial</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#94a3b8"><circle cx="11" cy="11" r="8" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke-width="2"/></svg>
+        <input id="search-input" type="text" placeholder="Search client, location, ID…" oninput="debounceSearch()" />
+      </div>
+      <select class="filter-select" id="f-status" onchange="applyFilter()">
+        <option value="">All Statuses</option>
+        <option>Draft</option><option>Active</option><option>Paused</option>
+        <option>Closed</option><option>Lost</option><option>Archived</option>
+      </select>
+      <select class="filter-select" id="f-txntype" onchange="applyFilter()">
+        <option value="">All Transactions</option>
+        <option>Purchase</option><option>Sale</option><option>Rent</option>
+        <option>Rent Out</option><option>Lease</option><option>Lease Out</option>
+      </select>
+      <select class="filter-select" id="f-category" onchange="applyFilter()">
+        <option value="">All Categories</option>
+        <option>Residential</option><option>Commercial</option><option>Land</option><option>Industrial</option>
+      </select>
+      <select class="filter-select" id="f-stage" onchange="applyFilter()">
+        <option value="">All Stages</option>
+        <option>New</option><option>Matching</option><option>Shortlisted</option>
+        <option>Site Visit</option><option>Negotiation</option><option>Token</option><option>Deal</option>
+      </select>
+      <select class="filter-select" id="f-urgency" onchange="applyFilter()">
+        <option value="">All Urgency</option>
+        <option>Immediate</option><option>High</option><option>Medium</option><option>Low</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sort('RequirementID')">Req ID</th>
+            <th onclick="sort('clientName')">Client</th>
+            <th>Transaction</th>
+            <th onclick="sort('Category')">Category</th>
+            <th>Sub Cat</th>
+            <th>Budget</th>
+            <th onclick="sort('Location1')">Location</th>
+            <th onclick="sort('RequirementStatus')">Status</th>
+            <th onclick="sort('PipelineStage')">Stage</th>
+            <th onclick="sort('Urgency')">Urgency</th>
+            <th onclick="sort('RequirementScore')">Score</th>
+            <th onclick="sort('CreatedAt')">Created</th>
+          </tr>
+        </thead>
+        <tbody id="req-tbody">
+          <tr><td colspan="12" class="loader">Loading requirements…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<script>
+
+  const PAGE_SIZE = 30;
+  let allReqs  = [];
+  let filtered = [];
+  let currentPage = 1;
+  let sortKey  = 'CreatedAt';
+  let sortDir  = -1;
+  let searchQ  = '';
+  let searchTimer = null;
+
+  async function init() {
+    try {
+      const res = await fetch('/api/v2/requirements/global').then(r => r.json());
+      allReqs = res.data || [];
+      updateStats();
+      applyFilter();
+      document.getElementById('last-refresh').textContent = 'Updated: ' + new Date().toLocaleTimeString('en-IN');
+    } catch(e) {
+      document.getElementById('req-tbody').innerHTML =
+        `<tr><td colspan="12" class="loader" style="color:#dc2626">Failed to load: ${esc(e.message)}</td></tr>`;
+    }
+  }
+
+  function updateStats() {
+    document.getElementById('st-total').textContent       = allReqs.length;
+    document.getElementById('st-active').textContent      = allReqs.filter(r => (r.RequirementStatus||r.Status)==='Active').length;
+    document.getElementById('st-purchase').textContent    = allReqs.filter(r => r.TransactionType==='Purchase').length;
+    document.getElementById('st-rent').textContent        = allReqs.filter(r => r.TransactionType==='Rent').length;
+    document.getElementById('st-residential').textContent = allReqs.filter(r => r.Category==='Residential').length;
+    document.getElementById('st-commercial').textContent  = allReqs.filter(r => r.Category==='Commercial').length;
+  }
+
+  function applyFilter() {
+    const status  = document.getElementById('f-status').value;
+    const txntype = document.getElementById('f-txntype').value;
+    const cat     = document.getElementById('f-category').value;
+    const stage   = document.getElementById('f-stage').value;
+    const urgency = document.getElementById('f-urgency').value;
+    filtered = allReqs.filter(r => {
+      const rs = r.RequirementStatus || r.Status || '';
+      if (status  && rs !== status) return false;
+      if (txntype && r.TransactionType !== txntype) return false;
+      if (cat     && r.Category !== cat) return false;
+      if (stage   && r.PipelineStage !== stage) return false;
+      if (urgency && r.Urgency !== urgency) return false;
+      if (searchQ) {
+        const q  = searchQ.toLowerCase();
+        const cn = (r.clientName||'').toLowerCase();
+        const loc = (r.Location1||'').toLowerCase();
+        const id  = (r.RequirementID||'').toLowerCase();
+        if (!cn.includes(q) && !loc.includes(q) && !id.includes(q)) return false;
+      }
+      return true;
+    });
+    sortData(); currentPage = 1; renderPage();
+  }
+
+  function sortData() {
+    filtered.sort((a,b) => {
+      let av = a[sortKey]||'', bv = b[sortKey]||'';
+      if (typeof av === 'object') av = av?.total || 0;
+      if (typeof bv === 'object') bv = bv?.total || 0;
+      if (av < bv) return -1 * sortDir;
+      if (av > bv) return  1 * sortDir;
+      return 0;
+    });
+  }
+
+  function sort(key) {
+    if (sortKey === key) sortDir *= -1;
+    else { sortKey = key; sortDir = -1; }
+    sortData(); renderPage();
+  }
+
+  function renderPage() {
+    const tbody = document.getElementById('req-tbody');
+    const start = (currentPage-1) * PAGE_SIZE;
+    const page  = filtered.slice(start, start + PAGE_SIZE);
+    if (!page.length) {
+      tbody.innerHTML = `<tr><td colspan="12" class="loader">No requirements found.</td></tr>`;
+      document.getElementById('pagination').innerHTML = '';
+      return;
+    }
+    tbody.innerHTML = page.map(r => {
+      const status  = r.RequirementStatus || r.Status || 'Draft';
+      const stage   = r.PipelineStage || '—';
+      const urgency = r.Urgency || '—';
+      const score   = typeof r.RequirementScore === 'object' ? r.RequirementScore?.total : r.RequirementScore;
+      const scoreCls = score >= 70 ? 'score-high' : score >= 40 ? 'score-mid' : 'score-low';
+      const stageCls = 'stage-' + stage.toLowerCase().replace(/\s/g,'').replace(/visit/,'sitevisit');
+      const urgCls   = 'urg-' + urgency.toLowerCase();
+      const budget   = formatBudget(r.BudgetMin, r.BudgetMax);
+      const created  = r.CreatedAt ? new Date(r.CreatedAt).toLocaleDateString('en-IN') : '—';
+      return `<tr>
+        <td style="font-size:12px;color:var(--clr-text-light)">${esc(r.RequirementID)}</td>
+        <td><a class="link" href="/client-workspace?id=${enc(r.LeadID)}">${esc(r.clientName||r.LeadID)}</a></td>
+        <td><span class="txn-badge">${esc(r.TransactionType||'—')}</span></td>
+        <td style="font-weight:600">${esc(r.Category||'—')}</td>
+        <td style="font-size:12.5px;color:var(--clr-text-light)">${esc(r.SubCategory||'—')}</td>
+        <td style="font-size:12.5px;font-weight:600;white-space:nowrap">${esc(budget||'—')}</td>
+        <td style="font-size:12.5px">${esc(r.Location1||'—')}</td>
+        <td><span class="badge badge-${status.toLowerCase()}">${esc(status)}</span></td>
+        <td><span class="stage-badge ${stageCls}">${esc(stage)}</span></td>
+        <td class="${urgCls}">${esc(urgency)}</td>
+        <td>${score != null ? `<span class="score-pill ${scoreCls}">${score}</span>` : '—'}</td>
+        <td style="font-size:12px;color:var(--clr-text-light);white-space:nowrap">${created}</td>
+      </tr>`;
+    }).join('');
+    renderPagination();
+  }
+
+  function renderPagination() {
+    const total = Math.ceil(filtered.length / PAGE_SIZE);
+    const pag   = document.getElementById('pagination');
+    if (total <= 1) { pag.innerHTML = `<span>${filtered.length} requirements</span>`; return; }
+    let html = `<span>${filtered.length} requirements</span>`;
+    for (let i=1; i<=Math.min(total,20); i++) {
+      html += `<button class="page-btn${i===currentPage?' active':''}" onclick="gotoPage(${i})">${i}</button>`;
+    }
+    pag.innerHTML = html;
+  }
+
+  function gotoPage(n) { currentPage=n; renderPage(); }
+
+  function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { searchQ = document.getElementById('search-input').value; applyFilter(); }, 250);
+  }
+
+  function formatBudget(mn,mx) {
+    const fmt=n=>n==null?null:n>=1e7?`₹${(n/1e7).toFixed(1)}Cr`:n>=1e5?`₹${(n/1e5).toFixed(0)}L`:`₹${n.toLocaleString('en-IN')}`;
+    return [fmt(mn),fmt(mx)].filter(Boolean).join(' – ');
+  }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function enc(s) { return encodeURIComponent(s||''); }
+
+  init();
+</script>
+</body>
+</html>

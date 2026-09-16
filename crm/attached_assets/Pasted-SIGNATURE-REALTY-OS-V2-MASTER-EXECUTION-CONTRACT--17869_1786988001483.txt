@@ -1,0 +1,1062 @@
+SIGNATURE REALTY OS V2 — MASTER EXECUTION CONTRACT
+===============================================
+
+IMPORTANT:
+STOP RE-DESIGNING THE ARCHITECTURE.
+
+This is the authoritative implementation contract for the remaining V2 work.
+
+The current codebase has already been inspected and verified.
+
+PHASES 1–7 ARE COMPLETE.
+DO NOT REIMPLEMENT, REFACTOR, OR REWRITE PHASES 1–7 UNLESS A LATER PHASE HAS A SPECIFIC, TEST-PROVEN BUG THAT MUST BE FIXED FOR COMPATIBILITY.
+
+Current verified baseline:
+
+- Phase 1–3: Lead model / ID engine / Repository = COMPLETE
+- Phase 4–5: Lead Service / Duplicate Protection = COMPLETE
+- Phase 6: Transaction Service = COMPLETE
+- Phase 7: Requirement Service progressive model = COMPLETE
+- 77 existing V2 tests currently pass.
+
+DO NOT LOSE OR RESET EXISTING DATA.
+DO NOT RESET THE DATABASE.
+DO NOT DELETE EXISTING V1 DATA.
+DO NOT REGENERATE IDs.
+DO NOT REWRITE WORKING PHASE 1–7 CODE WITHOUT A PROVEN NEED.
+
+==================================================
+1. FINAL BUSINESS MODEL — ABSOLUTE
+==================================================
+
+The business model is:
+
+CLIENT = LEAD
+
+LEAD
+  |
+  +-- TRANSACTION 1
+  |      |
+  |      +-- REQUIREMENT 1
+  |      +-- REQUIREMENT 2
+  |
+  +-- TRANSACTION 2
+         |
+         +-- REQUIREMENT 3
+
+Rules:
+
+1. One real client = one permanent Lead.
+2. One Lead can have many Transactions.
+3. One Transaction can have many Requirements.
+4. Requirement.LeadID MUST equal Transaction.LeadID.
+5. Requirement does NOT store inventory/property data.
+6. Matching remains a separate relationship between Requirement and Property/Inventory.
+7. Requirement is a living client need.
+8. Requirement can start extremely small.
+9. UNKNOWN is a valid state.
+10. Missing information is NOT an error.
+11. Never force the agent to complete a giant form.
+12. Never create a new Requirement just because a client answers another question.
+13. Progressive information must update the SAME RequirementID.
+14. Client conversation is what gradually enriches the Requirement.
+15. The system must adapt to the client's actual need.
+
+==================================================
+2. MOST IMPORTANT UX PRINCIPLE
+==================================================
+
+SIGNATURE REALTY V2 IS NOT A FORM-COMPLETION SYSTEM.
+
+It is a CLIENT MEMORY + CONVERSATION + REQUIREMENT INTELLIGENCE SYSTEM.
+
+Example:
+
+Client says:
+
+"Vesu mein 1 crore tak 3 BHK chahiye."
+
+Agent should be able to save immediately.
+
+Initial capture:
+
+Client:
+Rahul
+
+Phone:
+9876543210
+
+Transaction:
+Purchase
+
+Category:
+Residential
+
+SubCategory:
+Flat
+
+Location:
+Vesu
+
+Budget:
+10000000
+
+BHK:
+3
+
+SAVE.
+
+Everything else:
+
+Possession = UNKNOWN
+Parking = UNKNOWN
+Furnishing = UNKNOWN
+Facing = UNKNOWN
+Floor = UNKNOWN
+Move-in date = UNKNOWN
+etc.
+
+NO ERROR.
+
+NO giant form.
+
+NO requirement completion percentage blocking save.
+
+==================================================
+3. QUICK CAPTURE — FINAL DESIGN
+==================================================
+
+New Client must be SMALL.
+
+The first capture should contain:
+
+CLIENT:
+- Name
+- Primary Phone
+
+TRANSACTION:
+- Transaction Type
+- Category
+- SubCategory
+
+INITIAL NEED:
+- Location 1
+- Location 2
+- Location 3
+- Budget Min
+- Budget Max
+
+The UI must allow the agent to choose which fields to capture.
+
+Do NOT hardcode every possible field into the first screen.
+
+There must be:
+
+"Add more details"
+
+or equivalent progressive option.
+
+When the agent has only:
+
+Name + Phone + Transaction Type
+
+that should still be saveable if business rules permit.
+
+When the agent has:
+
+Name + Phone + Purchase + Residential + Vesu + 1 Cr
+
+that must definitely save.
+
+==================================================
+4. ATOMIC CREATION
+==================================================
+
+Quick Capture must eventually perform one atomic business operation:
+
+Lead + Transaction + Requirement
+
+in one save operation.
+
+Conceptually:
+
+createClientWithInitialNeed()
+
+must:
+
+1. resolve/create Lead safely
+2. resolve/create Transaction
+3. create initial Requirement
+4. connect all IDs
+5. commit as one logical operation
+6. rollback if any step fails
+
+Expected result:
+
+LeadID = L000001
+TransactionID = T000001
+RequirementID = R000001
+
+Relationship:
+
+Requirement.LeadID == Transaction.LeadID == Lead.LeadID
+
+No orphan records.
+
+No half-created client.
+
+Duplicate protection must run before Lead creation.
+
+If exact Lead exists:
+reuse existing Lead.
+
+If possible duplicate:
+show confirmation.
+
+==================================================
+5. REQUIREMENT MODEL
+==================================================
+
+Requirement is NOT a fixed form.
+
+It is a dynamic state object.
+
+Example:
+
+Fields:
+
+BHK:
+{
+  state: "KNOWN",
+  value: 3
+}
+
+Parking:
+{
+  state: "UNKNOWN"
+}
+
+Possession:
+{
+  state: "UNKNOWN"
+}
+
+Facing:
+{
+  state: "NOT_APPLICABLE"
+}
+
+States:
+
+UNKNOWN
+KNOWN
+NOT_APPLICABLE
+
+UNKNOWN does NOT mean NO.
+
+Do not convert UNKNOWN into null/false/0.
+
+==================================================
+6. PROGRESSIVE UPDATE
+==================================================
+
+Suppose initial Requirement:
+
+R000001
+
+Known:
+
+Location = Vesu
+Budget = 1 Cr
+BHK = 3
+
+Later agent calls client.
+
+Client says:
+
+"Ready possession chahiye."
+
+Agent updates:
+
+Possession = Ready
+
+The system MUST update:
+
+R000001
+
+NOT create R000002.
+
+Later:
+
+"2 parking bhi chahiye."
+
+Update:
+
+Parking = 2
+
+Still:
+
+R000001.
+
+Every update must:
+
+- preserve previous known fields
+- change only supplied fields
+- update UpdatedAt
+- update UpdatedBy
+- increment Version
+- create RequirementHistory
+- recompute score
+- recompute completeness
+
+==================================================
+7. DYNAMIC FIELD ENGINE
+==================================================
+
+Fields depend on:
+
+TransactionType
++
+Category
++
+SubCategory
+
+Example:
+
+Purchase + Residential + Flat
+
+can expose:
+
+BHK
+Budget
+Location
+Possession
+Parking
+Furnishing
+Facing
+Floor
+PropertyPreference
+
+Rent + Residential + Flat
+
+can expose:
+
+BHK
+RentBudget
+Deposit
+Furnishing
+Parking
+TenantType
+FoodPreference
+Pets
+MoveInDate
+etc.
+
+Commercial:
+
+Area
+BusinessType
+PowerLoad
+FireNOC
+Frontage
+Parking
+Possession
+etc.
+
+Industrial:
+
+BuiltUpArea
+PowerLoad
+CeilingHeight
+LoadingDock
+etc.
+
+Land:
+
+PlotArea
+RoadWidth
+Corner
+Zoning
+etc.
+
+BUT:
+
+Do NOT assume these are always required.
+
+Field visibility and relevance must be calculated dynamically.
+
+==================================================
+8. CLIENT NEED CAN BE ANYTHING
+==================================================
+
+This is extremely important.
+
+Do not design the system around a closed fixed questionnaire.
+
+Example client:
+
+"Mujhe school ke paas ghar chahiye."
+
+The system should be able to save:
+
+SpecialNeed:
+"Near school"
+
+without forcing:
+
+BHK
+Parking
+Facing
+Furnishing
+Possession
+
+Example:
+
+"Investment ke liye commercial property chahiye jisme rental income achhi ho."
+
+Save:
+
+Transaction = Purchase
+Category = Commercial
+Need = Investment / Rental Yield
+
+Other fields UNKNOWN.
+
+Example:
+
+"Family ke liye Vesu ya Adajan mein ready 3 BHK chahiye."
+
+Save:
+
+Category = Residential
+BHK = 3
+Location = Vesu
+Location2 = Adajan
+Possession = Ready
+Purpose/Notes = Family
+
+Everything else UNKNOWN.
+
+The system must support free-form client needs through:
+
+SpecialNotes
+Preferences
+DynamicAttributes
+Tags
+
+while still using structured fields wherever useful.
+
+==================================================
+9. PHASE 8 — CONFIGURATION ENGINE
+==================================================
+
+Build the configuration layer.
+
+Move configuration from static-only code toward repository-backed configuration.
+
+Create/standardize:
+
+FieldConfig
+QuestionConfig
+DependencyConfig
+ValidationConfig
+ScoringConfig
+WorkflowConfig
+ColumnConfig
+
+Each field should support metadata such as:
+
+FieldKey
+QuestionLabel
+FieldLabel
+TransactionType
+Category
+SubCategory
+FieldType
+Section
+Priority
+Tier
+RequiredMode
+Options
+Validation
+DefaultValue
+Active
+DisplayOrder
+
+Important:
+
+"Required" must NOT mean "required to create Requirement."
+
+RequiredMode should distinguish:
+
+CREATE_CORE
+IMPORTANT
+OPTIONAL
+CONDITIONAL
+
+The engine must still allow UNKNOWN.
+
+Admin editability must be designed without breaking runtime defaults.
+
+Use safe fallback:
+
+DB config
+→ fallback to V2 static config.
+
+Do not remove working static config until DB config passes tests.
+
+==================================================
+10. PHASE 9 — DEPENDENCY ENGINE
+==================================================
+
+Implement dynamic relevance.
+
+A field can be:
+
+VISIBLE
+HIDDEN
+RELEVANT
+NOT_RELEVANT
+
+depending on:
+
+TransactionType
+Category
+SubCategory
+other field values.
+
+Example:
+
+Transaction = Rent
+
+TenantType becomes relevant.
+
+Transaction = Purchase
+
+TenantType may be irrelevant.
+
+Category = Residential
+
+BHK relevant.
+
+Category = Land
+
+BHK irrelevant.
+
+Do not erase irrelevant data automatically.
+
+Existing known data must be preserved.
+
+==================================================
+11. PHASE 10 — NEED / FORM ENGINE
+==================================================
+
+Rework V2FormRegistry into a Need Configuration system.
+
+Do NOT turn it back into a giant mandatory form.
+
+The registry should describe:
+
+What fields are available
+What questions are useful
+When fields become relevant
+What priority they have
+What options exist
+How they affect scoring
+What next question can be asked
+
+The form is merely a UI representation of the Need model.
+
+The Requirement remains the source of truth.
+
+==================================================
+12. PHASE 11 — NEXT QUESTION ENGINE
+==================================================
+
+Create:
+
+GET /api/requirements/:id/next-questions
+
+The engine should inspect:
+
+Known fields
+Unknown fields
+Relevant fields
+TransactionType
+Category
+SubCategory
+Score
+Completeness
+Previous questions
+Recent conversation/activity
+
+Then return useful questions.
+
+Example:
+
+Known:
+
+Category = Residential
+SubCategory = Flat
+Location = Vesu
+BHK = 3
+Budget = 1 Cr
+
+Next useful questions might be:
+
+1. Possession kab tak chahiye?
+2. Furnished ya unfurnished?
+3. Parking kitni chahiye?
+
+Do NOT return 20 questions.
+
+Return a small prioritized list.
+
+For example:
+
+max 3.
+
+==================================================
+13. PHASE 12 — SCORING
+==================================================
+
+Implement configurable scoring for:
+
+Lead
+Requirement
+
+Every score must have explainable breakdown.
+
+Example:
+
+Requirement Score = 78
+
+Breakdown:
+
+Budget known = +20
+Location known = +20
+BHK known = +15
+Possession known = +10
+Urgency known = +5
+Other useful data = +8
+
+Do not make score a black box.
+
+Add GET endpoints:
+
+GET /api/leads/:id/score
+GET /api/requirements/:id/score
+
+POST recalculation can remain.
+
+==================================================
+14. PHASE 13 — QUICK CAPTURE UI
+==================================================
+
+Rebuild clients.html New Client experience.
+
+The first screen must be SMALL.
+
+Example:
+
+NEW CLIENT
+
+Name
+Phone
+
+Transaction:
+Purchase
+
+Category:
+Residential
+
+SubCategory:
+Flat
+
+Location:
+Vesu
+
+Budget:
+₹1 Cr
+
+[ Add more details ]
+
+[ SAVE CLIENT ]
+
+On Save:
+
+Lead + Transaction + Requirement are created atomically.
+
+Do NOT show 30 fields.
+
+Do NOT force Optional fields.
+
+Do NOT make the agent complete a form before saving.
+
+==================================================
+15. PHASE 14 — CLIENT WORKSPACE
+==================================================
+
+Rebuild client-workspace.html around the client, not around separate modules.
+
+Top:
+
+CLIENT NAME
+Phone
+Call
+WhatsApp
+Edit
+
+Then:
+
+NEEDS
+
+Requirement Card:
+
+Purchase • Residential • Flat
+
+₹1 Cr
+Vesu
+3 BHK
+
+KNOWN:
+Budget
+Location
+BHK
+
+TO DISCOVER:
+Possession
+Parking
+Furnishing
+Facing
+
+NEXT QUESTIONS:
+
+1. Possession?
+2. Furnishing?
+3. Parking?
+
+[Update Need]
+
+Agent must be able to update the SAME Requirement inline.
+
+Do not force navigation to another giant form.
+
+Transactions and requirements can still exist as supporting detail tabs, but the primary UX must be client-centered.
+
+==================================================
+16. PHASE 15 — CLIENT LIST
+==================================================
+
+clients.html must clearly say:
+
+CLIENTS
+
+not Leads in the primary UI.
+
+Support:
+
+Search
+Mobile
+Status
+Lifecycle
+Agent
+Tags
+Location
+Transaction Type
+
+Requirement should be treated as a client need/query view, not a replacement for Client.
+
+==================================================
+17. PHASE 16 — CONVERSATION / ACTIVITY
+==================================================
+
+Create a structured conversation workflow.
+
+Example:
+
+Agent clicks CALL.
+
+After call:
+
+CALL OUTCOME
+- Connected
+- Not Connected
+- Busy
+- Callback
+- Wrong Number
+
+Then:
+
+"What did client say?"
+
+Agent can enter free text.
+
+Then system can update:
+
+Requirement fields
+Preferences
+SpecialNotes
+NextQuestions
+Follow-up
+
+Timeline should automatically record:
+
+CALL
+→ conversation note
+→ requirement changes
+→ follow-up
+
+Do not lose activity when TransactionID or RequirementID is absent.
+
+Activity must remain attached to Lead even when no specific Requirement exists.
+
+==================================================
+18. PHASE 17 — API / COMPATIBILITY
+==================================================
+
+Canonical V2 APIs must be consistent.
+
+Required:
+
+POST /api/clients/quick-capture
+
+GET /api/clients/:id/workspace
+
+GET /api/leads/:id/transactions
+POST /api/leads/:id/transactions
+
+GET /api/transactions/:id
+PATCH /api/transactions/:id
+
+GET /api/transactions/:id/requirements
+POST /api/transactions/:id/requirements
+
+GET /api/requirements/:id
+PATCH /api/requirements/:id
+
+GET /api/requirements/:id/next-questions
+GET /api/requirements/:id/score
+GET /api/leads/:id/score
+
+Legacy APIs must continue working.
+
+Feature flag:
+
+LEAD_V2_ENABLED
+
+must be used safely.
+
+No V2 rollout should break V1.
+
+==================================================
+19. PHASE 18 — MIGRATION / DATA SAFETY
+==================================================
+
+Migration must be:
+
+DRY RUN FIRST.
+
+Never mutate production data automatically.
+
+Migration report must show:
+
+Legacy Lead count
+V2 Lead count
+Legacy Transaction count
+V2 Transaction count
+Legacy Requirement count
+V2 Requirement count
+Duplicates
+Orphans
+Invalid relationships
+Missing Lead relationships
+Missing Transaction relationships
+
+Every migrated record must preserve:
+
+LegacyID
+
+Do not delete original records before verification.
+
+Rollback plan required.
+
+==================================================
+20. PHASE 19 — TESTING
+==================================================
+
+Run:
+
+Unit tests
+Service tests
+Repository tests
+API tests
+Integration tests
+Lifecycle tests
+Matching tests
+Site Visit tests
+Workspace tests
+Quick Capture tests
+Next Question tests
+Dependency tests
+Migration dry-run tests
+E2E tests
+
+Minimum critical scenarios:
+
+1. Create client with only Name + Phone.
+2. Create client with initial need.
+3. Atomic Lead + Transaction + Requirement.
+4. Duplicate mobile.
+5. Duplicate formatted mobile.
+6. Possible duplicate.
+7. Requirement with only Location.
+8. Requirement with only Budget.
+9. Requirement with arbitrary SpecialNotes.
+10. Progressive update.
+11. Same RequirementID after multiple calls.
+12. Unknown field.
+13. Not applicable field.
+14. Transaction relationship mismatch.
+15. Requirement relationship mismatch.
+16. Workspace reload.
+17. Browser refresh.
+18. Legacy data.
+19. V1 API compatibility.
+20. V2 feature flag OFF.
+21. V2 feature flag ON.
+22. Migration dry run.
+23. Activity without Requirement.
+24. Activity with Requirement.
+25. Next question prioritization.
+
+NO PHASE IS COMPLETE UNTIL ITS TESTS PASS.
+
+==================================================
+21. PHASE 20 — ROLLOUT
+==================================================
+
+Before enabling V2:
+
+1. Full test suite green.
+2. Migration dry-run reviewed.
+3. No orphan relationships.
+4. No duplicate catastrophic errors.
+5. V1 compatibility verified.
+6. V2 disabled behavior verified.
+7. V2 enabled behavior verified.
+8. Backup verified.
+9. Rollback verified.
+
+Only then:
+
+LEAD_V2_ENABLED=true
+
+No automatic production rollout.
+
+==================================================
+22. CRITICAL SAFETY RULES
+==================================================
+
+NEVER:
+
+- delete existing data
+- reset database
+- rewrite IDs
+- remove V1 APIs
+- remove legacy aliases
+- force all Requirement fields
+- create a new Requirement for every conversation update
+- mix Property data into Requirement
+- make Inventory dependent on Requirement schema
+- bypass duplicate protection
+- expose full client contact information in broker-sharing flows
+- automatically merge duplicate clients
+- modify protected modules without phase scope
+- follow Replit "Suggested Tasks" unless explicitly authorized
+- implement multiple phases silently
+- claim a phase is complete without tests
+
+==================================================
+23. EXECUTION PROTOCOL
+==================================================
+
+Implement remaining phases in order:
+
+PHASE 8
+→ test
+→ gate report
+→ PHASE 9
+→ test
+→ gate report
+...
+→ PHASE 20
+
+BUT:
+
+The user has explicitly requested that the remaining V2 work be executed phase-by-phase.
+
+Therefore:
+
+Implement ONLY ONE PHASE per execution cycle.
+
+At the end of each phase report:
+
+PHASE:
+OBJECTIVE:
+FILES CHANGED:
+FUNCTIONS ADDED/MODIFIED:
+DATA MODEL:
+API:
+UI:
+TESTS:
+REGRESSION:
+RISKS:
+COMPATIBILITY:
+NEXT PHASE:
+
+Then STOP.
+
+Do not automatically start the next phase.
+
+==================================================
+24. CURRENT VERIFIED STATE
+==================================================
+
+Phase 1 = PASS
+Phase 2 = PASS
+Phase 3 = PASS
+Phase 4 = PASS
+Phase 5 = PASS
+Phase 6 = PASS
+Phase 7 = PASS
+
+Current next phase:
+
+PHASE 8 — CONFIGURATION ENGINE
+
+Do not redo Phase 1–7.
+
+Do not start Phase 9 until Phase 8 is explicitly approved.
+
+==================================================
+FINAL COMMAND
+==================================================
+
+Start ONLY Phase 8 now.
+
+First inspect the existing v2Config.js, repository configuration collections, config routes, tests, and current Phase 7 behavior.
+
+Then implement Phase 8.
+
+Do not touch Phase 9+.
+
+Do not modify Inventory, Matching, Deal, Commission, Authentication, RBAC, deployment, or production data.
+
+Do not delete or reset anything.
+
+Do not ask me to repeat the architecture.
+
+Do not waste time with explanations before implementation.
+
+Execute Phase 8, test it completely, give the gate report, and STOP.

@@ -1,0 +1,1022 @@
+STOP AUDITING. STOP ASKING REPEATED QUESTIONS. STOP WASTING TIME IN CHAT.
+
+IMPLEMENT SIGNATURE PROPERTIES — LEAD MODULE V2 COMPLETELY.
+
+This is V2 ONLY.
+
+The approved architecture is:
+
+CLIENT
+  ↓
+LEAD
+  ↓
+TRANSACTION
+  ↓
+REQUIREMENT
+
+Inventory is a completely separate module.
+
+DO NOT redesign Inventory.
+DO NOT implement Matching Engine.
+DO NOT redesign Deal.
+DO NOT redesign Commission.
+DO NOT redesign Authentication/RBAC unless absolutely required for V2 compatibility.
+DO NOT delete existing APIs.
+DO NOT delete existing production data.
+DO NOT perform production migration automatically.
+DO NOT rewrite unrelated modules.
+
+==================================================
+IMPORTANT EXECUTION RULE
+==================================================
+
+Do NOT spend time producing repeated audit reports.
+
+Inspect the existing repository only as much as necessary to identify the correct implementation files.
+
+Then IMPLEMENT.
+
+Use the existing architecture.
+
+Do not invent filenames blindly.
+
+If an existing file already owns a responsibility, extend it instead of creating a duplicate implementation.
+
+Use incremental changes.
+
+Do not rewrite the whole application.
+
+The objective is a production-ready V2 Lead Module inside the existing application.
+
+==================================================
+PHASE ORDER
+==================================================
+
+Implement in this exact order:
+
+PHASE 1 — V2 DATA FOUNDATION
+PHASE 2 — CENTRALIZED ID ENGINE
+PHASE 3 — REPOSITORY/PERSISTENCE
+PHASE 4 — LEAD SERVICE
+PHASE 5 — DUPLICATE PROTECTION
+PHASE 6 — TRANSACTION SERVICE
+PHASE 7 — REQUIREMENT SERVICE
+PHASE 8 — CONFIGURATION ENGINE
+PHASE 9 — FORM REGISTRY
+PHASE 10 — VALIDATION + DEPENDENCY ENGINE
+PHASE 11 — STATUS + WORKFLOW + SCORING
+PHASE 12 — TAG SYSTEM
+PHASE 13 — V2 API LAYER
+PHASE 14 — CLIENT WORKSPACE
+PHASE 15 — CLIENT LIST
+PHASE 16 — GLOBAL REQUIREMENT VIEW
+PHASE 17 — ACTIVITY + FOLLOW-UP INTEGRATION
+PHASE 18 — COMPLETE TEST SUITE
+PHASE 19 — MIGRATION TOOLING
+PHASE 20 — FEATURE FLAG + STAGED ROLLOUT
+
+IMPORTANT:
+
+Do NOT stop after every tiny subtask.
+
+Complete each PHASE as a coherent implementation unit.
+
+After each PHASE:
+
+1. Run relevant tests.
+2. Check syntax.
+3. Check git diff.
+4. Verify protected modules were not unintentionally changed.
+5. Report a SHORT phase result.
+6. Immediately continue to the next phase if tests pass.
+
+Do NOT ask for permission between phases.
+
+Only STOP if:
+- a critical test failure cannot safely be repaired within the current phase,
+- a destructive data operation would be required,
+- production data would be modified,
+- authentication/security would be weakened,
+- Inventory would need modification,
+- or architecture becomes incompatible with the approved V2 specification.
+
+==================================================
+PHASE 1 — DATA FOUNDATION
+==================================================
+
+Create canonical V2 entities.
+
+LEAD:
+
+LeadID
+ClientName
+PrimaryMobile
+AlternateMobile
+WhatsApp
+Email
+ClientStatus
+ClientLifecycle
+ClientScore
+Source
+AssignedAgentID
+Tags
+Notes
+CreatedBy
+CreatedAt
+UpdatedBy
+UpdatedAt
+Version
+RecordHash
+LegacyID
+
+TRANSACTION:
+
+TransactionID
+LeadID
+TransactionType
+TransactionStatus
+PipelineStage
+CreatedBy
+CreatedAt
+UpdatedBy
+UpdatedAt
+Version
+LegacyID
+
+REQUIREMENT:
+
+RequirementID
+LeadID
+TransactionID
+RequirementStatus
+PipelineStage
+Category
+SubCategory
+PropertyPreference
+BudgetMin
+BudgetMax
+BudgetType
+BudgetFlexibility
+Location1
+Location2
+Location3
+AvoidLocations
+Possession
+Urgency
+MoveInDate
+CategorySpecificData
+Preferences
+RequirementScore
+ScoreBreakdown
+FormVersion
+CreatedBy
+CreatedAt
+UpdatedBy
+UpdatedAt
+Version
+LegacyID
+
+Relationships:
+
+Lead = client identity.
+
+Transaction belongs to exactly one Lead.
+
+Requirement belongs to exactly one Transaction and one Lead.
+
+Requirement.LeadID MUST equal Transaction.LeadID.
+
+Never relate entities using name/mobile/email.
+
+Requirement MUST NOT copy Inventory/Property data.
+
+==================================================
+PHASE 2 — ID ENGINE
+==================================================
+
+Centralized server-side ID generator.
+
+Lead:
+
+L000001
+
+Transaction:
+
+T000001
+
+Requirement:
+
+R000001
+
+Rules:
+
+- immutable
+- server generated
+- client cannot control final ID
+- no name/mobile based IDs
+- preserve legacy IDs through LegacyID
+- concurrency-safe as far as current persistence architecture permits
+- one centralized service
+- no duplicate ID generators in individual services
+
+==================================================
+PHASE 3 — PERSISTENCE
+==================================================
+
+All writes must use repository/service layer.
+
+Implement:
+
+createLead
+updateLead
+findLead
+findLeadByMobile
+findPossibleDuplicate
+
+createTransaction
+updateTransaction
+findTransaction
+listTransactionsByLead
+
+createRequirement
+updateRequirement
+findRequirement
+listRequirements
+listRequirementsByLead
+listRequirementsByTransaction
+
+Transaction MUST be durable.
+
+No authoritative in-memory-only Transaction storage.
+
+Do not break existing JSON/database adapter.
+
+Preserve legacy records.
+
+Use LegacyID.
+
+Do not migrate production data yet.
+
+==================================================
+PHASE 4 — LEAD SERVICE
+==================================================
+
+Lead creation/update MUST go through LeadService.
+
+Implement:
+
+ClientStatus:
+
+New
+Verified
+Active
+Inactive
+Blacklisted
+
+ClientLifecycle:
+
+Prospect
+Client
+Past Client
+Inactive
+Blacklisted
+
+These are independent.
+
+Server controls:
+
+CreatedBy
+CreatedAt
+UpdatedBy
+UpdatedAt
+Version
+
+LeadID immutable.
+
+Preserve legacy fields/API responses through adapters.
+
+==================================================
+PHASE 5 — DUPLICATE PROTECTION
+==================================================
+
+Normalize:
+
+mobile
+alternate mobile
+WhatsApp
+email
+name
+
+Duplicate resolution:
+
+EXACT_MATCH
+POSSIBLE_MATCH
+NO_MATCH
+
+Exact match:
+
+Do not create another Lead.
+
+Possible match:
+
+Show candidate warning.
+
+Require explicit confirmation.
+
+Never automatically merge/delete.
+
+Name alone must NEVER be primary identity.
+
+Add:
+
+POST /api/leads/check-duplicate
+
+Mask sensitive contact information in candidate responses.
+
+Perform second duplicate check immediately before creation.
+
+==================================================
+PHASE 6 — TRANSACTION SERVICE
+==================================================
+
+Transaction types:
+
+Purchase
+Sale
+Rent
+Rent Out
+Lease
+Lease Out
+
+TransactionStatus independent.
+
+PipelineStage independent:
+
+New
+Matching
+Shortlisted
+Site Visit
+Negotiation
+Token
+Deal
+
+Transaction belongs to exactly one Lead.
+
+Cannot change:
+
+TransactionID
+LeadID
+
+Implement:
+
+POST /api/leads/:leadId/transactions
+GET /api/leads/:leadId/transactions
+GET /api/transactions/:id
+PATCH /api/transactions/:id
+
+Preserve:
+
+GET /api/transactions
+
+Legacy Transaction IDs remain readable.
+
+==================================================
+PHASE 7 — REQUIREMENT SERVICE
+==================================================
+
+Requirement belongs to:
+
+LeadID
+TransactionID
+
+Creation must validate:
+
+Transaction exists.
+
+Transaction belongs to Lead.
+
+Requirement LeadID matches Transaction LeadID.
+
+Implement:
+
+POST /api/transactions/:transactionId/requirements
+GET /api/transactions/:transactionId/requirements
+GET /api/requirements/:id
+PATCH /api/requirements/:id
+GET /api/requirements
+
+RequirementStatus:
+
+Draft
+Active
+Paused
+Closed
+Lost
+Archived
+
+PipelineStage:
+
+New
+Matching
+Shortlisted
+Site Visit
+Negotiation
+Token
+Deal
+
+Store both independently.
+
+FormVersion immutable.
+
+Requirement must contain criteria only.
+
+Never embed Inventory/Property records.
+
+==================================================
+PHASE 8 — CONFIGURATION ENGINE
+==================================================
+
+Build configuration-driven architecture.
+
+Configuration entities:
+
+EntityConfig
+FormConfig
+FieldConfig
+OptionConfig
+DependencyConfig
+ValidationConfig
+WorkflowConfig
+ColumnConfig
+ScoringConfig
+
+Frontend must execute configuration.
+
+DO NOT write business branching such as:
+
+if(category === "Residential")
+
+or equivalent hardcoded category-specific form logic.
+
+Configuration must control:
+
+fields
+labels
+types
+options
+visibility
+dependencies
+required rules
+validation
+ordering
+workflow
+columns
+scoring
+
+==================================================
+PHASE 9 — FORM REGISTRY
+==================================================
+
+Registry key:
+
+TransactionType
++
+Category
++
+SubCategory
+
+Examples:
+
+Purchase + Residential + Flat
+Purchase + Residential + Villa
+Rent + Residential + Flat
+Rent + Commercial + Office
+
+Every form:
+
+FormVersion
+IsActive
+
+Requirement stores FormVersion.
+
+Historical Requirement must render using its stored FormVersion.
+
+Never silently replace historical forms with the newest configuration.
+
+==================================================
+PHASE 10 — VALIDATION + DEPENDENCY
+==================================================
+
+Configuration controls:
+
+field visibility
+required state
+options
+numeric validation
+date validation
+cross-field validation
+role visibility
+progressive disclosure
+
+Basic fields first.
+
+Advanced fields only when needed.
+
+Validation MUST execute server-side.
+
+Frontend validation is only UX assistance.
+
+==================================================
+PHASE 11 — STATUS + WORKFLOW + SCORING
+==================================================
+
+Keep these separate:
+
+Lead ClientStatus
+Lead ClientLifecycle
+TransactionStatus
+Transaction PipelineStage
+RequirementStatus
+Requirement PipelineStage
+
+Never infer one from another.
+
+Implement:
+
+ClientScore
+
+RequirementScore
+
+ScoringConfig controls score rules.
+
+Store ScoreBreakdown.
+
+Scoring must be explainable.
+
+RequirementScore is only prepared for future Matching Engine.
+
+DO NOT implement Matching Engine now.
+
+==================================================
+PHASE 12 — TAG SYSTEM
+==================================================
+
+Configuration-driven tags:
+
+Investor
+Buyer
+Seller
+Tenant
+Landlord
+Builder
+NRI
+Corporate
+VIP
+Hot
+Referral
+
+Investor remains a TAG/CLIENT TYPE.
+
+DO NOT create Investor module.
+
+==================================================
+PHASE 13 — API LAYER
+==================================================
+
+Canonical APIs:
+
+GET /api/leads
+GET /api/leads/:id
+POST /api/leads
+PATCH /api/leads/:id
+POST /api/leads/check-duplicate
+
+GET /api/leads/:leadId/transactions
+POST /api/leads/:leadId/transactions
+
+GET /api/transactions/:id
+PATCH /api/transactions/:id
+
+GET /api/transactions/:transactionId/requirements
+POST /api/transactions/:transactionId/requirements
+
+GET /api/requirements/:id
+PATCH /api/requirements/:id
+GET /api/requirements
+
+GET /api/clients/:leadId/workspace
+
+Preserve old APIs through adapters.
+
+Controllers MUST NOT directly mutate storage.
+
+Frontend MUST NOT directly manipulate database.
+
+Preserve existing auth/RBAC.
+
+==================================================
+PHASE 14 — CLIENT WORKSPACE
+==================================================
+
+User-facing terminology:
+
+CLIENT
+
+Not Leads.
+
+Header:
+
+Client Name
+Mobile
+Lead Status
+Lifecycle
+Client Score
+Tags
+
+Actions:
+
+Call
+WhatsApp
+Edit
+Add Transaction
+
+Tabs:
+
+Overview
+Profile
+Transactions
+Requirements
+Activities
+Follow-ups
+Timeline
+
+Structure:
+
+Client
+ ├── Purchase
+ │    └── Requirement(s)
+ ├── Rent
+ │    └── Requirement(s)
+ └── Sale
+      └── Requirement(s)
+
+==================================================
+PHASE 15 — CLIENT LIST
+==================================================
+
+Navigation:
+
+Clients
+
+Filters:
+
+All
+My Clients
+New
+Active
+Follow-up Due
+Hot
+Inactive
+Investor
+
+Dynamic columns via ColumnConfig.
+
+Default columns:
+
+Client Name
+Mobile
+Status
+Lifecycle
+Tags
+Requirements
+Latest Requirement
+Budget
+Location
+Score
+Follow-up
+
+==================================================
+PHASE 16 — GLOBAL REQUIREMENTS
+==================================================
+
+Create global Requirement VIEW.
+
+This is NOT another Lead database.
+
+It queries Requirement records.
+
+Examples:
+
+Purchase | Residential | 3BHK | Vesu | ₹1Cr
+Rent | Residential | 2BHK | Adajan | ₹40K
+
+Click:
+
+Client
+→ Transaction
+→ Requirement
+
+Never duplicate Lead data.
+
+==================================================
+PHASE 17 — ACTIVITY + FOLLOW-UP
+==================================================
+
+Reuse existing systems.
+
+Activities reference:
+
+LeadID
+TransactionID
+RequirementID
+UserID
+
+Types:
+
+Call
+WhatsApp
+Note
+Follow-up
+Requirement Updated
+Status Changed
+
+Timeline is aggregated.
+
+Do not redesign existing Follow-up/Activity modules.
+
+==================================================
+PHASE 18 — TESTING
+==================================================
+
+Add tests for:
+
+ID generation
+normalization
+duplicate detection
+Lead lifecycle
+Lead CRUD
+Transaction CRUD
+Requirement CRUD
+parent-child relationships
+status separation
+pipeline separation
+FormVersion
+configuration
+dependency engine
+validation
+scoring
+API contracts
+workspace
+global requirements
+
+E2E:
+
+Create Client
+→ Add Transaction
+→ Add Requirement
+→ Edit Requirement
+→ Change RequirementStatus
+→ Change PipelineStage
+→ View Client Workspace
+
+Regression:
+
+Authentication
+Dashboard
+Existing Requirements
+Matching
+Inventory
+Follow-ups
+Activities
+Timeline
+
+Run tests after every phase.
+
+Do not allow V2 failures to silently pass.
+
+==================================================
+PHASE 19 — MIGRATION TOOLING
+==================================================
+
+DO NOT migrate production automatically.
+
+First build dry-run migration.
+
+Create:
+
+MigrationMap
+
+Old LeadID
+→ New LeadID
+
+Old TransactionID
+→ New TransactionID
+
+Old RequirementID
+→ New RequirementID
+
+Migration process:
+
+1. Backup.
+2. Read existing data.
+3. Normalize.
+4. Identify Lead identities.
+5. Deduplicate safely.
+6. Create Transactions.
+7. Attach Requirements.
+8. Validate relationships.
+9. Generate migration report.
+10. Generate rollback information.
+11. STOP.
+
+Never delete original records.
+
+Production migration requires explicit approval.
+
+==================================================
+PHASE 20 — FEATURE FLAG + ROLLOUT
+==================================================
+
+Add:
+
+LEAD_V2_ENABLED=false
+
+OFF:
+
+Existing application remains active.
+
+ON:
+
+V2 Client Workspace + V2 APIs enabled.
+
+Do not remove legacy APIs.
+
+Before production rollout:
+
+- migration dry run passes
+- relationship validation passes
+- full test suite passes
+- E2E passes
+- regression passes
+- smoke test passes
+
+Only then activate V2.
+
+==================================================
+PROTECTED MODULES
+==================================================
+
+DO NOT redesign:
+
+Inventory
+Matching Engine
+Deal
+Commission
+Authentication
+RBAC
+SSH
+Deployment workflow
+
+Do not touch them unless a direct compatibility adapter is absolutely required.
+
+==================================================
+DATA SAFETY
+==================================================
+
+NEVER:
+
+git reset --hard
+git clean
+git checkout .
+git restore .
+delete production data
+overwrite database blindly
+run production migration automatically
+change GitHub secrets
+change SSH
+change deployment workflow
+
+Preserve all pre-existing worktree changes.
+
+==================================================
+IMPLEMENTATION STYLE
+==================================================
+
+Use the existing repository architecture.
+
+Do not create duplicate services if equivalent services already exist.
+
+Do not duplicate ID logic.
+
+Do not duplicate form logic.
+
+Do not duplicate database logic.
+
+Do not hardcode category-specific business rules in frontend.
+
+Use adapters for backward compatibility.
+
+Keep V2 canonical internally.
+
+Keep legacy compatibility at the boundaries.
+
+==================================================
+CHAT/TIME RULE
+==================================================
+
+NO TIME WASTE.
+
+Do not give me long audit reports.
+
+Do not repeatedly ask me what to do next.
+
+Do not stop after every file.
+
+Do not ask permission after every phase.
+
+IMPLEMENT PHASE 1 → PHASE 20 SEQUENTIALLY.
+
+After each phase give ONLY:
+
+PHASE X — PASS/FAIL
+Files changed:
+Tests:
+Result:
+Next phase:
+
+If a phase fails, repair it within that phase and rerun tests.
+
+If a critical blocker requires user decision, STOP and explain only the blocker.
+
+Otherwise CONTINUE.
+
+==================================================
+FINAL ACCEPTANCE CRITERIA
+==================================================
+
+The implementation is complete only when:
+
+CLIENT
+  ↓
+LEAD
+  ↓
+TRANSACTION
+  ↓
+REQUIREMENT
+
+works persistently.
+
+IDs are immutable.
+
+Duplicate Leads are protected.
+
+Transactions are durable.
+
+Requirements are durable.
+
+Lead/Transaction/Requirement relationships are enforced.
+
+Status and Pipeline are independent.
+
+Forms are configuration-driven.
+
+Forms are versioned.
+
+Historical requirements preserve their FormVersion.
+
+Scoring is configurable and explainable.
+
+Client Workspace works.
+
+Client List works.
+
+Global Requirement view works.
+
+Activity/Follow-up integration works.
+
+Existing APIs remain compatible.
+
+Existing authentication/RBAC remains intact.
+
+Inventory remains separate and working.
+
+Matching Engine remains untouched.
+
+Deal/Commission remain untouched.
+
+Production data remains untouched until explicitly approved for migration.
+
+All tests pass.
+
+ONLY AFTER ALL OF THIS:
+
+Report the final implementation summary.
+
+START NOW.
+
+DO NOT AUDIT AGAIN.
+DO NOT WAIT FOR CHAT CONFIRMATION.
+DO NOT IMPLEMENT V3.
+DO NOT IMPLEMENT INVENTORY.
+DO NOT IMPLEMENT MATCHING ENGINE.
+IMPLEMENT V2.

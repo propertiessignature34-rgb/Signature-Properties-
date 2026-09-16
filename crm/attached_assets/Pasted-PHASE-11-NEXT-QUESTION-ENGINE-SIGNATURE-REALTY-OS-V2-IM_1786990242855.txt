@@ -1,0 +1,787 @@
+PHASE 11 — NEXT QUESTION ENGINE
+SIGNATURE REALTY OS V2
+
+IMPORTANT:
+Phase 1–10 are already completed and approved.
+
+Current verified baseline:
+- Phase 1–8 completed
+- Phase 9 completed
+- Phase 10 must be treated as the approved Dependency Engine implementation once its gate passes
+
+DO NOT:
+- redo Phase 1–10
+- rewrite Lead
+- rewrite Transaction
+- rewrite Requirement
+- rewrite Configuration Engine
+- rewrite Form Registry
+- rewrite Dependency Engine
+- make Requirement a mandatory form
+- touch Inventory implementation
+- implement Matching Engine
+- implement Deal/Commission
+- redesign Authentication/RBAC
+- implement Quick Capture
+- redesign Client Workspace
+- redesign Client List
+- implement Conversation Engine
+- migrate production data
+- delete legacy APIs
+- create a second configuration architecture
+
+====================================================
+OBJECTIVE
+====================================================
+
+Build the:
+
+NEXT QUESTION ENGINE
+
+Its job is NOT to complete a form.
+
+Its job is to identify the most useful unanswered question for the agent to ask the client next.
+
+The engine must work with:
+
+CLIENT
+  ↓
+LEAD
+  ↓
+TRANSACTION
+  ↓
+REQUIREMENT
+  ↓
+FORM REGISTRY
+  ↓
+DEPENDENCY ENGINE
+  ↓
+NEXT QUESTION ENGINE
+  ↓
+NEXT BEST QUESTION
+
+====================================================
+CORE BUSINESS PRINCIPLE
+====================================================
+
+A Requirement is a living client need.
+
+UNKNOWN is valid.
+
+The system must NEVER ask every available question.
+
+It should ask only useful questions based on:
+
+- TransactionType
+- Category
+- SubCategory
+- known Requirement fields
+- UNKNOWN fields
+- Dependency state
+- Question priority
+- Question tier
+- business relevance
+- existing answers
+
+Example:
+
+Client says:
+
+"Vesu mein 3 BHK chahiye.
+Budget 1 crore."
+
+Known:
+
+BHK = 3
+Location = Vesu
+Budget = 1 Cr
+
+Unknown:
+
+Possession
+Furnishing
+Parking
+Facing
+Urgency
+
+The engine might recommend:
+
+"Possession kab chahiye?"
+
+It must NOT return 20 unrelated questions.
+
+====================================================
+DEPENDENCY ENGINE INTEGRATION
+====================================================
+
+Phase 10 is the authority for field relevance.
+
+Next Question Engine MUST consume Dependency Engine output.
+
+Only consider fields whose dependency state is:
+
+RELEVANT
+or
+VISIBLE
+
+Do NOT recommend:
+
+HIDDEN
+NOT_RELEVANT
+
+Do not duplicate dependency logic inside Next Question Engine.
+
+Architecture:
+
+FormRegistry
+     ↓
+FieldConfig / QuestionConfig
+     ↓
+DependencyEngine
+     ↓
+Relevant fields
+     ↓
+NextQuestionEngine
+     ↓
+Rank unanswered questions
+
+====================================================
+REQUIREMENT FIELD STATES
+====================================================
+
+Use Phase 7 field states:
+
+UNKNOWN
+KNOWN
+NOT_APPLICABLE
+
+Only UNKNOWN fields are candidates for questions.
+
+Never ask about:
+
+KNOWN
+
+or:
+
+NOT_APPLICABLE
+
+Example:
+
+Parking:
+{
+  state: "KNOWN",
+  value: 2
+}
+
+Do not recommend Parking again.
+
+====================================================
+QUESTION CONFIGURATION
+====================================================
+
+Use Phase 8 QuestionConfig.
+
+Do NOT create a duplicate question configuration system.
+
+QuestionConfig should provide, where available:
+
+- QuestionID
+- FieldKey
+- QuestionLabel
+- Priority
+- Tier
+- Section
+- TransactionType
+- Category
+- SubCategory
+- DisplayOrder
+- IsActive
+
+If some metadata does not yet exist, extend the existing configuration model minimally.
+
+Do not hardcode questions in frontend.
+
+====================================================
+QUESTION PRIORITY
+====================================================
+
+Questions must be ranked.
+
+Recommended ranking factors:
+
+1. Core tier
+2. Important tier
+3. Optional tier
+4. Question Priority
+5. Dependency relevance
+6. Business usefulness
+7. Whether answer affects future workflow
+8. Whether answer affects scoring
+9. Whether answer reduces requirement ambiguity
+
+Do not simply return configuration order.
+
+====================================================
+CORE / IMPORTANT / OPTIONAL
+====================================================
+
+The existing Phase 7 tiers are:
+
+CORE
+IMPORTANT
+OPTIONAL
+
+The engine should prefer:
+
+CORE
+→ IMPORTANT
+→ OPTIONAL
+
+But do not force CORE questions if they are not relevant to the current Transaction/Category/SubCategory.
+
+Example:
+
+For Rent + Residential + Flat:
+
+TenantType may be more useful than a Purchase-only field.
+
+For Commercial + Office:
+
+BusinessType may be highly relevant.
+
+For Industrial + Factory:
+
+PowerLoad may be highly relevant.
+
+====================================================
+NEXT QUESTION RESULT
+====================================================
+
+Create a service such as:
+
+NextQuestionService
+
+Suggested methods:
+
+- getNextQuestions(requirementId, options)
+- getNextQuestion(requirementId)
+- rankQuestions(requirement, context)
+- explainQuestion(question, requirement, context)
+
+Reuse existing configuration and Dependency services.
+
+Do not put this logic in:
+
+- server.js
+- frontend
+- v2RequirementService
+
+====================================================
+API
+====================================================
+
+Add:
+
+GET /api/requirements/:requirementId/next-questions
+
+Also support the V2 equivalent if routing architecture requires:
+
+GET /api/v2/requirements/:requirementId/next-questions
+
+Do not create duplicate route implementations.
+
+Use the canonical V2 router/service architecture.
+
+====================================================
+API RESPONSE
+====================================================
+
+Example:
+
+{
+  "ok": true,
+  "requirementId": "R000001",
+  "questions": [
+    {
+      "questionId": "Q-POSSESSION",
+      "fieldKey": "Possession",
+      "label": "Possession kab chahiye?",
+      "priority": 90,
+      "tier": "IMPORTANT",
+      "reason": "Helps determine purchase urgency",
+      "dependencyState": "RELEVANT"
+    }
+  ]
+}
+
+The API may return multiple ranked questions, but the UI should be able to select the top question.
+
+====================================================
+EXPLANATION
+====================================================
+
+Every recommended question should have an explainable reason.
+
+Example:
+
+Question:
+"Possession kab chahiye?"
+
+Reason:
+"Your location, budget and property type are known; possession timeline is the next important missing requirement."
+
+Another:
+
+Question:
+"Family ke liye hai ya bachelor tenant?"
+
+Reason:
+"TenantType is relevant for this Rent + Residential requirement and is currently unknown."
+
+Do not use unexplained black-box scoring.
+
+====================================================
+QUESTION COUNT
+====================================================
+
+Default response should be small.
+
+Recommended:
+
+Top 3 questions.
+
+Allow:
+
+limit=1
+limit=3
+limit=5
+
+Do not return the entire QuestionConfig.
+
+====================================================
+QUESTION DEDUPLICATION
+====================================================
+
+Never recommend the same field if:
+
+- field is already KNOWN
+- field is NOT_APPLICABLE
+- field is HIDDEN
+- field is NOT_RELEVANT
+
+Also avoid duplicate questions caused by multiple configuration rules.
+
+One FieldKey should normally produce one recommendation.
+
+====================================================
+CONTEXT
+====================================================
+
+The engine must use the current Requirement.
+
+Example:
+
+Requirement:
+
+{
+  "RequirementID": "R000001",
+  "TransactionID": "T000001",
+  "LeadID": "L000001",
+  "TransactionType": "Purchase",
+  "Category": "Residential",
+  "SubCategory": "Flat",
+  "Fields": {
+    "Location1": {
+      "state": "KNOWN",
+      "value": "Vesu"
+    },
+    "BHKMin": {
+      "state": "KNOWN",
+      "value": 3
+    },
+    "BudgetMax": {
+      "state": "KNOWN",
+      "value": 10000000
+    },
+    "Possession": {
+      "state": "UNKNOWN"
+    }
+  }
+}
+
+The engine must resolve the current form/dependencies and then rank unanswered relevant fields.
+
+====================================================
+UNKNOWN MUST NEVER BE TREATED AS NO
+====================================================
+
+Critical:
+
+UNKNOWN ≠ NO
+
+If:
+
+Parking = UNKNOWN
+
+do not infer:
+
+Parking = No
+
+If:
+
+Furnishing = UNKNOWN
+
+do not infer:
+
+Unfurnished
+
+If:
+
+PetsAllowed = UNKNOWN
+
+do not infer:
+
+No Pets
+
+The engine may ASK.
+
+It must never invent the answer.
+
+====================================================
+PROGRESSIVE CAPTURE
+====================================================
+
+The engine must work repeatedly.
+
+First call:
+
+Next question:
+Possession?
+
+Agent gets answer:
+
+Possession = 0-6 Months
+
+Requirement PATCH happens later through existing Requirement API.
+
+Then:
+
+GET /next-questions
+
+must recalculate.
+
+Possession must disappear from the next-question list because it is now KNOWN.
+
+The next most useful UNKNOWN field should appear.
+
+No new Requirement should be created.
+
+RequirementID remains unchanged.
+
+====================================================
+QUESTION ANSWER DOES NOT HAPPEN HERE
+====================================================
+
+Phase 11 is recommendation only.
+
+Do NOT build the complete conversation capture engine here.
+
+Do NOT automatically update Requirement from the question API.
+
+The flow is:
+
+Next Question Engine
+      ↓
+Question suggestion
+      ↓
+Agent asks client
+      ↓
+Existing Requirement PATCH
+      ↓
+Next Question Engine recalculates
+
+Conversation/Activity automation belongs to Phase 16.
+
+====================================================
+SCORING
+====================================================
+
+Do not redesign Phase 12 scoring.
+
+If RequirementScore already exists, the engine MAY use it as a ranking signal only if already available.
+
+Do not create the final scoring architecture in Phase 11.
+
+Do not hardcode future matching logic.
+
+====================================================
+BUSINESS VALUE
+====================================================
+
+Where configuration provides appropriate metadata, prioritize questions that help:
+
+- clarify budget
+- clarify location
+- clarify timeline
+- clarify property type
+- clarify transaction intent
+- clarify rent/tenant requirements
+- clarify commercial/industrial requirements
+
+But do NOT invent arbitrary business rules.
+
+Configuration remains the source of truth.
+
+====================================================
+NO QUESTION FLOOD
+====================================================
+
+Bad behavior:
+
+"Here are 25 questions."
+
+Correct behavior:
+
+"Next best question:
+Possession kab chahiye?"
+
+Optional:
+
+"Other useful questions:
+1. Furnishing?
+2. Parking?"
+
+The agent should be able to continue the conversation naturally.
+
+====================================================
+NO MANDATORY FORM BEHAVIOR
+====================================================
+
+This engine MUST NOT block:
+
+createRequirement()
+
+because questions remain unanswered.
+
+It only recommends.
+
+Example:
+
+Requirement has:
+
+Category = Residential
+Location = Vesu
+Budget = 1 Cr
+
+and 15 UNKNOWN fields.
+
+Requirement remains valid.
+
+====================================================
+CONFIGURATION FALLBACK
+====================================================
+
+Use:
+
+DB configuration
+    ↓
+static fallback where already supported
+
+Do not create another fallback architecture.
+
+If no question is available:
+
+Return:
+
+{
+  "ok": true,
+  "questions": [],
+  "reason": "No additional relevant unanswered questions are currently configured."
+}
+
+Do not fabricate a question.
+
+====================================================
+HISTORICAL FORM VERSION
+====================================================
+
+Respect Requirement.FormVersion.
+
+Use the correct historical configuration where available.
+
+Do not automatically reinterpret old Requirements using the newest QuestionConfig.
+
+Do not modify historical records.
+
+====================================================
+SECURITY
+====================================================
+
+Use existing authentication/RBAC architecture.
+
+Do not expose unrelated client information.
+
+The response only needs:
+
+- question
+- field
+- reason
+- priority
+- relevance state
+
+Do not return:
+
+- other clients
+- unrelated Requirements
+- private notes
+- full activity history
+
+====================================================
+TESTS
+====================================================
+
+Create comprehensive Phase 11 tests.
+
+Do NOT target an artificial number.
+
+At minimum test:
+
+1. Requirement with no answers.
+2. Requirement with some known answers.
+3. Requirement with many known answers.
+4. UNKNOWN candidate selection.
+5. KNOWN field excluded.
+6. NOT_APPLICABLE field excluded.
+7. HIDDEN field excluded.
+8. NOT_RELEVANT field excluded.
+9. Core priority.
+10. Important priority.
+11. Optional priority.
+12. Dependency integration.
+13. TransactionType-specific question.
+14. Category-specific question.
+15. SubCategory-specific question.
+16. Rent questions.
+17. Purchase questions.
+18. Commercial questions.
+19. Industrial questions.
+20. Land questions.
+21. Agriculture questions.
+22. Question ranking.
+23. Deterministic ranking.
+24. Duplicate FieldKey removal.
+25. limit=1.
+26. limit=3.
+27. limit=5.
+28. Explanation/reason.
+29. No available questions.
+30. Historical FormVersion.
+31. Requirement PATCH causes recalculation.
+32. Known answer disappears from recommendations.
+33. UNKNOWN remains UNKNOWN.
+34. No Requirement mutation from next-question API.
+35. API authorization.
+36. Invalid RequirementID.
+37. Existing Phase 1–10 tests.
+38. Existing lifecycle tests.
+39. Existing Matching tests.
+40. Existing Site Visit tests.
+41. Inventory regression.
+
+====================================================
+TEST POLICY
+====================================================
+
+You decide the exact commands.
+
+Run:
+
+- Phase 11 focused tests
+- all existing tests
+- relevant integration tests
+- syntax checks
+- git diff --check
+
+If failures occur:
+
+diagnose
+→ fix Phase 11 issue
+→ rerun
+
+Do not weaken tests.
+
+Do not delete tests.
+
+Do not change existing tests simply to make them pass.
+
+====================================================
+DATA SAFETY
+====================================================
+
+DO NOT:
+
+- migrate production data
+- rewrite Leads
+- rewrite Transactions
+- rewrite Requirements
+- regenerate IDs
+- delete configuration
+- modify Inventory
+- modify Matching
+- modify Deal/Commission
+- modify authentication
+
+The Next Question API must be read-only.
+
+====================================================
+PHASE BOUNDARY
+====================================================
+
+DO NOT IMPLEMENT:
+
+Phase 12 — Scoring redesign
+Phase 13 — Quick Capture
+Phase 14 — Client Workspace
+Phase 15 — Client List
+Phase 16 — Conversation/Activity Engine
+Phase 17 — Final API consolidation
+Phase 18 — Migration
+Phase 19 — Final E2E
+Phase 20 — Production rollout
+
+Only implement minimal compatibility adapters if absolutely required.
+
+====================================================
+FINAL PHASE GATE REPORT
+====================================================
+
+Return:
+
+PHASE 11 — PASS / FAIL
+
+1. Files changed
+2. Functions added/modified
+3. Next Question algorithm
+4. Dependency Engine integration
+5. Ranking logic
+6. UNKNOWN behavior
+7. Question deduplication
+8. API routes
+9. Response format
+10. Historical FormVersion behavior
+11. Security
+12. Tests run
+13. Total tests passed/failed
+14. Full regression result
+15. Risks
+16. Exactly what remains for Phase 12
+
+IMPORTANT:
+
+Do not ask unnecessary questions.
+
+Do not redo Phase 1–10.
+
+Do not redesign the approved architecture.
+
+Implement Phase 11 completely and test it properly.

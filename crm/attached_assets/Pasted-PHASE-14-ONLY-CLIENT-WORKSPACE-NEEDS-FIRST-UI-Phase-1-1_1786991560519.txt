@@ -1,0 +1,727 @@
+PHASE 14 ONLY — CLIENT WORKSPACE / NEEDS-FIRST UI
+
+Phase 1–13 are already completed and passed their respective gates.
+Do NOT repeat, redesign, or rewrite completed phases.
+Do NOT start Phase 15.
+
+OBJECTIVE
+
+Replace the current tab-centric Client Workspace with a
+NEEDS-FIRST, conversation-driven Client Workspace.
+
+The fundamental model remains:
+
+CLIENT/LEAD
+   ↓
+TRANSACTION
+   ↓
+REQUIREMENT / NEED
+   ↓
+MATCHING → SITE VISIT → NEGOTIATION → TOKEN → DEAL
+
+One Lead = one client.
+One Lead can have multiple Transactions.
+One Transaction can have multiple Requirements.
+
+A Requirement is a living client need.
+UNKNOWN is valid.
+Do not force agents to complete forms.
+
+IMPORTANT:
+The UI must behave like an agent's memory/workspace, NOT like a data-entry form.
+
+==================================================
+1. DO NOT BREAK EXISTING ARCHITECTURE
+==================================================
+
+Reuse existing:
+
+- V2LeadService
+- V2TransactionService
+- V2RequirementService
+- V2ConfigService
+- V2FormRegistryService
+- V2DependencyService
+- V2NextQuestionService
+- V2 scoring
+- duplicate protection
+- repository
+- existing authentication/RBAC
+- existing API compatibility
+- existing feature flag
+
+Do NOT modify Inventory, Matching, Site Visit, Negotiation,
+Deal, Commission business logic.
+
+Do NOT create a second Lead model.
+Do NOT create a second Requirement model.
+Do NOT create another scoring engine.
+Do NOT create another dependency engine.
+
+==================================================
+2. CLIENT WORKSPACE MUST BE NEEDS-FIRST
+==================================================
+
+Current workspace has separate tabs such as:
+
+Overview
+Transactions
+Requirements
+Activities
+Follow-ups
+Timeline
+
+Do NOT simply keep this as the primary UX.
+
+The first screen after opening a Client must immediately show:
+
+CLIENT HEADER
+↓
+ACTIVE NEEDS
+↓
+WHAT WE KNOW
+↓
+WHAT WE DON'T KNOW
+↓
+NEXT QUESTIONS
+↓
+RECENT CONVERSATION / ACTIVITY
+↓
+TRANSACTIONS / OTHER DETAILS
+
+The agent should understand the client in 5–10 seconds.
+
+==================================================
+3. CLIENT HEADER
+==================================================
+
+Show:
+
+- Client Name
+- Primary Mobile
+- WhatsApp
+- Client Status
+- Client Lifecycle
+- Client Score
+- Tags
+- Assigned Agent
+- Last Contact
+- Next Follow-up
+
+Actions:
+
+[Call]
+[WhatsApp]
+[Add Need]
+[Edit Client]
+[More]
+
+Call and WhatsApp must use the existing client contact information.
+
+Do not expose unnecessary private data.
+
+==================================================
+4. ACTIVE NEEDS CARDS
+==================================================
+
+This is the MOST IMPORTANT part.
+
+For every active Transaction/Requirement combination,
+create a Need Card.
+
+Example:
+
+--------------------------------------------
+🏠 PURCHASE • RESIDENTIAL • FLAT
+
+Budget
+₹80L – ₹1.20Cr
+
+Location
+Vesu
+Piplod
+Adajan
+
+BHK
+3 BHK
+
+Possession
+UNKNOWN
+
+Urgency
+UNKNOWN
+
+Requirement Score
+62%
+
+Pipeline
+Matching
+
+[Update Need]
+[Ask Questions]
+[Match Properties]
+--------------------------------------------
+
+The card must NOT display every possible field.
+
+Only show:
+
+1. Known high-value information
+2. Important unknown information
+3. Current pipeline/status
+4. Score
+5. Next best action
+
+Use existing Requirement Fields / Completeness / Dependency state.
+
+==================================================
+5. KNOWN VS TO DISCOVER
+==================================================
+
+Inside each Need Card provide:
+
+KNOWN
+
+✓ Budget: ₹80L–₹1.20Cr
+✓ Location: Vesu
+✓ BHK: 3
+✓ Property Type: Flat
+
+TO DISCOVER
+
+? Possession
+? Urgency
+? Furnishing
+? Parking
+
+Do NOT interpret UNKNOWN as NO.
+
+UNKNOWN means:
+
+"We have not asked / captured this yet."
+
+NOT_APPLICABLE means:
+
+"This field does not apply to this requirement."
+
+KNOWN means:
+
+"We have an actual captured value."
+
+==================================================
+6. NEXT QUESTIONS
+==================================================
+
+Use the existing:
+
+V2NextQuestionService
+
+API:
+
+GET /api/v2/requirements/:requirementId/next-questions
+
+Display the top 1–3 questions.
+
+Example:
+
+NEXT QUESTIONS
+
+1. "Possession kab chahiye?"
+2. "Kitne parking chahiye?"
+3. "Fully furnished chahiye ya semi-furnished?"
+
+Each question should have:
+
+[Ask]
+
+After the agent gets the answer:
+
+[Save Answer]
+
+The answer must PATCH the SAME RequirementID.
+
+Do NOT create a new Requirement.
+
+Example:
+
+Before:
+
+Possession = UNKNOWN
+
+After:
+
+Possession = "0-6 Months"
+
+Same:
+
+RequirementID = R000123
+
+==================================================
+7. INLINE UPDATE
+==================================================
+
+The agent must be able to click a known field and edit it.
+
+Example:
+
+Budget ₹80L – ₹1.20Cr
+
+tap Budget →
+
+Min Budget
+[8000000]
+
+Max Budget
+[12000000]
+
+[Save]
+
+PATCH:
+
+PATCH /api/requirements/:requirementId
+
+Only changed fields should be sent.
+
+Never send the complete form unnecessarily.
+
+Existing known fields must survive the PATCH.
+
+==================================================
+8. ADD NEED
+==================================================
+
+[+ Add Need]
+
+must create a new Transaction/Requirement relationship.
+
+Do NOT create another Lead.
+
+Example client:
+
+Rahul Shah
+
+Existing:
+
+Purchase → Residential → Flat
+
+Agent discovers:
+
+"Rahul also wants to rent an office."
+
+Click:
+
+[+ Add Need]
+
+Choose:
+
+Transaction Type
+Rent
+
+Category
+Commercial
+
+SubCategory
+Office
+
+Save minimal requirement.
+
+The system creates:
+
+same Lead
++
+new Transaction
++
+new Requirement
+
+using existing services/API.
+
+Only minimum information should be requested.
+
+Everything else starts UNKNOWN.
+
+==================================================
+9. MULTIPLE REQUIREMENTS
+==================================================
+
+One Transaction may have multiple Requirements.
+
+Example:
+
+Transaction:
+Purchase
+
+Requirements:
+
+R000101
+3 BHK in Vesu
+
+R000102
+4 BHK in Piplod
+
+Both belong to the same Transaction.
+
+The UI must show:
+
+PURCHASE
+ ├─ Need 1: 3 BHK / Vesu
+ └─ Need 2: 4 BHK / Piplod
+
+Do not merge them accidentally.
+
+==================================================
+10. MULTIPLE TRANSACTIONS
+==================================================
+
+Example:
+
+CLIENT:
+Rahul Shah
+
+TRANSACTIONS:
+
+Purchase
+ └─ Residential Flat
+    ├─ Requirement 1
+    └─ Requirement 2
+
+Rent
+ └─ Commercial Office
+    └─ Requirement 1
+
+The workspace must make this hierarchy obvious.
+
+==================================================
+11. REQUIREMENT SCORE
+==================================================
+
+Display the existing Requirement Score.
+
+Example:
+
+Requirement Score
+62 / 100
+
+Clicking the score may show:
+
+Core
+8 / 10
+
+Important
+6 / 10
+
+Optional
+3 / 10
+
+Missing high-impact information:
+
+- Possession
+- Urgency
+
+Use the existing scoring endpoint/service.
+
+Do NOT invent another scoring formula.
+
+==================================================
+12. TRANSACTION PIPELINE
+==================================================
+
+Each Need Card must show:
+
+New
+↓
+Matching
+↓
+Shortlisted
+↓
+Site Visit
+↓
+Negotiation
+↓
+Token
+↓
+Deal
+
+Highlight the current stage.
+
+Example:
+
+Matching ●───○───○───○───○───○
+
+Do not implement new pipeline business logic.
+
+Use existing Transaction PipelineStage.
+
+==================================================
+13. CONVERSATION-FIRST DESIGN
+==================================================
+
+The workspace should make it obvious what the agent should do next.
+
+Example:
+
+CLIENT:
+Rahul Shah
+
+ACTIVE NEED:
+3 BHK Vesu ₹80L–₹1.2Cr
+
+NEXT ACTION:
+
+"Call client and confirm possession timeline."
+
+[Call Client]
+
+After call:
+
+"What did you learn?"
+
+Quick capture:
+
+Possession
+[0–6 Months]
+
+Urgency
+[Immediate]
+
+Parking
+[2]
+
+Notes
+[Client wants ready-to-move...]
+
+[Save Conversation]
+
+This updates the existing Requirement and/or Activity using existing APIs.
+
+Do not create duplicate records.
+
+==================================================
+14. ACTIVITY AREA
+==================================================
+
+Show a compact recent activity section:
+
+Today
+📞 Called client
+Possession confirmed: 0–6 Months
+
+Yesterday
+💬 WhatsApp
+Shared 3 matching properties
+
+Do not rebuild the entire Activity system in Phase 14.
+
+Use existing activity/timeline data where available.
+
+If an activity API is missing, show the UI integration point
+but do not redesign unrelated modules.
+
+==================================================
+15. RESPONSIVE UI
+==================================================
+
+Must work on:
+
+Desktop
+Tablet
+Mobile
+
+Important because agents may use mobile/tablet while calling clients.
+
+No huge forms.
+
+Use:
+
+Cards
+Chips
+Inline editing
+Expandable sections
+Bottom/action bars where appropriate
+
+==================================================
+16. EMPTY STATES
+==================================================
+
+New client with no Transaction:
+
+"No active need yet."
+
+[+ Add Need]
+
+Transaction with empty Requirement:
+
+"No detailed requirement captured yet."
+
+[Capture Need]
+
+Requirement with many UNKNOWN fields:
+
+"We know the basics. 3 questions can improve matching."
+
+[Ask Next Questions]
+
+==================================================
+17. API REQUIREMENTS
+==================================================
+
+Use existing APIs wherever possible.
+
+Expected calls include:
+
+GET /api/clients/:leadId/workspace
+
+GET /api/leads/:leadId/transactions
+
+GET /api/transactions/:transactionId/requirements
+
+GET /api/v2/requirements/:requirementId/next-questions
+
+GET /api/v2/requirements/:requirementId/score
+
+PATCH /api/requirements/:requirementId
+
+POST /api/leads/:leadId/transactions
+
+POST /api/transactions/:transactionId/requirements
+
+Do not create duplicate endpoints if an existing endpoint already satisfies the requirement.
+
+==================================================
+18. DATA SAFETY
+==================================================
+
+CRITICAL:
+
+Opening Client Workspace must NEVER mutate data.
+
+Refreshing the page must NEVER create:
+
+- Lead
+- Transaction
+- Requirement
+- Activity
+
+Clicking Next Questions must NEVER mutate Requirement.
+
+Only explicit user actions may write data.
+
+==================================================
+19. BACKWARD COMPATIBILITY
+==================================================
+
+Existing Client Workspace URL must continue working.
+
+Existing API responses must not be broken.
+
+Existing legacy clients must continue to load.
+
+LEAD_V2_ENABLED behavior must remain intact.
+
+Do not delete old UI files.
+
+If necessary, progressively enhance existing:
+
+client-workspace.html
+
+rather than replacing the entire application architecture.
+
+==================================================
+20. TESTS
+==================================================
+
+Create Phase 14 tests.
+
+Minimum coverage:
+
+A. Client workspace loads
+B. Lead information appears
+C. Active Needs appear
+D. Multiple Transactions display correctly
+E. Multiple Requirements under one Transaction display correctly
+F. Known fields display
+G. UNKNOWN fields display separately
+H. NOT_APPLICABLE is not shown as UNKNOWN
+I. Next Questions load
+J. Next Question does not mutate data
+K. Inline PATCH updates same RequirementID
+L. Existing known fields survive PATCH
+M. Add Need does not create another Lead
+N. Requirement score displays
+O. Pipeline stage displays
+P. Empty states
+Q. Mobile/tablet layout smoke checks if existing browser test infrastructure supports it
+R. Existing tests remain green
+
+Run:
+
+- Phase 14 focused tests
+- ALL existing unit tests
+- ALL API/integration tests
+- Existing browser tests if executable
+
+Do not stop after only Phase 14 tests.
+
+==================================================
+21. IMPORTANT ARCHITECTURAL RULE
+==================================================
+
+DO NOT turn Client Workspace into another giant form.
+
+The workspace is:
+
+CLIENT MEMORY + ACTIVE NEEDS + UNKNOWN INFORMATION + NEXT ACTION.
+
+The system should help the AGENT have a better conversation with the CLIENT.
+
+It should not force the agent to complete every field.
+
+==================================================
+22. PHASE CONTROL
+==================================================
+
+Implement ONLY Phase 14.
+
+Do NOT implement:
+
+Phase 15 Client List redesign
+Phase 16 Conversation Engine
+Phase 17 API finalization
+Phase 18 Migration
+Phase 19 full testing architecture
+Phase 20 rollout
+
+Those remain separate phases.
+
+When Phase 14 is complete, STOP.
+
+Return exactly:
+
+PHASE 14 — CLIENT WORKSPACE
+STATUS: PASS / FAIL
+
+FILES CHANGED
+
+FUNCTIONS CHANGED
+
+UI CHANGES
+
+API USED
+
+DATA MODEL IMPACT
+
+TESTS:
+- Phase 14:
+- Full regression:
+- Browser:
+- Failures:
+
+BACKWARD COMPATIBILITY
+
+PROTECTED MODULES
+
+RISKS
+
+NEXT PHASE:
+Phase 15 — Client List / Query View
+
+Do not start Phase 15 automatically.

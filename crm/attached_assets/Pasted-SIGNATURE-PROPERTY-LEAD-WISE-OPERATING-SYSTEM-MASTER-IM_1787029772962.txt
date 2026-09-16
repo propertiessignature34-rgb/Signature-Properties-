@@ -1,0 +1,1173 @@
+SIGNATURE PROPERTY — LEAD-WISE OPERATING SYSTEM
+MASTER IMPLEMENTATION PROMPT
+
+IMPORTANT:
+This is NOT a redesign of the existing V2 architecture.
+
+Phases 1–20 are already completed/certified.
+Do NOT rewrite completed phases.
+Do NOT create another Lead/Client model.
+Do NOT create another Requirement model.
+Do NOT create another Form Engine.
+Do NOT create duplicate APIs.
+
+The objective is to make the entire CRM OPERATE LEAD-WISE from the
+agent's perspective while preserving the existing normalized backend
+entities.
+
+============================================================
+1. CORE PRINCIPLE — FREEZE THIS
+============================================================
+
+Agent works CLIENT/LEAD-WISE.
+
+Backend remains ENTITY-WISE.
+
+Therefore:
+
+AGENT VIEW:
+
+CLIENT / LEAD
+      ↓
+REQUIREMENTS
+      ↓
+MATCHING
+      ↓
+SITE VISIT
+      ↓
+NEGOTIATION
+      ↓
+TOKEN
+      ↓
+DEAL
+      ↓
+COMMISSION
+
+And alongside:
+
+CALLS
+WHATSAPP
+ACTIVITIES
+FOLLOW-UPS
+TIMELINE
+DOCUMENTS
+
+Do NOT flatten these entities into one database record.
+
+============================================================
+2. CANONICAL DATA RELATIONSHIP
+============================================================
+
+Preserve:
+
+Lead
+  ↓
+Transaction
+  ↓
+Requirement
+
+Requirement
+  ↓
+Matching
+  ↓
+Property / Inventory
+
+Requirement
+  ↓
+Site Visit
+  ↓
+Negotiation
+  ↓
+Token
+  ↓
+Deal
+  ↓
+Commission
+
+Lead
+  ↓
+Activities
+  ↓
+Follow-ups
+  ↓
+Timeline
+  ↓
+Documents
+
+A Lead is the permanent Client identity.
+
+A Requirement is a specific need of that Client.
+
+============================================================
+3. NON-NEGOTIABLE BUSINESS RULES
+============================================================
+
+RULE 1:
+
+One Client = One Lead.
+
+Never create a second Lead for the same client merely because the
+client has another requirement.
+
+RULE 2:
+
+Same requirement changes:
+
+UPDATE REQUIREMENT.
+
+Keep the SAME RequirementID.
+
+Example:
+
+R000001
+
+Before:
+3 BHK
+₹2 Cr
+Vesu
+
+After client conversation:
+2 BHK
+₹80 Lakh
+Vesu
+
+Still:
+
+R000001
+
+Never create R000002 for this change.
+
+RULE 3:
+
+Genuinely different need:
+
+NEW REQUIREMENT.
+
+Example:
+
+Existing:
+
+R000001
+Purchase → Residential → Flat
+
+Client now says:
+
+"I also need a Commercial Office."
+
+Create:
+
+R000002
+Purchase → Commercial → Office
+
+Same Lead.
+New Requirement.
+
+RULE 4:
+
+Inventory is GLOBAL.
+
+Do NOT copy/create duplicate property records inside every Lead.
+
+Instead:
+
+Lead
+→ Requirement
+→ Matching
+→ Inventory Property
+
+============================================================
+4. CLIENT WORKSPACE — MAIN OPERATING SCREEN
+============================================================
+
+The Client Workspace becomes the primary screen for agents.
+
+When agent opens:
+
+/client-workspace?id=<LEAD_ID>
+
+they should see the complete business context of that client.
+
+Header:
+
+SIGNATURE PROPERTY
+
+Client Name
+Mobile
+Lead ID
+Status
+Lifecycle
+Agent
+
+Actions:
+
+[CALL]
+[WHATSAPP]
+[EDIT CLIENT]
+[+ NEW REQUIREMENT]
+
+============================================================
+5. REQUIREMENTS SECTION
+============================================================
+
+Show ALL active requirements of this Lead.
+
+Example:
+
+ROHAN SHAH
+
+------------------------------------------------
+
+REQUIREMENTS                         [+ NEW REQUIREMENT]
+
+R000001
+Purchase • Residential • Flat
+
+2 BHK
+₹80 Lakh
+Vesu
+Ready
+
+Status: Active
+Score: 82
+Pipeline: Matching
+
+[UPDATE]
+[MATCHING]
+[SITE VISITS]
+[ACTIVITY]
+
+------------------------------------------------
+
+R000002
+Purchase • Commercial • Office
+
+Vesu
+₹1 Cr
+
+Status: Active
+Score: 64
+Pipeline: New
+
+[UPDATE]
+[MATCHING]
+[SITE VISITS]
+[ACTIVITY]
+
+------------------------------------------------
+
+DO NOT show old online requirement as a separate requirement
+just because the agent changed the requirement.
+
+The current Requirement record is the source of truth.
+
+============================================================
+6. INITIAL ONLINE LEAD
+============================================================
+
+An online lead may arrive with:
+
+Name
+Mobile
+Transaction
+Category
+SubCategory
+BHK
+Budget
+Location
+etc.
+
+Example:
+
+Online client submits:
+
+3 BHK
+₹2 Cr
+Vesu
+
+System creates:
+
+Lead
++
+Transaction
++
+Requirement
+
+Example:
+
+L000001
+T000001
+R000001
+
+This becomes the client's active working requirement.
+
+============================================================
+7. AGENT CALL WORKFLOW
+============================================================
+
+When agent calls the client, the agent should NOT have to navigate
+through multiple modules.
+
+From Client Workspace:
+
+[CALL]
+
+opens a conversation/call interaction associated with:
+
+LeadID
+TransactionID
+RequirementID
+
+The agent can update the SAME Requirement immediately.
+
+Example:
+
+Online requirement:
+
+3 BHK
+₹2 Cr
+Vesu
+
+Client says:
+
+"Actually 2 BHK chalega.
+Budget 80 lakh hai.
+Ready possession chahiye."
+
+Agent updates:
+
+BHK = 2
+Budget = ₹80L
+Possession = Ready
+
+SAVE
+
+Same:
+
+R000001
+
+No duplicate requirement.
+
+============================================================
+8. NEXT QUESTIONS
+============================================================
+
+Inside the active Requirement card show:
+
+KNOWN
+
+✓ BHK
+✓ Budget
+✓ Location
+
+TO DISCOVER
+
+? Possession
+? Parking
+? Furnishing
+? Facing
+
+NEXT QUESTIONS
+
+1. Possession kab tak chahiye?
+2. Parking kitni chahiye?
+3. Furnished ya unfurnished?
+
+Use the existing:
+
+Dependency Engine
++
+Next Question Engine
++
+FieldConfig
+
+Do NOT create another question engine.
+
+============================================================
+9. PROGRESSIVE REQUIREMENT UPDATE
+============================================================
+
+The existing progressive PATCH behaviour must remain.
+
+Agent may update one or multiple fields.
+
+Example:
+
+PATCH R000001
+
+BHKMin
+BudgetMax
+Parking
+Possession
+
+Only supplied fields change.
+
+Previously known values must not be erased accidentally.
+
+Unknown fields remain UNKNOWN.
+
+Use the existing three-state system:
+
+UNKNOWN
+KNOWN
+NOT_APPLICABLE
+
+============================================================
+10. NEW REQUIREMENT
+============================================================
+
+Button:
+
+[+ NEW REQUIREMENT]
+
+opens the existing dynamic requirement flow.
+
+The new requirement must use:
+
+TransactionType
++
+Category
++
+SubCategory
++
+FormRegistry
++
+FieldConfig
++
+DependencyConfig
+
+Do NOT hardcode a separate New Requirement form.
+
+Example:
+
+Rohan already has:
+
+R000001
+Residential Flat
+
+He says:
+
+"Office bhi chahiye."
+
+Agent:
+
+[+ NEW REQUIREMENT]
+
+creates:
+
+R000002
+Commercial Office
+
+Both appear under Rohan.
+
+============================================================
+11. MATCHING — LEAD CONTEXT
+============================================================
+
+When agent clicks:
+
+[MATCHING]
+
+from R000001:
+
+show properties matched to:
+
+LeadID
++
+RequirementID
+
+Example:
+
+R000001
+2 BHK
+₹80L
+Vesu
+
+MATCH RESULTS:
+
+Property A — 94%
+Property B — 89%
+Property C — 81%
+
+Do NOT create duplicate inventory records.
+
+Matching remains its existing entity/service.
+
+============================================================
+12. SITE VISITS — LEAD CONTEXT
+============================================================
+
+From Requirement:
+
+[SITE VISITS]
+
+show:
+
+Client
+Requirement
+Property
+Date
+Time
+Agent
+Status
+Feedback
+
+Example:
+
+Rohan
+R000001
+Property P001
+18 Aug
+4:00 PM
+Scheduled
+
+All site visit records must remain linked to the appropriate
+Requirement and Lead.
+
+============================================================
+13. NEGOTIATION — LEAD CONTEXT
+============================================================
+
+Requirement:
+
+R000001
+
+Property:
+
+P001
+
+Pipeline:
+
+New
+→ Matching
+→ Shortlisted
+→ Site Visit
+→ Negotiation
+→ Token
+→ Deal
+
+Show current stage inside the Requirement card.
+
+Do NOT duplicate pipeline data in the Lead record.
+
+============================================================
+14. DEAL — LEAD CONTEXT
+============================================================
+
+When a Requirement reaches Deal:
+
+Lead:
+
+Rohan
+
+Requirement:
+
+R000001
+
+Property:
+
+P001
+
+Deal:
+
+D000001
+
+Commission:
+
+linked to the Deal.
+
+The agent should be able to reach the Deal from the Lead Workspace.
+
+============================================================
+15. COMMISSION — LEAD CONTEXT
+============================================================
+
+Inside Lead Workspace:
+
+DEALS / COMMISSION
+
+Example:
+
+Deal D000001
+Property XYZ
+Deal Value ₹80L
+
+Expected Commission ₹1.6L
+Received ₹1.2L
+Pending ₹40K
+
+Commission remains its existing entity.
+
+Only the navigation/context is Lead-wise.
+
+============================================================
+16. FOLLOW-UP — LEAD CONTEXT
+============================================================
+
+Show client follow-ups in workspace.
+
+Example:
+
+FOLLOW-UPS
+
+Today
+Call regarding R000001
+
+Tomorrow
+Property visit
+
+Friday
+Negotiation follow-up
+
+Every follow-up should preserve:
+
+LeadID
+RequirementID where applicable
+TransactionID where applicable
+Agent
+Date/time
+Status
+
+============================================================
+17. ACTIVITY / CALL HISTORY
+============================================================
+
+Show:
+
+ACTIVITY TIMELINE
+
+Client Created
+Requirement Created
+Call
+Requirement Updated
+Property Matched
+Site Visit
+Negotiation
+Follow-up
+Deal
+Commission
+
+Example:
+
+18 Aug 10:00
+Client created
+
+18 Aug 10:05
+Requirement R000001 created
+
+18 Aug 11:30
+Call completed
+
+18 Aug 11:35
+BHK changed 3 → 2
+
+18 Aug 11:36
+Budget changed ₹2Cr → ₹80L
+
+18 Aug 12:00
+5 properties matched
+
+18 Aug 16:00
+Site visit scheduled
+
+Use existing Activity/Timeline architecture.
+
+Do NOT create duplicate history storage.
+
+============================================================
+18. DOCUMENTS — LEAD CONTEXT
+============================================================
+
+Show relevant client documents in workspace.
+
+Where a document belongs specifically to a Deal/Property/Requirement,
+retain that relationship.
+
+Do not duplicate the actual document record.
+
+============================================================
+19. LOST REQUIREMENT
+============================================================
+
+If a requirement is lost:
+
+[MARK LOST]
+
+Only that Requirement becomes:
+
+Lost
+
+Do NOT delete it.
+
+Do NOT delete the Client/Lead.
+
+Do NOT delete unrelated requirements.
+
+Example:
+
+R000001 → Lost
+
+R000002 → Active
+
+Client remains active.
+
+If the client later has a genuinely new need:
+
+[+ NEW REQUIREMENT]
+
+creates a new Requirement.
+
+============================================================
+20. LEAD STATUS VS REQUIREMENT STATUS
+============================================================
+
+Keep these separate.
+
+LEAD:
+
+New
+Verified
+Active
+Inactive
+Blacklisted
+
+REQUIREMENT:
+
+Draft
+Active
+Paused
+Closed
+Lost
+Archived
+
+Do NOT automatically mark the entire Lead Lost because one Requirement
+is Lost.
+
+A Lead may have:
+
+R000001 → Lost
+R000002 → Active
+
+Therefore Lead remains Active.
+
+============================================================
+21. GLOBAL MODULES
+============================================================
+
+Keep global modules for operational/reporting purposes:
+
+Clients
+Requirements
+Inventory
+Matching
+Site Visits
+Deals
+Commission
+Reports
+Users
+Settings
+Admin
+
+BUT:
+
+Every module that can be reached from a client context should preserve
+LeadID / RequirementID context.
+
+Example:
+
+Global Matching:
+all matches
+
+Lead Workspace Matching:
+only this Lead's Requirement matches
+
+============================================================
+22. INVENTORY RULE
+============================================================
+
+Inventory remains global.
+
+Never create:
+
+Rohan Inventory
+Meera Inventory
+Amit Inventory
+
+Instead:
+
+GLOBAL INVENTORY
+
+P001
+P002
+P003
+
+Relations:
+
+Rohan
+→ R000001
+→ P002
+
+Meera
+→ R000004
+→ P002
+
+Same property can match multiple clients.
+
+============================================================
+23. CLIENT DASHBOARD
+============================================================
+
+Client list should show useful summary:
+
+Client
+Mobile
+Status
+Lifecycle
+Requirements
+Active Requirements
+Score
+Latest Activity
+Next Follow-up
+Agent
+
+Clicking the client opens the Lead Workspace.
+
+============================================================
+24. WORKSPACE SUMMARY
+============================================================
+
+At top of workspace show:
+
+TOTAL REQUIREMENTS
+ACTIVE REQUIREMENTS
+SITE VISITS
+OPEN NEGOTIATIONS
+DEALS
+FOLLOW-UPS
+CLIENT SCORE
+
+Example:
+
+Requirements: 2
+Active: 1
+Site Visits: 2
+Negotiations: 1
+Deals: 1
+Follow-ups: 3
+Client Score: 82
+
+These are aggregated from existing entities.
+
+Do NOT store duplicate counters unless already supported by the
+existing architecture.
+
+============================================================
+25. MOBILE / TABLET
+============================================================
+
+The Lead Workspace must work properly on tablet/mobile.
+
+Prioritize:
+
+Client identity
+Call
+WhatsApp
+Active Requirement
+Update
+Next Questions
+New Requirement
+
+Buttons must be touch-friendly.
+
+No horizontal scrolling.
+
+============================================================
+26. VISUAL DESIGN
+============================================================
+
+Brand:
+
+SIGNATURE PROPERTY
+
+NOT:
+
+Signature Realty
+Signature Reality
+
+Use:
+
+Brown
+Gold
+Yellow
+
+Existing Signature Property visual language should be consistent across:
+
+Client List
+New Client
+Client Workspace
+Requirement
+Matching
+Site Visit
+Deal
+
+Do not introduce unrelated colors/styles.
+
+============================================================
+27. DO NOT CHANGE BACKEND CONTRACTS UNNECESSARILY
+============================================================
+
+Phases 1–20 are certified.
+
+Do NOT rewrite:
+
+V2LeadService
+V2TransactionService
+V2RequirementService
+V2DependencyService
+V2NextQuestionService
+V2ScoringService
+V2FormRegistryService
+Migration engine
+Inventory
+Matching
+Deal
+Commission
+Auth
+
+Only integrate existing services into the Lead Workspace where needed.
+
+If an API is missing for a required UI operation:
+
+STOP and report it before inventing a duplicate API.
+
+============================================================
+28. CRITICAL DATA RULE
+============================================================
+
+Never confuse:
+
+Lead
+Transaction
+Requirement
+Property
+
+Example:
+
+ONE CLIENT:
+
+L000001
+
+can have:
+
+T000001
+  R000001
+
+T000002
+  R000002
+
+Both belong to the same Lead.
+
+Do not create a new Lead when creating R000002.
+
+============================================================
+29. ACCEPTANCE TEST — COMPLETE BUSINESS FLOW
+============================================================
+
+Test client:
+
+Rohan
+
+Online submission:
+
+Purchase
+Residential
+Flat
+3 BHK
+₹2Cr
+Vesu
+
+Expected:
+
+Lead created
+Transaction created
+Requirement R000001 created
+
+Agent calls client.
+
+Client says:
+
+2 BHK
+₹80L
+Vesu
+Ready
+
+Agent updates R000001.
+
+Expected:
+
+R000001 remains same.
+
+No R000002.
+
+Next Questions update accordingly.
+
+Then client says:
+
+"I also need a commercial office."
+
+Agent clicks:
+
++ NEW REQUIREMENT
+
+Expected:
+
+R000002 created.
+
+Rohan now has:
+
+R000001
+Residential Flat
+2 BHK
+₹80L
+
+R000002
+Commercial Office
+
+Then:
+
+R000001
+→ Matching
+→ Site Visit
+→ Negotiation
+→ Token
+→ Deal
+
+All activity remains visible from Rohan's workspace.
+
+============================================================
+30. LOST TEST
+============================================================
+
+Mark R000001 Lost.
+
+Expected:
+
+R000001 = Lost
+
+Rohan Lead = NOT automatically deleted.
+
+R000002 remains Active.
+
+Timeline records remain.
+
+If Rohan later needs another property:
+
++ NEW REQUIREMENT
+
+creates R000003.
+
+============================================================
+31. REGRESSION SAFETY
+============================================================
+
+Before changing anything:
+
+inspect existing implementation.
+
+Then implement only the minimum UI/orchestration changes.
+
+Run:
+
+ALL existing tests.
+
+Do not reduce test coverage.
+
+Do not delete tests.
+
+Do not modify production DB.
+
+Do not run migration.
+
+Keep:
+
+LEAD_V2_ENABLED = OFF.
+
+============================================================
+32. FINAL REPORT
+============================================================
+
+Return:
+
+LEAD-WISE WORKSPACE:
+PASS / FAIL
+
+CLIENT → REQUIREMENTS:
+PASS / FAIL
+
+UPDATE SAME REQUIREMENT:
+PASS / FAIL
+
+NEW REQUIREMENT:
+PASS / FAIL
+
+MATCHING LEAD CONTEXT:
+PASS / FAIL
+
+SITE VISIT LEAD CONTEXT:
+PASS / FAIL
+
+NEGOTIATION LEAD CONTEXT:
+PASS / FAIL
+
+DEAL LEAD CONTEXT:
+PASS / FAIL
+
+COMMISSION LEAD CONTEXT:
+PASS / FAIL
+
+FOLLOW-UP LEAD CONTEXT:
+PASS / FAIL
+
+ACTIVITY/TIMELINE:
+PASS / FAIL
+
+LOST REQUIREMENT:
+PASS / FAIL
+
+LEAD STATUS SEPARATION:
+PASS / FAIL
+
+INVENTORY GLOBAL:
+PASS / FAIL
+
+MOBILE/TABLET:
+PASS / FAIL
+
+SIGNATURE PROPERTY BRANDING:
+PASS / FAIL
+
+FULL REGRESSION:
+X/X
+
+DATABASE MODIFIED:
+YES / NO
+
+MIGRATION:
+NOT RUN
+
+V2 FLAG:
+OFF
+
+FILES CHANGED:
+...
+
+APIs CHANGED:
+...
+
+KNOWN ISSUES:
+...
+
+IMPORTANT:
+Do NOT declare production-ready based only on unit tests.
+Verify the actual Preview/UI flow.
+
+STOP after the report.

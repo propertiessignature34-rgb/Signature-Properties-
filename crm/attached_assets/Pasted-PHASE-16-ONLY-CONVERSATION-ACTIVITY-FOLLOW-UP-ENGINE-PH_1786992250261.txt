@@ -1,0 +1,379 @@
+PHASE 16 ONLY — CONVERSATION / ACTIVITY / FOLLOW-UP ENGINE
+
+PHASES 1–12 ARE COMPLETE.
+PHASE 13 IS DEFERRED.
+PHASES 14–15 MUST NOT BE REDESIGNED OR REPEATED.
+
+Implement ONLY Phase 16.
+
+OBJECTIVE
+
+Build the conversation-driven Activity + Follow-up layer.
+
+The CRM should remember what happened when an agent interacted
+with a client and should connect the conversation to the correct
+Client, Transaction and Requirement.
+
+CORE MODEL:
+
+ONE CLIENT = ONE LEAD
+        ↓
+TRANSACTION
+        ↓
+REQUIREMENT / NEED
+        ↓
+CONVERSATION / ACTIVITY
+        ↓
+FOLLOW-UP
+
+IMPORTANT:
+
+Conversation is NOT a new Lead.
+Conversation is NOT a new Requirement.
+An activity must never create a duplicate Client.
+
+==================================================
+1. ACTIVITY MODEL
+==================================================
+
+Create/standardize activity records with:
+
+ActivityID
+LeadID
+TransactionID
+RequirementID
+ActivityType
+ActivityDirection
+Summary
+Details
+Outcome
+CreatedBy
+CreatedAt
+NextAction
+FollowUpDate
+Version
+
+ActivityType examples:
+
+CALL
+WHATSAPP
+SMS
+MEETING
+SITE_VISIT
+NOTE
+EMAIL
+OTHER
+
+ActivityDirection:
+
+INBOUND
+OUTBOUND
+
+Do not destroy existing activity fields.
+
+Preserve legacy aliases where required.
+
+==================================================
+2. CONVERSATION CAPTURE
+==================================================
+
+Agent should be able to record:
+
+What happened?
+
+Example:
+
+"Client said ready-to-move property preferred."
+
+What did we learn?
+
+Possession:
+Ready to Move
+
+Urgency:
+Immediate
+
+Parking:
+2
+
+Next action:
+
+"Send 3 matching properties"
+
+Follow-up:
+
+Tomorrow 11:00
+
+The system must update the EXISTING Requirement where
+the agent explicitly chooses a Requirement.
+
+Do NOT create another Requirement.
+
+==================================================
+3. REQUIREMENT UPDATE
+==================================================
+
+When conversation captures:
+
+Possession = Ready to Move
+
+the system should PATCH:
+
+PATCH /api/requirements/:requirementId
+
+Only supplied fields are changed.
+
+Existing fields remain untouched.
+
+UNKNOWN → KNOWN.
+
+KNOWN → updated KNOWN value.
+
+NOT_APPLICABLE remains distinct.
+
+Never convert UNKNOWN to NO automatically.
+
+==================================================
+4. ACTIVITY + REQUIREMENT HISTORY
+==================================================
+
+A conversation that changes a Requirement must create:
+
+1. Activity record
+2. RequirementHistory record
+
+Example:
+
+Activity:
+"Called client"
+
+RequirementHistory:
+Possession:
+UNKNOWN → KNOWN("Ready to Move")
+
+Both must be linked to:
+
+LeadID
+TransactionID
+RequirementID
+
+Use existing RequirementHistory architecture.
+
+Do not create duplicate history entries.
+
+==================================================
+5. QUICK CONVERSATION ACTIONS
+==================================================
+
+Workspace should support:
+
+[Call]
+[WhatsApp]
+[Add Note]
+[Record Conversation]
+[Set Follow-up]
+
+Do not redesign the entire Client Workspace.
+
+Phase 14 remains authoritative for Workspace UI.
+
+Only add the minimum integration needed.
+
+==================================================
+6. FOLLOW-UP MODEL
+==================================================
+
+Follow-up should support:
+
+FollowUpID
+LeadID
+TransactionID
+RequirementID
+ActivityID
+DueAt
+Type
+Status
+AssignedTo
+Notes
+CreatedBy
+CreatedAt
+UpdatedAt
+
+Statuses:
+
+PENDING
+COMPLETED
+CANCELLED
+OVERDUE
+
+Use existing Follow-up fields if already present.
+
+Do NOT create duplicate follow-up collections.
+
+==================================================
+7. FOLLOW-UP ACTIONS
+==================================================
+
+Agent must be able to:
+
+Create Follow-up
+Edit Follow-up
+Complete Follow-up
+Cancel Follow-up
+
+When completed:
+
+Activity may optionally be recorded.
+
+Do not automatically create a new Requirement.
+
+==================================================
+8. TODAY / OVERDUE
+==================================================
+
+Provide query capabilities:
+
+Today's follow-ups
+Overdue follow-ups
+Upcoming follow-ups
+Completed follow-ups
+
+Return client context:
+
+Client
+Need
+Due time
+Assigned agent
+Last activity
+
+==================================================
+9. NEXT ACTION
+==================================================
+
+After conversation, show:
+
+NEXT ACTION
+
+Example:
+
+"Confirm possession by tomorrow."
+
+or
+
+"Send matching properties."
+
+This is an Activity/Follow-up concept.
+
+Do not confuse it with Phase 11 Next Question Engine.
+
+NEXT QUESTION:
+"What should I ask the client?"
+
+NEXT ACTION:
+"What should the agent do next?"
+
+They are different.
+
+==================================================
+10. APIs
+==================================================
+
+Reuse existing APIs where possible.
+
+Provide canonical APIs if missing:
+
+POST /api/v2/activities
+GET /api/v2/clients/:leadId/activities
+GET /api/v2/requirements/:requirementId/activities
+
+POST /api/v2/followups
+GET /api/v2/followups
+PATCH /api/v2/followups/:id
+POST /api/v2/followups/:id/complete
+POST /api/v2/followups/:id/cancel
+
+Do not duplicate existing endpoints.
+
+==================================================
+11. AUTHORIZATION
+==================================================
+
+Use existing authentication/RBAC.
+
+CreatedBy/UpdatedBy must come from trusted actor context.
+
+Do not trust client-supplied audit identity.
+
+Respect tenant/agent scope.
+
+==================================================
+12. DATA SAFETY
+==================================================
+
+Reading activities/follow-ups must NEVER mutate data.
+
+Creating an activity must NOT automatically create a Lead.
+
+Creating a follow-up must NOT automatically create a Requirement.
+
+Explicit Requirement updates only.
+
+==================================================
+13. TESTS
+==================================================
+
+Create Phase 16 tests for:
+
+- Activity creation
+- Activity retrieval
+- Lead linkage
+- Transaction linkage
+- Requirement linkage
+- Conversation → Requirement PATCH
+- UNKNOWN → KNOWN
+- Existing fields preserved
+- RequirementHistory created
+- Follow-up creation
+- Follow-up listing
+- Complete
+- Cancel
+- Overdue
+- Today
+- Upcoming
+- Authorization
+- Audit fields
+- No duplicate Lead
+- No duplicate Requirement
+- Legacy activity compatibility
+
+Run ALL existing tests.
+
+Do not claim PASS based only on Phase 16 tests.
+
+==================================================
+PHASE BOUNDARY
+==================================================
+
+Implement ONLY Phase 16.
+
+Do NOT implement Phase 17, 18, 19 or 20.
+
+Stop after Phase 16.
+
+Return:
+
+PHASE 16 GATE REPORT
+STATUS
+FILES CHANGED
+FUNCTIONS
+DATA MODEL
+APIs
+UI INTEGRATION
+TESTS
+FULL REGRESSION
+BACKWARD COMPATIBILITY
+SECURITY
+RISKS
+NEXT PHASE = 17
+
+STOP.

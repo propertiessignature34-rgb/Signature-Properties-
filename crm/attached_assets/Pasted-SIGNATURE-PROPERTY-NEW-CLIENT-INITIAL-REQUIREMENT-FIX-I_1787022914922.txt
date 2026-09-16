@@ -1,0 +1,634 @@
+SIGNATURE PROPERTY — NEW CLIENT INITIAL REQUIREMENT FIX
+
+IMPORTANT:
+This is a targeted UX correction.
+Do NOT redesign the architecture.
+Do NOT modify production data.
+Do NOT run migration.
+Do NOT enable LEAD_V2_ENABLED.
+Reuse the existing V2 FormConfig / FieldConfig / DependencyConfig /
+FormRegistry systems.
+
+========================================================
+PROBLEM FOUND IN ACTUAL PREVIEW
+========================================================
+
+The current "Add Client" / "New Client" modal shows:
+
+INITIAL REQUIREMENT
+
+Transaction
+Category
+Location
+Budget
+
+But for:
+
+Purchase → Residential → Flat
+
+the BHK field is missing.
+
+This is incorrect.
+
+The Initial Requirement section must use the SAME dynamic requirement
+field system that is used by the Requirement workflow.
+
+========================================================
+FINAL NEW CLIENT FLOW
+========================================================
+
+New Client form:
+
+CLIENT DETAILS
+
+Name *
+Mobile *
+
+--------------------------------
+
+INITIAL REQUIREMENT
+
+Transaction *
+[ Purchase ▼ ]
+
+Category *
+[ Residential ▼ ]
+
+SubCategory *
+[ Flat ▼ ]
+
+Then dynamically render the relevant requirement fields.
+
+For:
+
+Purchase
+→ Residential
+→ Flat
+
+show at minimum:
+
+BHK
+Budget
+Location
+
+and then other relevant configured fields according to the existing
+V2 configuration.
+
+Example:
+
+INITIAL REQUIREMENT
+
+Transaction
+[ Purchase ▼ ]
+
+Category
+[ Residential ▼ ]
+
+SubCategory
+[ Flat ▼ ]
+
+BHK
+[ 2 ▼ ]
+
+Budget
+[ ₹80,00,000 ]
+
+Location
+[ Vesu ]
+
+Possession
+[ Ready ▼ ]
+
+Parking
+[ 2 ]
+
+Furnishing
+[ Semi Furnished ▼ ]
+
+Facing
+[ East ▼ ]
+
+Only fields that are relevant according to the existing dynamic
+configuration should be displayed.
+
+Do NOT hardcode only BHK.
+
+========================================================
+DYNAMIC BEHAVIOUR
+========================================================
+
+When Transaction changes:
+
+Purchase
+Rent
+Sale
+Rent Out
+Lease
+Lease Out
+
+reload the applicable Category/SubCategory configuration.
+
+When Category changes:
+
+Residential
+Commercial
+Industrial
+Land
+Agriculture
+
+reload the applicable SubCategory list.
+
+When SubCategory changes:
+
+load the existing FormConfig / FieldConfig for:
+
+TransactionType + Category + SubCategory
+
+and render the relevant fields.
+
+Example:
+
+Purchase + Residential + Flat
+→ BHK, Budget, Location, etc.
+
+Rent + Residential + Flat
+→ BHK, Rent Budget, Location, Tenant Type, etc.
+
+Purchase + Commercial + Office
+→ Area, Budget, Location, Business Type, etc.
+
+Purchase + Land
+→ Plot Area, Budget, Location, Road Width, etc.
+
+Industrial
+→ Built-up Area, Budget, Power Load, Location, etc.
+
+Agriculture
+→ relevant agricultural fields from existing configuration.
+
+========================================================
+IMPORTANT — DO NOT DUPLICATE FORMS
+========================================================
+
+There must NOT be one hardcoded "New Client Requirement Form" and
+another separate hardcoded "Requirement Form".
+
+Both should use the existing dynamic configuration.
+
+New Client Initial Requirement:
+
+        ↓
+
+existing V2 FormRegistry
+        +
+FieldConfig
+        +
+DependencyConfig
+
+The New Client form is simply the INITIAL CAPTURE entry point.
+
+========================================================
+INITIAL REQUIREMENT IS NOT A SEPARATE ENTITY
+========================================================
+
+When New Client is saved with requirement information:
+
+Create:
+
+Client
++
+Transaction
++
+Requirement
+
+using the existing V2 APIs/services.
+
+The created Requirement becomes the client's working Requirement.
+
+Do NOT create an "InitialRequirement" duplicate entity.
+
+========================================================
+ONLINE CLIENT EXAMPLE
+========================================================
+
+If an online client submits:
+
+Name:
+Rohan
+
+Mobile:
+98765xxxxx
+
+Transaction:
+Purchase
+
+Category:
+Residential
+
+SubCategory:
+Flat
+
+BHK:
+3
+
+Budget:
+₹2 Cr
+
+Location:
+Vesu
+
+Then create the client and the Requirement with:
+
+BHK = 3
+Budget = ₹2 Cr
+Location = Vesu
+
+Later the agent calls the client.
+
+Client says:
+
+"Actually mujhe 2 BHK chahiye aur budget 80 lakh hai."
+
+Agent opens:
+
+UPDATE REQUIREMENT
+
+and changes:
+
+BHK:
+3 → 2
+
+Budget:
+₹2 Cr → ₹80 Lakh
+
+Same RequirementID must remain.
+
+Example:
+
+R000001 → R000001
+
+Never create R000002 for this change.
+
+========================================================
+NEW REQUIREMENT RULE
+========================================================
+
+Only if the client has a genuinely different need:
+
+Example:
+
+Existing:
+Purchase → Residential → Flat → 2 BHK → ₹80L
+
+Client says:
+
+"Office bhi chahiye."
+
+Agent uses:
+
++ NEW REQUIREMENT
+
+and a NEW RequirementID is created.
+
+========================================================
+UI REQUIREMENT
+========================================================
+
+The Initial Requirement section should be visually clear.
+
+Use:
+
+CLIENT DETAILS
+
+Name
+Mobile
+
+----------------------------
+
+INITIAL REQUIREMENT
+
+Transaction
+Category
+SubCategory
+
+Dynamic Requirement Fields
+
+[Cancel] [Save Client]
+
+Do not label it:
+
+"Initial Requirement (optional — add more from workspace)"
+
+if Transaction/Category/requirement capture is part of the normal
+online client intake.
+
+Use a clean label:
+
+INITIAL REQUIREMENT
+
+or:
+
+CLIENT REQUIREMENT
+
+========================================================
+BHK SPECIFIC REQUIREMENT
+========================================================
+
+For:
+
+Residential → Flat
+
+BHK must be visible in the Initial Requirement form.
+
+Use a proper field:
+
+BHK
+[ 1 | 2 | 3 | 4 | 5 | 5+ ]
+
+or the existing configured BHK options.
+
+Do NOT use a free-text field if the existing configuration defines
+BHK as Select.
+
+For other Residential SubCategories, use their existing configured
+field rules.
+
+========================================================
+BUDGET
+========================================================
+
+Do not show confusing duplicate:
+
+Budget
+Budget Min
+Budget Max
+
+to the normal agent.
+
+The UI can display:
+
+Budget
+
+while backend may store:
+
+BudgetMin
+BudgetMax
+
+according to the existing data model.
+
+If the configuration requires a range, present it naturally:
+
+Budget From
+Budget To
+
+or a single Budget field where appropriate.
+
+========================================================
+LOCATION
+========================================================
+
+Use:
+
+Location
+
+with support for multiple locations if the configuration allows it.
+
+Do not expose:
+
+Location1
+Location2
+Location3
+
+as technical field names.
+
+========================================================
+UNKNOWN FIELDS
+========================================================
+
+The user does NOT have to complete every dynamic field.
+
+Only the information available at the time of client capture is saved.
+
+Unknown fields remain UNKNOWN.
+
+Do not block Client creation because optional requirement information
+is missing.
+
+========================================================
+VISUAL THEME
+========================================================
+
+Maintain the approved:
+
+BROWN + GOLD + YELLOW
+
+Signature Property theme.
+
+Initial Requirement fields should visually match the Update Requirement
+and New Requirement forms.
+
+Do NOT create a different visual style for New Client.
+
+========================================================
+TABLET/MOBILE
+========================================================
+
+The form must work properly on tablet/mobile.
+
+Use single-column layout where necessary.
+
+No horizontal scrolling.
+
+BHK and other Select controls must be large enough for touch.
+
+========================================================
+ACCEPTANCE TESTS
+========================================================
+
+Test 1:
+
+New Client
+→ Purchase
+→ Residential
+→ Flat
+
+Expected:
+
+BHK appears.
+
+Test 2:
+
+Change BHK from 3 to 2.
+
+Expected:
+
+Value is saved into the created Requirement.
+
+Test 3:
+
+New Client
+→ Rent
+→ Residential
+→ Flat
+
+Expected:
+
+Rent-specific dynamic fields appear and BHK remains available where
+configured.
+
+Test 4:
+
+New Client
+→ Purchase
+→ Commercial
+→ Office
+
+Expected:
+
+Commercial/Office fields appear.
+
+BHK must NOT appear if DependencyConfig says it is NOT_RELEVANT.
+
+Test 5:
+
+New Client
+→ Purchase
+→ Land
+
+Expected:
+
+Land-specific fields appear.
+
+BHK must NOT appear.
+
+Test 6:
+
+Create Client with:
+
+Name
+Mobile
+Purchase
+Residential
+Flat
+BHK = 3
+Budget = ₹2Cr
+Location = Vesu
+
+Expected:
+
+Client created.
+
+Transaction created.
+
+One Requirement created.
+
+Requirement contains:
+
+BHK = 3
+Budget = ₹2Cr
+Location = Vesu
+
+Test 7:
+
+Open that Requirement.
+
+Update:
+
+BHK = 2
+Budget = ₹80L
+
+Expected:
+
+Same RequirementID.
+
+No duplicate Requirement.
+
+Test 8:
+
+Create a different need from workspace:
+
+Commercial Office.
+
+Expected:
+
+New RequirementID.
+
+========================================================
+REGRESSION SAFETY
+========================================================
+
+Run the full existing test suite.
+
+Also run targeted UI/API tests for the New Client flow.
+
+Do NOT:
+
+- change database architecture
+- change Inventory
+- change Matching
+- change Deals
+- change Commission
+- change Authentication
+- enable production V2
+- run migration --apply
+- create another form engine
+- create another requirement entity
+
+========================================================
+FINAL REPORT
+========================================================
+
+Return:
+
+NEW CLIENT FORM:
+PASS / FAIL
+
+BHK FOR RESIDENTIAL FLAT:
+PASS / FAIL
+
+DYNAMIC FIELDS:
+PASS / FAIL
+
+TRANSACTION/CATEGORY/SUBCATEGORY DEPENDENCY:
+PASS / FAIL
+
+INITIAL CLIENT + REQUIREMENT CREATION:
+PASS / FAIL
+
+UPDATE SAME REQUIREMENT:
+PASS / FAIL
+
+NEW DISTINCT REQUIREMENT:
+PASS / FAIL
+
+NO DUPLICATE REQUIREMENTS:
+PASS / FAIL
+
+MOBILE/TABLET:
+PASS / FAIL
+
+BROWN/GOLD/YELLOW THEME:
+PASS / FAIL
+
+ACTUAL PREVIEW VERIFIED:
+PASS / FAIL
+
+FULL TESTS:
+X/X
+
+DATABASE MODIFIED:
+YES / NO
+
+MIGRATION:
+NOT RUN
+
+V2 FLAG:
+OFF
+
+FILES CHANGED:
+...
+
+REMAINING ISSUES:
+...
+
+STOP.

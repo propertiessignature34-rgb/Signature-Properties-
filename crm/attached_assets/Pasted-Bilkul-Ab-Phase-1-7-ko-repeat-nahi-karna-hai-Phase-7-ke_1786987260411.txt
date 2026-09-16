@@ -1,0 +1,900 @@
+Bilkul. Ab Phase 1–7 ko repeat nahi karna hai. Phase 7 ke actual result ko baseline maan kar pending Phase 8–20 ko completely update karna chahiye.
+
+Aapke current Phase 7 implementation ko dekhte hue, purana Phase 8–20 design ab insufficient hai. Neeche final updated Phase 8–20 architecture hai. Isko Replit ke existing replit.md / blueprint mein replace karna chahiye.
+
+SIGNATURE PROPERTIES V2 — UPDATED PENDING PHASES 8–20
+
+PHASE 8 — QUESTION & CONFIGURATION ENGINE
+
+Objective
+
+CRM ko form-driven nahi, conversation-driven configuration system banana.
+
+Phase 7 ne Requirement ko progressive bana diya hai.
+
+Ab Phase 8 decide karega:
+
+> Client ke Transaction + Category + SubCategory + current known information ke basis par kaunse questions relevant hain?
+
+
+
+Configuration layers
+
+EntityConfig
+QuestionConfig
+FieldConfig
+OptionConfig
+DependencyConfig
+ValidationConfig
+WorkflowConfig
+ColumnConfig
+ScoringConfig
+FormRegistry
+
+QuestionConfig
+
+Har question:
+
+QuestionID
+FieldKey
+QuestionLabel
+FieldLabel
+
+TransactionType
+Category
+SubCategory
+
+FieldType
+
+Priority
+Section
+
+RequiredMode
+
+DependencyRule
+ValidationRule
+
+Options
+
+HelpText
+Placeholder
+
+Active
+Version
+DisplayOrder
+
+Priority
+
+CORE
+IMPORTANT
+OPTIONAL
+
+CORE ka matlab mandatory form fields nahi hai.
+
+CORE ka matlab:
+
+> requirement ko meaningful banane ke liye high-value information.
+
+
+
+Agar client ne abhi nahi bataya:
+
+BHK = UNKNOWN
+
+Error nahi.
+
+
+---
+
+PHASE 9 — DEPENDENCY ENGINE
+
+Configuration-driven dependency system.
+
+Example:
+
+Transaction = Purchase
+Category = Residential
+SubCategory = Flat
+
+→ relevant residential-flat questions.
+
+If:
+
+Transaction = Rent
+
+→ rent-specific questions.
+
+If:
+
+Category = Commercial
+
+→ commercial questions.
+
+If:
+
+SubCategory = Office
+
+→ office-specific questions.
+
+Dependency engine must calculate:
+
+VISIBLE
+HIDDEN
+RELEVANT
+NOT_RELEVANT
+REQUIRED
+OPTIONAL
+UNKNOWN
+KNOWN
+NOT_APPLICABLE
+
+Frontend mein business logic:
+
+if(category === "Residential")
+
+NOT ALLOWED.
+
+Frontend sirf engine ka result render karega.
+
+
+---
+
+PHASE 10 — FORM REGISTRY → NEED CONFIGURATION
+
+Important correction:
+
+Old concept:
+
+> Dynamic Form
+
+
+
+New concept:
+
+> Dynamic Need Configuration
+
+
+
+Form Registry remains, but its purpose changes.
+
+Key:
+
+TransactionType
++
+Category
++
+SubCategory
++
+FormVersion
+
+Example:
+
+Purchase | Residential | Flat | V2.1
+Rent     | Residential | Flat | V2.1
+Purchase | Commercial  | Office | V2.1
+
+But the form must NOT behave like:
+
+30 fields
+↓
+all required
+↓
+Submit
+
+Instead:
+
+Current known information
+        ↓
+Relevant questions
+        ↓
+Unknown information
+        ↓
+Ask only when useful
+
+Historical Requirement keeps its:
+
+FormVersion
+
+so old data is never reinterpreted incorrectly.
+
+
+---
+
+PHASE 11 — NEXT QUESTION ENGINE
+
+This is one of the most important new phases.
+
+The system should answer:
+
+> "Agent ko ab client se kya poochna chahiye?"
+
+
+
+Example.
+
+Current Requirement:
+
+Purchase
+Residential
+Flat
+Vesu
+₹1 Cr
+3 BHK
+
+Known:
+
+Location
+Budget
+BHK
+Category
+SubCategory
+
+Unknown:
+
+Possession
+Parking
+Furnishing
+Facing
+Floor
+
+Engine may return:
+
+Next Best Questions
+
+1. "Possession kab tak chahiye?"
+
+2. "Parking kitni chahiye?"
+
+3. "Furnished property chalegi?"
+
+Each question should have:
+
+QuestionID
+Priority
+Reason
+ExpectedValue
+
+Example:
+
+{
+  "QuestionID": "possession",
+  "Question": "Possession kab tak chahiye?",
+  "Priority": "HIGH",
+  "Reason": "Purchase requirement qualification"
+}
+
+API:
+
+GET /api/requirements/:id/next-questions
+
+
+---
+
+PHASE 12 — CLIENT INTELLIGENCE + SCORING
+
+Two separate scores.
+
+ClientScore
+
+Client relationship/value.
+
+Factors configurable:
+
+Responsiveness
+Engagement
+Past transactions
+Follow-up behavior
+Relationship value
+
+RequirementScore
+
+Specific requirement quality.
+
+Factors:
+
+Budget confirmed
+Location confirmed
+BHK confirmed
+Timeline
+Finance readiness
+Site visit
+Shortlist
+Responsiveness
+
+Negative:
+
+No response
+Very long timeline
+Inactive requirement
+
+Every score must explain itself:
+
+RequirementScore: 78
+
+Budget confirmed      +15
+Location confirmed    +15
+BHK confirmed         +10
+Timeline confirmed    +10
+Responsive            +10
+Site Visit            +18
+--------------------------------
+Total                  78
+
+Store:
+
+ScoreBreakdown
+ScoreVersion
+CalculatedAt
+
+
+---
+
+PHASE 13 — NEW CLIENT QUICK CAPTURE
+
+This phase changes the UI philosophy completely.
+
+Agent clicks:
+
++ NEW CLIENT
+
+Do NOT show huge form.
+
+Quick Capture
+
+CLIENT
+
+Name
+Phone
+Alternate Phone
+WhatsApp
+
+INITIAL NEED
+
+Transaction
+Category
+SubCategory
+Location
+Multiple Locations
+Budget
+Short Notes
+
+The agent can choose additional fields if required.
+
+Example
+
+Rahul Shah
+9876543210
+
+Purchase
+Residential
+Flat
+
+Vesu
+₹1 Cr
+
+"3 BHK preferred"
+
+SAVE.
+
+Backend atomically creates:
+
+L000001
+T000001
+R000001
+
+Everything else:
+
+UNKNOWN
+
+
+---
+
+PHASE 14 — CLIENT WORKSPACE
+
+This becomes the main CRM screen.
+
+Header
+
+Rahul Shah
+
+📞 Call
+💬 WhatsApp
+✏️ Edit
++ Transaction
++ Requirement
+
+Show:
+
+Status
+Lifecycle
+Score
+Tags
+
+
+---
+
+Needs
+
+Example:
+
+Purchase — Residential Flat
+
+Vesu
+₹1 Cr
+3 BHK
+
+KNOWN
+
+✓ Purchase
+✓ Residential
+✓ Flat
+✓ Vesu
+✓ ₹1 Cr
+✓ 3 BHK
+
+TO DISCOVER
+
+○ Possession
+○ Parking
+○ Furnishing
+○ Facing
+
+NEXT QUESTIONS
+
+1. Possession kab chahiye?
+2. Parking kitni?
+3. Furnishing preference?
+
+
+---
+
+Important
+
+Agent ko full form dobara nahi kholna padega.
+
+Agent directly answer update karega.
+
+Example:
+
+Parking
+[ + ] 2
+
+Save.
+
+Same RequirementID.
+
+
+---
+
+PHASE 15 — CLIENT LIST + REQUIREMENT VIEW
+
+Clients
+
+Navigation:
+
+Clients
+
+Not:
+
+Leads
+
+Default columns:
+
+Client
+Mobile
+Status
+Lifecycle
+Tags
+Needs
+Latest Need
+Budget
+Location
+Score
+Follow-up
+
+Filters:
+
+All
+My Clients
+New
+Active
+Hot
+Follow-up Due
+Inactive
+Investor
+
+
+---
+
+Requirements View
+
+This is a query, not another database.
+
+Example:
+
+Purchase | Residential | 3 BHK | Vesu | ₹1 Cr
+Rent     | Residential | 2 BHK | Adajan | ₹40K
+
+Click:
+
+Client
+ ↓
+Transaction
+ ↓
+Requirement
+
+
+---
+
+PHASE 16 — CONVERSATION / ACTIVITY / FOLLOW-UP ENGINE
+
+This phase connects the CRM to actual agent work.
+
+Example:
+
+Call
+
+Rahul called
+
+Agent opens current Need.
+
+System displays:
+
+Known:
+3 BHK
+Vesu
+₹1 Cr
+
+Unknown:
+Possession
+Parking
+Furnishing
+
+Agent asks.
+
+Client says:
+
+> "Ready possession chahiye."
+
+
+
+Agent updates.
+
+Timeline automatically:
+
+10 Aug 2026
+Requirement Updated
+
+Possession:
+UNKNOWN → Ready
+
+Next call:
+
+> "2 parking."
+
+
+
+Timeline:
+
+Parking:
+UNKNOWN → 2
+
+Activity references
+
+LeadID
+TransactionID
+RequirementID
+UserID
+
+No duplicate Client records.
+
+
+---
+
+PHASE 17 — API + BACKWARD COMPATIBILITY
+
+Canonical API architecture:
+
+Client/Lead
+
+GET    /api/leads
+GET    /api/leads/:id
+POST   /api/leads
+PATCH  /api/leads/:id
+
+POST   /api/leads/check-duplicate
+
+Transaction
+
+GET    /api/leads/:leadId/transactions
+POST   /api/leads/:leadId/transactions
+
+GET    /api/transactions/:id
+PATCH  /api/transactions/:id
+
+Requirement
+
+GET    /api/transactions/:transactionId/requirements
+POST   /api/transactions/:transactionId/requirements
+
+GET    /api/requirements/:id
+PATCH  /api/requirements/:id
+
+GET    /api/requirements
+
+Intelligence
+
+GET /api/requirements/:id/next-questions
+GET /api/requirements/:id/score
+GET /api/leads/:id/score
+GET /api/leads/:id/tags
+
+Workspace
+
+GET /api/clients/:leadId/workspace
+
+Configuration
+
+GET /api/v2/config/questions
+GET /api/v2/config/forms
+GET /api/v2/config/options
+GET /api/v2/config/dependencies
+
+Compatibility
+
+Old APIs continue through adapters.
+
+Do not break:
+
+Dashboard
+Matching
+Inventory
+Follow-up
+Activities
+Deal
+Commission
+Auth
+RBAC
+
+
+---
+
+PHASE 18 — MIGRATION & DATA SAFETY
+
+No automatic production migration.
+
+Migration flow:
+
+Backup
+ ↓
+Dry Run
+ ↓
+MigrationMap
+ ↓
+Normalize
+ ↓
+Duplicate Analysis
+ ↓
+Create/Map Lead
+ ↓
+Create Transaction
+ ↓
+Attach Requirement
+ ↓
+Validate relationships
+ ↓
+Generate Report
+ ↓
+Approval
+ ↓
+Production Migration
+
+Preserve:
+
+LegacyID
+
+Never delete original data.
+
+Generate:
+
+migration-report.json
+duplicate-report.json
+orphan-report.json
+relationship-report.json
+
+
+---
+
+PHASE 19 — COMPLETE TESTING
+
+Unit
+
+ID Engine
+Lead
+Duplicate
+Transaction
+Requirement
+QuestionConfig
+Dependency
+Unknown/Known/N/A
+FormVersion
+Next Question
+Scoring
+Tags
+Activity
+
+API
+
+Lead CRUD
+Duplicate
+Transaction CRUD
+Requirement CRUD
+Workspace
+Next Questions
+Scoring
+
+Integration
+
+Critical:
+
+Create Client
+ ↓
+Transaction
+ ↓
+Requirement
+ ↓
+Call
+ ↓
+Update Requirement
+ ↓
+Next Question
+ ↓
+Follow-up
+ ↓
+Timeline
+
+E2E acceptance
+
+Step 1
+
+Create:
+
+Rahul
+9876543210
+Purchase
+Residential
+Vesu
+₹1 Cr
+
+Step 2
+
+Workspace:
+
+Known:
+Vesu
+₹1 Cr
+
+Unknown:
+BHK
+Possession
+Parking
+
+Step 3
+
+Call:
+
+3 BHK
+
+Step 4
+
+Update same Requirement:
+
+BHK = 3
+
+Step 5
+
+Next question:
+
+Possession?
+
+Step 6
+
+Client:
+
+Ready
+
+Step 7
+
+Same:
+
+LeadID
+TransactionID
+RequirementID
+
+must remain unchanged.
+
+
+---
+
+PHASE 20 — ROLLOUT
+
+Feature flag:
+
+LEAD_V2_ENABLED=false
+
+OFF
+
+Existing system.
+
+ON
+
+New:
+
+Clients
+Client Workspace
+Progressive Needs
+Dynamic Questions
+Next Questions
+
+Before production:
+
+Tests PASS
+ ↓
+E2E PASS
+ ↓
+Regression PASS
+ ↓
+Backup
+ ↓
+Migration Dry Run
+ ↓
+Report Review
+ ↓
+Explicit Approval
+ ↓
+Enable V2
+
+V1 remains available until V2 is proven stable.
+
+
+---
+
+🔴 IMPORTANT ARCHITECTURE CORRECTION
+
+Replit ko specifically ye bhi bolna hai:
+
+PHASE 8–20 MUST NOT revert Phase 7.
+
+Phase 7 is now the canonical Requirement behavior.
+
+Never reintroduce:
+"all required fields must be filled before saving."
+
+Never reintroduce:
+"one complete form submission = one Requirement."
+
+Never create a new Requirement simply because an agent records a new call.
+
+A Requirement is a living client need that becomes progressively more complete.
+
+UNKNOWN is a valid state.
+
+KNOWN is a valid state.
+
+NOT_APPLICABLE is a valid state.
+
+The UI must optimize for real-time agent conversation, not data-entry completeness.
+
+Aur Phase 8 ka first task
+
+Phase 8 start karte waqt Replit ko sirf ek cheez verify karni hai:
+
+v2LeadService.js ka counter-overwrite risk jo Phase 7 report mein identify hua hai.
+
+Agar bug hai → Phase 8 ke beginning mein fix + test.
+
+Agar bug nahi hai → document as verified and continue.
+
+Phase 1–7 ko dobara implement/audit nahi karna.
+
+Yeh updated Phase 8–20 ab aapke actual desired workflow — “New Client → minimum information → Call → Ask → Answer → Same Need update” — ke around designed hai.

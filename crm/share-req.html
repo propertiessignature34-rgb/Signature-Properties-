@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="/assets/signature-mark.svg" type="image/svg+xml" />
+<title>Requirement Share — Signature Properties</title>
+<style>
+:root {
+  --brown-dark:#2c1405; --brown:#5c3317; --gold:#d4a017; --gold-soft:#fdf8ec;
+  --bg:#faf7f2; --card:#fff; --border:#e8ddd0; --text:#1c0a00; --text-light:#7a6355;
+  --ok:#16a34a; --danger:#dc2626; --info:#0284c7;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); padding-bottom:40px; }
+.topbar { background:var(--brown-dark); color:#fff; padding:14px 20px; }
+.topbar .brand { color:var(--gold); font-weight:800; font-size:16px; }
+.wrap { max-width:640px; margin:0 auto; padding:20px 16px; }
+.hero { background:linear-gradient(135deg,var(--brown-dark),var(--brown)); color:#fff; border-radius:12px; padding:20px; margin-bottom:16px; }
+.hero .kicker { color:var(--gold); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+.hero h1 { font-size:20px; font-weight:800; margin-top:6px; line-height:1.3; }
+.hero .greet { font-size:12.5px; color:rgba(255,255,255,.8); margin-top:8px; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:14px; }
+.card h2 { font-size:12px; color:var(--brown); text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px; font-weight:800; }
+.spec { display:grid; grid-template-columns:1fr 1fr; gap:10px 16px; }
+.spec .k { font-size:11px; color:var(--text-light); font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+.spec .v { font-size:14px; color:var(--text); font-weight:600; margin-top:2px; }
+.spec .full { grid-column:1/-1; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.field { margin-bottom:10px; }
+.field.full { grid-column:1/-1; }
+.field label { display:block; font-size:11.5px; font-weight:700; color:var(--brown); margin-bottom:4px; text-transform:uppercase; letter-spacing:.03em; }
+.field input, .field select, .field textarea {
+  width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:8px; font-size:13.5px; font-family:inherit; background:#fff;
+}
+.field textarea { resize:vertical; min-height:60px; }
+.btn { padding:12px 20px; border-radius:10px; border:none; font-weight:800; font-size:14px; cursor:pointer; width:100%; }
+.btn.primary { background:var(--brown); color:#fff; }
+.btn.primary:hover { background:var(--brown-dark); }
+.btn.primary:disabled { opacity:.5; cursor:not-allowed; }
+.notice { padding:14px; border-radius:10px; text-align:center; font-size:13px; }
+.notice.err { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+.notice.ok { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+.privacy { background:var(--gold-soft); border:1px solid #fde68a; border-radius:10px; padding:12px; margin-bottom:14px; font-size:12px; color:#78350f; }
+.photos-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.photos-list img, .photos-list .thumb { width:60px; height:60px; border-radius:6px; object-fit:cover; background:#eee; }
+@media (max-width:520px) { .form-grid, .spec { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="topbar"><span class="brand" style="display:inline-flex;align-items:center;gap:8px"><img src="/assets/signature-mark.svg" alt="logo" style="width:26px;height:26px;border-radius:50%;object-fit:cover" />Signature Properties — Broker Network</span></div>
+<div class="wrap">
+  <div id="app"><div class="notice" style="background:#fff;color:var(--text-light)">Loading...</div></div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const token = location.pathname.split('/').filter(Boolean).pop();
+
+async function boot() {
+  try {
+    const r = await fetch(`/api/v2/public/req/${encodeURIComponent(token)}`).then(r => r.json());
+    if (!r.ok) { render(errCard(r.error)); return; }
+    render(mainCard(r.data));
+  } catch (e) { render(errCard(e.message)); }
+}
+function render(html) { $('app').innerHTML = html; }
+function errCard(msg) { return `<div class="notice err">Link invalid ya expire ho gaya hai: ${esc(msg)}</div>`; }
+
+function fmtInr(n) {
+  if (!n) return '—'; n = Number(n);
+  if (n >= 1e7) return '₹' + (n/1e7).toFixed(2) + ' Cr';
+  if (n >= 1e5) return '₹' + (n/1e5).toFixed(1) + ' L';
+  return '₹' + n.toLocaleString('en-IN');
+}
+function budget(r) {
+  const min = r.BudgetMin, max = r.BudgetMax;
+  if (min && max) return `${fmtInr(min)} – ${fmtInr(max)}`;
+  return fmtInr(max || min);
+}
+
+function mainCard(d) {
+  const r = d.Requirement || {};
+  return `
+  <div class="hero">
+    <div class="kicker">Signature Properties se</div>
+    <h1>Hello ${esc(d.BrokerName)} 👋</h1>
+    <div class="greet">Ek client ke liye <b>${esc(r.SubCategory || r.Category || 'property')}</b> chahiye. Agar aapke pass matching hai to niche form fill karke bhej do.</div>
+  </div>
+  <div class="privacy">🔒 Client ki personal details (naam, phone, email) confidential rakhi gayi hain. Aap sirf property submit kar sakte hain — deal aage badhe to broker A directly contact karega.</div>
+  <div class="card">
+    <h2>🎯 Requirement Details</h2>
+    <div class="spec">
+      ${r.Category ? `<div><div class="k">Category</div><div class="v">${esc(r.Category)}${r.SubCategory ? ' · ' + esc(r.SubCategory) : ''}</div></div>` : ''}
+      ${r.TransactionType ? `<div><div class="k">Transaction</div><div class="v">${esc(r.TransactionType)}</div></div>` : ''}
+      ${r.BHK ? `<div><div class="k">Configuration</div><div class="v">${esc(r.BHK)}</div></div>` : ''}
+      ${r.Location1 ? `<div><div class="k">Location</div><div class="v">${esc(r.Location1)}${r.Location2 ? ' · ' + esc(r.Location2) : ''}</div></div>` : ''}
+      ${(r.BudgetMin || r.BudgetMax) ? `<div><div class="k">Budget</div><div class="v">${esc(budget(r))}</div></div>` : ''}
+      ${(r.CarpetAreaMin || r.CarpetAreaMax) ? `<div><div class="k">Carpet Area</div><div class="v">${r.CarpetAreaMin||'?'} – ${r.CarpetAreaMax||'?'} sqft</div></div>` : ''}
+      ${r.FurnishingPreference ? `<div><div class="k">Furnishing</div><div class="v">${esc(r.FurnishingPreference)}</div></div>` : ''}
+      ${r.Purpose ? `<div><div class="k">Purpose</div><div class="v">${esc(r.Purpose)}</div></div>` : ''}
+      ${r.ReadyToMove ? `<div><div class="k">Ready to Move</div><div class="v">${esc(r.ReadyToMove)}</div></div>` : ''}
+      ${r.Timeline ? `<div><div class="k">Timeline</div><div class="v">${esc(r.Timeline)}</div></div>` : ''}
+      ${r.Amenities ? `<div class="full"><div class="k">Amenities</div><div class="v">${esc(Array.isArray(r.Amenities)?r.Amenities.join(', '):r.Amenities)}</div></div>` : ''}
+    </div>
+    ${d.Message ? `<div style="margin-top:12px;padding:10px;background:var(--gold-soft);border-radius:8px;font-size:12.5px;color:#78350f"><b>Message:</b> ${esc(d.Message)}</div>` : ''}
+  </div>
+
+  <div class="card">
+    <h2>➕ Submit Matching Property</h2>
+    <div class="form-grid">
+      <div class="field full"><label>Property / Project Name *</label><input id="f-title" type="text" placeholder="e.g. Signature Villa, Vesu" required /></div>
+      <div class="field"><label>BHK / Configuration</label><input id="f-bhk" type="text" placeholder="e.g. 3 BHK" value="${esc(r.BHK||'')}" /></div>
+      <div class="field"><label>Carpet Area (sqft)</label><input id="f-carpet" type="number" placeholder="e.g. 1350" /></div>
+      <div class="field"><label>Society / Building</label><input id="f-society" type="text" /></div>
+      <div class="field"><label>Location / Area</label><input id="f-location" type="text" value="${esc(r.Location1||'')}" /></div>
+      <div class="field"><label>Asking Price (₹)</label><input id="f-price" type="number" placeholder="e.g. 12500000" /></div>
+      <div class="field"><label>Rate / sqft (₹)</label><input id="f-rate" type="number" placeholder="e.g. 9500" /></div>
+      <div class="field"><label>Floor</label><input id="f-floor" type="text" placeholder="e.g. 5 of 12" /></div>
+      <div class="field"><label>Furnishing</label>
+        <select id="f-furnishing"><option value="">—</option><option>Unfurnished</option><option>Semi-Furnished</option><option>Fully Furnished</option></select>
+      </div>
+      <div class="field"><label>Availability</label><input id="f-availability" type="text" placeholder="Ready / 30 days / by June 2027" /></div>
+      <div class="field"><label>Expected Commission Split</label><input id="f-split" type="text" placeholder="e.g. 50-50, 1% + 1%" /></div>
+      <div class="field full"><label>Photo URLs (comma-separated)</label><textarea id="f-photos" rows="2" placeholder="https://... , https://..."></textarea></div>
+      <div class="field full"><label>Video URL</label><input id="f-video" type="url" placeholder="https://youtu.be/..." /></div>
+      <div class="field full"><label>Amenities (comma-separated)</label><input id="f-amenities" type="text" placeholder="Gym, Pool, Parking, Security" /></div>
+      <div class="field full"><label>Notes</label><textarea id="f-notes" rows="2" placeholder="Anything else Broker A should know..."></textarea></div>
+    </div>
+    <div id="submit-notice"></div>
+    <button class="btn primary" id="submit-btn" onclick="submit()" data-testid="submit-property">📤 Submit Property</button>
+  </div>`;
+}
+
+async function submit() {
+  const notice = $('submit-notice');
+  const btn = $('submit-btn');
+  notice.innerHTML = '';
+  const title = $('f-title').value.trim();
+  if (!title) { notice.innerHTML = '<div class="notice err" style="margin-bottom:10px">Property / Project Name zaroori hai</div>'; return; }
+  const photos = ($('f-photos').value || '').split(',').map(s => s.trim()).filter(Boolean).map(url => ({ url }));
+  const amenities = ($('f-amenities').value || '').split(',').map(s => s.trim()).filter(Boolean);
+  const payload = {
+    Title: title,
+    BHK: $('f-bhk').value.trim(),
+    CarpetArea: Number($('f-carpet').value) || null,
+    SocietyName: $('f-society').value.trim(),
+    Location1: $('f-location').value.trim(),
+    AskingPrice: Number($('f-price').value) || null,
+    AskingRatePerSqFt: Number($('f-rate').value) || null,
+    Floor: $('f-floor').value.trim(),
+    FurnishingType: $('f-furnishing').value,
+    Availability: $('f-availability').value.trim(),
+    ExpectedSplit: $('f-split').value.trim(),
+    Photos: photos,
+    VideoUrl: $('f-video').value.trim(),
+    Amenities: amenities,
+    Notes: $('f-notes').value.trim()
+  };
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  try {
+    const r = await fetch(`/api/v2/public/req/${encodeURIComponent(token)}/response`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    }).then(r => r.json());
+    if (!r.ok) throw new Error(r.error || 'Failed');
+    render(`<div class="notice ok" data-testid="submit-success" style="padding:30px 20px"><div style="font-size:44px">✅</div><h1 style="font-size:20px;margin:12px 0;color:#166534">Thank you!</h1><div>Aapki property submit ho gayi hai. Broker A jald hi review karega.</div><div style="margin-top:12px;font-size:11.5px;color:#166534">Response ID: ${esc(r.data.NetworkResponseID)}</div></div>`);
+  } catch (e) {
+    notice.innerHTML = `<div class="notice err" style="margin-bottom:10px">Error: ${esc(e.message)}</div>`;
+    btn.disabled = false; btn.textContent = '📤 Submit Property';
+  }
+}
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+FINAL TEST-DATA CLEANUP — TARGETED ONLY
+
+Production data has been verified intact.
+
+DO NOT modify any production records.
+
+The following are confirmed TEST records created during API verification:
+
+Lead:
+L000001 — Test BHK Client
+
+Transaction:
+T000001 — test transaction belonging to L000001
+
+Requirements:
+R000001
+R000002
+
+These four records are the ONLY records authorized for removal.
+
+==================================================
+BEFORE DELETE
+==================================================
+
+1. Create a fresh safety backup of:
+
+data/sig-realty-db.json
+
+2. Record:
+   - backup path
+   - timestamp
+   - file size
+   - SHA-256
+
+3. Confirm the following production records exist:
+
+LEAD-0001 Rohan Verma
+LEAD-0002 Meera Iyer
+
+TXN-0001
+TXN-0002
+TXN-0003
+
+REQ-0001
+
+DO NOT modify these records.
+
+==================================================
+TARGETED CLEANUP
+==================================================
+
+Remove ONLY:
+
+Leads:
+L000001
+
+Transactions:
+T000001
+
+Requirements:
+R000001
+R000002
+
+Use the actual PascalCase collections:
+
+db.Leads
+db.Transactions
+db.Requirements
+
+DO NOT use lowercase:
+
+db.leads
+db.transactions
+db.requirements
+
+==================================================
+RELATIONSHIP CLEANUP
+==================================================
+
+After removing the test Lead:
+
+Confirm no remaining Transaction references:
+
+LeadID = L000001
+
+After removing T000001:
+
+Confirm no remaining Requirement references:
+
+TransactionID = T000001
+
+If any unexpected reference is found:
+
+STOP.
+
+Do not automatically remove anything else.
+
+==================================================
+V2 COUNTERS
+==================================================
+
+After test records are removed, inspect:
+
+db._V2Counters
+
+Because these were only development/test V2 records, verify whether
+the counters can safely return to their pre-test state:
+
+Lead: 0
+Transaction: 0
+Requirement: 0
+
+Do NOT reset counters blindly.
+
+First verify there are no remaining V2 user records:
+
+L*
+T*
+R*
+
+If no V2 user records remain, counters may be reset to their initial
+state.
+
+If ANY V2 user record remains:
+
+STOP and report it.
+
+==================================================
+POST-CLEANUP VERIFICATION
+==================================================
+
+Verify:
+
+Production Leads:
+2
+
+Production Transactions:
+3
+
+Production Requirements:
+1
+
+Test Lead:
+L000001 → NOT PRESENT
+
+Test Transaction:
+T000001 → NOT PRESENT
+
+Test Requirements:
+R000001 → NOT PRESENT
+R000002 → NOT PRESENT
+
+Orphan Transactions:
+0
+
+Orphan Requirements:
+0
+
+JSON:
+VALID
+
+Migration:
+NOT APPLIED
+
+LEAD_V2_ENABLED:
+OFF
+
+==================================================
+IMPORTANT
+==================================================
+
+Do NOT:
+
+- restore the production backup
+- run migration --apply
+- enable V2
+- delete legacy records
+- rewrite production IDs
+- modify Inventory
+- modify Matching
+- modify Deals
+- modify Commission
+- modify Authentication
+- delete configuration collections
+- delete any record other than the four explicitly listed test records
+
+==================================================
+FINAL REPORT
+==================================================
+
+TEST CLEANUP:
+PASS / FAIL
+
+PRODUCTION DATA:
+INTACT / CHANGED
+
+PRODUCTION LEADS:
+2 / actual
+
+PRODUCTION TRANSACTIONS:
+3 / actual
+
+PRODUCTION REQUIREMENTS:
+1 / actual
+
+TEST RECORDS REMAINING:
+0 / actual
+
+ORPHANS:
+0 / actual
+
+V2 COUNTERS:
+...
+
+BACKUP:
+...
+
+DATABASE CHECKSUM:
+...
+
+MIGRATION:
+NOT RUN
+
+V2 FLAG:
+OFF
+
+STATUS:
+CLEAN / BLOCKED
+
+STOP.

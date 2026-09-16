@@ -1,0 +1,1994 @@
+STOP.
+
+Do NOT continue the previous Lead Module V2 implementation blindly.
+
+The previous V2 architecture was designed too much like a traditional Lead → large Requirement Form system. That is NOT the approved product design.
+
+We are now RE-DESIGNING SIGNATURE PROPERTIES V2 around the actual real-estate brokerage workflow.
+
+IMPORTANT:
+
+THIS IS V2.
+
+NOT V3.
+
+Do NOT call this V3.
+
+Do NOT start coding immediately.
+
+First understand and freeze the architecture below.
+
+Do NOT waste time with another generic audit report.
+
+Do NOT ask unnecessary questions.
+
+Do NOT redesign unrelated modules.
+
+Do NOT rewrite the application.
+
+Do NOT touch Inventory architecture.
+
+Do NOT implement Matching Engine now.
+
+Do NOT implement Deal/Commission now.
+
+Do NOT change Authentication/RBAC unless absolutely required for the new V2 APIs.
+
+Do NOT migrate production data automatically.
+
+Do NOT delete legacy data.
+
+Do NOT break existing APIs.
+
+Use incremental implementation.
+
+The final system must be configuration-driven, transaction-driven, need-driven, and conversation-driven.
+
+========================================================
+1. CORE PRODUCT IDEA
+========================================================
+
+The CRM is NOT a collection of giant forms.
+
+The CRM is the AGENT'S MEMORY.
+
+The real workflow is:
+
+CLIENT CALL
+    ↓
+Agent captures what client currently says
+    ↓
+Minimum information is saved
+    ↓
+Client is created
+    ↓
+Agent continues conversation
+    ↓
+More information is discovered
+    ↓
+CRM progressively updates the SAME requirement
+    ↓
+Requirement becomes richer over time
+    ↓
+Eventually it becomes ready for future Matching
+
+The client should NEVER feel like:
+
+"Broker is making me fill a 40-field form."
+
+The client should feel:
+
+"Broker understands what I need."
+
+The agent should feel:
+
+"CRM remembers everything I discussed with this client."
+
+========================================================
+2. USER-FACING TERMINOLOGY
+========================================================
+
+The user-facing concept is:
+
+CLIENT
+
+NOT:
+
+Lead database
+
+The backend may continue using LeadID for compatibility.
+
+Therefore:
+
+UI:
+Client
+
+Backend identity:
+Lead
+
+Example:
+
+Client:
+Rahul Shah
+
+LeadID:
+L000125
+
+There is NO separate Client entity in V2.
+
+Rule:
+
+ONE CLIENT = ONE LEAD IDENTITY.
+
+Never create another Lead because the same client has another requirement.
+
+========================================================
+3. CORE BUSINESS MODEL
+========================================================
+
+Backend relationship:
+
+CLIENT / LEAD
+      |
+      | LeadID
+      |
+      +--------------------+
+      |                    |
+      v                    v
+TRANSACTION 1          TRANSACTION 2
+      |                    |
+      v                    v
+REQUIREMENT 1          REQUIREMENT 2
+
+A client can have multiple independent needs.
+
+Example:
+
+Rahul Shah
+
+Need 1:
+Purchase → Residential → Flat
+
+Need 2:
+Rent → Commercial → Office
+
+Need 3:
+Purchase → Land
+
+These are NOT three clients.
+
+They belong to the same LeadID.
+
+========================================================
+4. IMPORTANT TERMINOLOGY: NEED
+========================================================
+
+The UI may use the word:
+
+Need
+
+instead of showing technical words such as Requirement or Transaction everywhere.
+
+For example:
+
+Rahul Shah
+
+Needs:
+
+1. Buy Home
+2. Rent Office
+3. Buy Land
+
+Backend:
+
+Transaction + Requirement.
+
+Do not create a separate database entity called "Need" unless absolutely necessary.
+
+"Need" is primarily a UX concept.
+
+========================================================
+5. NEW CLIENT FORM
+========================================================
+
+The NEW CLIENT form must be SMALL.
+
+It is only the STARTING POINT.
+
+The exact fields should be configuration-driven so the business owner can decide what appears.
+
+Typical example:
+
+NEW CLIENT
+
+Name *
+Phone *
+
+What does client need?
+[ Purchase ]
+
+Category
+[ Residential ]
+
+Location
+[ Vesu ]
+
+Budget
+[ ₹1 Cr ]
+
+[ SAVE ]
+
+That is enough to create the Client.
+
+DO NOT force:
+
+BHK
+Area
+Parking
+Facing
+Furnishing
+Possession
+Finance
+Floor
+Amenities
+etc.
+
+during initial creation unless configured as required by the business.
+
+The user must be able to configure the initial Client/Need fields.
+
+========================================================
+6. VERY IMPORTANT:
+CLIENT INFORMATION AND REQUIREMENT INFORMATION ARE DIFFERENT
+========================================================
+
+Client-level information:
+
+- Name
+- Primary Mobile
+- Alternate Mobile
+- WhatsApp
+- Email
+- Tags
+- Client Status
+- Client Lifecycle
+- Client Score
+- Source
+- Assigned Agent
+- Notes
+- etc.
+
+Need/Transaction-level information:
+
+- Purchase/Rent/Sale/etc.
+- Category
+- SubCategory
+- Budget
+- Location
+- Property preference
+- Possession
+- BHK
+- Area
+- Parking
+- Furnishing
+- Business type
+- Power load
+- Road width
+- etc.
+
+Do NOT mix these.
+
+Example:
+
+"Rahul is an investor"
+
+may be Client Tag.
+
+"Rahul wants a 3BHK"
+
+belongs to a specific Need/Transaction/Requirement.
+
+========================================================
+7. TRANSACTION MODEL
+========================================================
+
+Transaction represents WHAT THE CLIENT IS TRYING TO DO.
+
+Allowed Transaction Types:
+
+Purchase
+Sale
+Rent
+Rent Out
+Lease
+Lease Out
+
+A Transaction belongs to exactly one Lead.
+
+Transaction:
+
+TransactionID
+LeadID
+TransactionType
+TransactionStatus
+PipelineStage
+CreatedBy
+CreatedAt
+UpdatedBy
+UpdatedAt
+Version
+LegacyID
+
+Pipeline belongs to the Transaction/Need workflow.
+
+Do NOT put pipeline state directly into Lead.
+
+========================================================
+8. REQUIREMENT MODEL
+========================================================
+
+Requirement represents the CURRENT UNDERSTANDING OF WHAT THE CLIENT WANTS for a specific Transaction.
+
+Requirement belongs to:
+
+LeadID
+TransactionID
+
+Hard invariant:
+
+Requirement.LeadID MUST equal Transaction.LeadID.
+
+Never allow:
+
+Requirement.LeadID = L000001
+
+while:
+
+Transaction.LeadID = L000002
+
+Reject this server-side.
+
+Requirement is NOT a property.
+
+Requirement is NOT inventory.
+
+Requirement stores criteria/preferences.
+
+Never copy PropertyID/property details into Requirement as a substitute for Matching.
+
+Future:
+
+Requirement
+    ↓
+MatchingResult
+    ↓
+PropertyID
+    ↓
+Inventory
+
+But Matching Engine is OUT OF SCOPE for this V2 implementation stage.
+
+========================================================
+9. REQUIREMENT IS NOT A STATIC FORM
+========================================================
+
+THIS IS THE MOST IMPORTANT ARCHITECTURAL RULE.
+
+A Requirement is a:
+
+CONTINUOUSLY EVOLVING STRUCTURED RECORD.
+
+It starts small.
+
+It grows through:
+
+- calls
+- WhatsApp
+- notes
+- follow-ups
+- conversations
+- requirement edits
+
+Example.
+
+Call 1:
+
+Rahul says:
+
+"I want a home in Vesu around 1 crore."
+
+Save:
+
+Transaction:
+Purchase
+
+Category:
+Residential
+
+Location:
+Vesu
+
+Budget:
+1 Cr
+
+That is already a VALID requirement.
+
+Do NOT force additional fields.
+
+========================================================
+10. PROGRESSIVE REQUIREMENT CAPTURE
+========================================================
+
+Later Rahul says:
+
+"I want 3BHK."
+
+Update:
+
+BHK = 3
+
+Later:
+
+"Ready possession preferred."
+
+Update:
+
+Possession = Ready
+
+Later:
+
+"2 car parking compulsory."
+
+Update:
+
+Parking = 2
+
+Later:
+
+"Vesu or City Light both okay."
+
+Update:
+
+Location1 = Vesu
+Location2 = City Light
+
+Later:
+
+"Adajan nahi."
+
+Update:
+
+AvoidLocations = Adajan
+
+Later:
+
+"Budget can stretch to 1.10 Cr."
+
+Update:
+
+BudgetMax = 1.10 Cr
+
+The requirement grows.
+
+It is NOT recreated.
+
+It is NOT a new Lead.
+
+It is NOT a new client.
+
+========================================================
+11. THREE STATES FOR DYNAMIC INFORMATION
+========================================================
+
+Every optional/qualifying field must conceptually support:
+
+UNKNOWN
+KNOWN
+NOT_APPLICABLE / NOT_REQUIRED
+
+Example:
+
+Parking:
+
+Unknown
+    means agent has not asked yet.
+
+Not Required:
+    client explicitly said parking is not needed.
+
+2:
+    client wants two parking spaces.
+
+Never treat UNKNOWN as NO.
+
+This is critical for scoring and future matching.
+
+========================================================
+12. DYNAMIC FIELD ARCHITECTURE
+========================================================
+
+The system must NOT hardcode business logic like:
+
+if(category === "Residential") {}
+
+or:
+
+if(transaction === "Rent") {}
+
+inside frontend business logic.
+
+Frontend must execute configuration.
+
+Architecture:
+
+TransactionType
++
+Category
++
+SubCategory
++
+FormVersion
++
+Context
+    ↓
+FieldConfig
+    ↓
+DependencyConfig
+    ↓
+ValidationConfig
+    ↓
+Dynamic UI
+
+The server must enforce the same rules.
+
+Frontend configuration is NOT security.
+
+========================================================
+13. DYNAMIC FIELDS MUST FOLLOW TRANSACTION
+========================================================
+
+Example:
+
+Purchase + Residential + Flat
+
+may expose:
+
+Core:
+
+Budget
+Location
+BHK
+Property Preference
+Possession
+Urgency
+
+Optional:
+
+Area
+Parking
+Furnishing
+Facing
+Floor
+Amenities
+Project Preference
+Finance
+
+But the UI must NOT show all of them immediately.
+
+========================================================
+14. RENT MUST HAVE DIFFERENT FIELD CONFIGURATION
+========================================================
+
+Example:
+
+Rent + Residential + Flat
+
+may use:
+
+Budget
+Location
+BHK
+Furnishing
+Move-in Date
+Tenant Type
+Family/Bachelor
+Food Preference
+Pets
+Parking
+Deposit
+
+Do NOT blindly reuse Purchase fields.
+
+The configuration determines which fields are relevant.
+
+========================================================
+15. COMMERCIAL EXAMPLE
+========================================================
+
+Rent + Commercial + Office
+
+may use:
+
+Budget
+Location
+Area
+Business Type
+Parking
+Frontage
+Power Load
+Fire NOC
+Possession
+Move-in Date
+
+If client only says:
+
+"Vesu office chahiye, 50K rent."
+
+then save only:
+
+Location = Vesu
+Budget = 50K
+
+Everything else remains UNKNOWN.
+
+========================================================
+16. INDUSTRIAL EXAMPLE
+========================================================
+
+Purchase + Industrial
+
+may expose:
+
+Plot Area
+Built-up Area
+Power Load
+Ceiling Height
+Loading Dock
+Road Width
+Crane Requirement
+Industrial Permission
+etc.
+
+Again:
+
+Do not force every field.
+
+Only relevant/known information is captured.
+
+========================================================
+17. LAND EXAMPLE
+========================================================
+
+Purchase + Land
+
+may expose:
+
+Land Area
+Location
+Road Width
+Frontage
+Corner
+Zoning
+NA/NON-NA
+Water
+Electricity
+Agricultural status
+etc.
+
+Client:
+
+"I need 5 acres near Surat."
+
+Requirement immediately becomes valid:
+
+Area = 5 Acre
+Location = Surat
+
+No need to ask 15 questions before saving.
+
+========================================================
+18. AGRICULTURE EXAMPLE
+========================================================
+
+Agriculture requirements can be completely different.
+
+Example:
+
+"I want farm land and water is compulsory."
+
+Store:
+
+Category = Agriculture
+
+Water = Required
+
+Other fields remain UNKNOWN.
+
+========================================================
+19. CLIENT CAN SAY ANYTHING
+========================================================
+
+The system must support requirements that don't perfectly fit predefined fields.
+
+Examples:
+
+"School ke paas chahiye."
+
+"Temple ke paas nahi."
+
+"Ground floor chahiye."
+
+"Lift compulsory hai."
+
+"Vastu important hai."
+
+"2 car parking compulsory."
+
+"Mummy ke liye hai."
+
+"Main road se bahut andar nahi hona chahiye."
+
+The CRM must NOT reject these because a predefined field does not exist.
+
+Use:
+
+Preferences
+SpecialNotes
+DynamicAttributes
+Custom configured fields
+
+where appropriate.
+
+The system should preserve the client's actual words/context without destroying structure.
+
+========================================================
+20. FIELD RELEVANCE STATES
+========================================================
+
+Dynamic fields should support configuration such as:
+
+HIDDEN
+VISIBLE
+RELEVANT
+REQUIRED
+COMPLETED
+
+Example:
+
+PowerLoad:
+
+Residential Flat:
+HIDDEN
+
+Industrial:
+VISIBLE
+
+Factory client says machinery requires high power:
+RELEVANT / REQUIRED
+
+Client gives:
+500 KVA
+
+Then:
+
+COMPLETED
+
+Do not confuse:
+
+field exists
+
+with:
+
+field must be shown.
+
+========================================================
+21. PROGRESSIVE DISCLOSURE
+========================================================
+
+The UI should show:
+
+KNOWN INFORMATION
+
+and:
+
+IMPORTANT INFORMATION TO DISCOVER
+
+Example:
+
+RAHUL SHAH
+Purchase • Residential • Flat
+
+Known:
+
+✓ Vesu
+✓ ₹1 Cr
+✓ 3 BHK
+
+Still to discover:
+
+○ Possession
+○ Parking
+○ Finance
+
+Next Best Question:
+
+"Ready possession compulsory hai ya under-construction bhi chalega?"
+
+This is a UX assistant.
+
+It is NOT a mandatory form wizard.
+
+========================================================
+22. NEW CLIENT → CONVERSATION FLOW
+========================================================
+
+Correct flow:
+
+NEW CLIENT
+    ↓
+Minimum details
+    ↓
+SAVE
+    ↓
+Client Workspace
+    ↓
+Call
+    ↓
+Capture information
+    ↓
+Update current Need
+    ↓
+Follow-up
+    ↓
+More information
+    ↓
+Requirement becomes richer
+
+Do NOT use:
+
+New Client
+→ 40-field Requirement Form
+→ Save
+
+========================================================
+23. CLIENT WORKSPACE
+========================================================
+
+Main screen:
+
+CLIENT WORKSPACE
+
+Header:
+
+Client Name
+Mobile
+Client Status
+Lifecycle
+Client Score
+Tags
+
+Actions:
+
+Call
+WhatsApp
+Edit
+Add Need
+
+Sections:
+
+Overview
+Profile
+Needs
+Activities
+Follow-ups
+Timeline
+
+"Needs" shows the client's transactions/requirements in simple language.
+
+Example:
+
+RAHUL SHAH
+
+NEEDS
+
+🏠 Buy Home
+3 BHK
+Vesu
+₹1.10 Cr
+
+🏢 Rent Office
+Vesu
+₹60K
+
+🌳 Buy Land
+5 Acre
+Surat
+₹2 Cr
+
+========================================================
+24. MULTIPLE NEEDS
+========================================================
+
+Same client can have:
+
+Purchase Residential Flat
+Rent Commercial Office
+Purchase Land
+Rent Home
+Sell Property
+Lease Property
+
+All remain under the same LeadID.
+
+Never create duplicate Lead identities.
+
+========================================================
+25. CALL EXPERIENCE
+========================================================
+
+When agent calls client, CRM should show:
+
+CLIENT:
+
+Rahul Shah
+98765xxxxx
+
+CURRENT NEED:
+
+Purchase
+Residential
+Flat
+
+Known:
+
+Vesu
+City Light
+3 BHK
+₹1.10 Cr
+Ready
+2 Parking
+
+Unknown:
+
+Area
+Finance confirmation
+
+Last conversation:
+
+"2 parking compulsory."
+
+Suggested next question:
+
+"Loan final hai ya self-funded?"
+
+Actions:
+
+[Add Update]
+[Add Note]
+[Call]
+[WhatsApp]
+[Follow-up]
+
+========================================================
+26. CONVERSATION UPDATE ENGINE
+========================================================
+
+The architecture must allow an agent to update a requirement naturally.
+
+The exact UI can initially use structured controls:
+
+Field:
+Budget
+
+Field:
+Location
+
+Field:
+BHK
+
+Field:
+Parking
+
+etc.
+
+Later it may support natural-language extraction.
+
+DO NOT require AI/NLP implementation now.
+
+But design the architecture so future conversation intelligence can map:
+
+User statement
+    ↓
+Candidate field/value
+    ↓
+Agent confirmation
+    ↓
+Requirement update
+
+without redesigning the database.
+
+========================================================
+27. CONFIGURATION SYSTEM
+========================================================
+
+Create/maintain:
+
+EntityConfig
+FormConfig
+FieldConfig
+OptionConfig
+DependencyConfig
+ValidationConfig
+WorkflowConfig
+ColumnConfig
+ScoringConfig
+TagConfig
+QuestionConfig
+
+QuestionConfig is important.
+
+It can define:
+
+Field
+Question
+Priority
+Condition
+NextQuestion
+TransactionType
+Category
+SubCategory
+
+Example:
+
+Field:
+Possession
+
+Question:
+"Ready possession chahiye ya under-construction bhi chalega?"
+
+Priority:
+High
+
+This enables the CRM to suggest useful questions.
+
+========================================================
+28. FIELD CONFIG STRUCTURE
+========================================================
+
+Every configured field should support metadata such as:
+
+FieldID
+Entity
+FieldKey
+FieldLabel
+QuestionLabel
+FieldType
+TransactionType
+Category
+SubCategory
+Required
+Visible
+Default
+Options
+Validation
+Dependency
+Priority
+Section
+HelpText
+Version
+IsActive
+
+IMPORTANT:
+
+QuestionLabel and FieldLabel must be separate.
+
+Example:
+
+FieldLabel:
+Budget Max
+
+QuestionLabel:
+"Maximum kitna budget stretch kar sakte hain?"
+
+========================================================
+29. FORM REGISTRY
+========================================================
+
+Form Registry key:
+
+TransactionType
++
+Category
++
+SubCategory
+
+Examples:
+
+Purchase|Residential|Flat
+
+Purchase|Residential|Villa
+
+Rent|Residential|Flat
+
+Rent|Commercial|Office
+
+Purchase|Land|Plot
+
+Purchase|Industrial|Factory
+
+Each form/configuration must have:
+
+FormVersion
+IsActive
+
+Requirement stores FormVersion.
+
+Historical requirements must remain interpretable using the original version.
+
+========================================================
+30. DO NOT OVER-REQUIRE
+========================================================
+
+A requirement should be allowed to exist with only:
+
+Transaction
+Category
+Location
+Budget
+
+if those are the only known facts.
+
+Example:
+
+Purchase
+Residential
+Vesu
+₹1Cr
+
+VALID.
+
+Do not reject because:
+
+BHK missing
+Parking missing
+Possession missing
+
+unless the configured workflow specifically says a field is mandatory at that stage.
+
+========================================================
+31. REQUIREMENT COMPLETENESS
+========================================================
+
+Do NOT use:
+
+"Number of fields filled / total fields"
+
+as the only completeness calculation.
+
+Instead use configuration:
+
+Core required
+Important
+Optional
+Unknown
+
+Example:
+
+Core:
+Budget
+Location
+Transaction
+Category
+
+Important:
+BHK
+Possession
+
+Optional:
+Parking
+Facing
+
+Then:
+
+Completeness can be:
+
+Core complete
+Important 1/2
+Optional 1/5
+
+This is much more meaningful.
+
+========================================================
+32. CLIENT SCORE VS REQUIREMENT SCORE
+========================================================
+
+Keep them separate.
+
+ClientScore:
+
+overall relationship/value.
+
+RequirementScore:
+
+quality/seriousness of this particular need.
+
+RequirementScore may consider:
+
+Budget confirmed
+Location confirmed
+Timeline
+Finance readiness
+Responsiveness
+Site visit
+Shortlist
+
+But scoring must come from ScoringConfig.
+
+Do NOT implement Matching Engine now.
+
+========================================================
+33. TAGS
+========================================================
+
+Client tags:
+
+Investor
+Buyer
+Seller
+Tenant
+Landlord
+Builder
+NRI
+Corporate
+VIP
+Hot
+Referral
+
+Investor is ONLY a tag/client classification in V2.
+
+Do NOT create Investor module.
+
+========================================================
+34. STATUS MODEL
+========================================================
+
+Lead/Client Status:
+
+New
+Verified
+Active
+Inactive
+Blacklisted
+
+Client Lifecycle:
+
+Prospect
+Client
+Past Client
+Inactive
+Blacklisted
+
+These are independent.
+
+Transaction Status:
+
+Open
+Active
+Closed
+Cancelled
+
+Requirement Status:
+
+Draft
+Active
+Paused
+Closed
+Lost
+Archived
+
+Pipeline Stage:
+
+New
+Matching
+Shortlisted
+Site Visit
+Negotiation
+Token
+Deal
+
+Do NOT collapse these into one status.
+
+========================================================
+35. ACTIVITIES
+========================================================
+
+Every activity should be able to reference:
+
+LeadID
+TransactionID
+RequirementID
+UserID
+
+Types:
+
+Call
+WhatsApp
+Note
+Follow-up
+Requirement Updated
+Status Changed
+
+Timeline aggregates activities.
+
+Do not duplicate client records.
+
+========================================================
+36. API ARCHITECTURE
+========================================================
+
+Preserve existing APIs.
+
+Add canonical APIs as needed.
+
+Lead:
+
+GET /api/leads
+GET /api/leads/:id
+POST /api/leads
+PATCH /api/leads/:id
+
+Duplicate:
+
+POST /api/leads/check-duplicate
+
+Transactions:
+
+GET /api/leads/:leadId/transactions
+POST /api/leads/:leadId/transactions
+GET /api/transactions/:id
+PATCH /api/transactions/:id
+
+Requirements:
+
+GET /api/transactions/:transactionId/requirements
+POST /api/transactions/:transactionId/requirements
+GET /api/requirements/:id
+PATCH /api/requirements/:id
+GET /api/requirements
+
+Workspace:
+
+GET /api/clients/:leadId/workspace
+
+Do NOT remove existing endpoints.
+
+Use adapters where old field names/routes exist.
+
+========================================================
+37. PERSISTENCE
+========================================================
+
+All writes must go through:
+
+Controller
+    ↓
+Service
+    ↓
+Repository
+    ↓
+JSON database
+
+Never:
+
+Controller
+    ↓
+JSON file
+
+Never:
+
+Frontend
+    ↓
+JSON
+
+Transaction must NOT be in-memory-only.
+
+Requirement must be persistent.
+
+Lead/Transaction/Requirement relationships must survive restart.
+
+========================================================
+38. ID ENGINE
+========================================================
+
+Canonical V2 IDs:
+
+Lead:
+L000001
+
+Transaction:
+T000001
+
+Requirement:
+R000001
+
+IDs:
+
+- server generated
+- immutable
+- never based on name
+- never based on phone
+- never changed during update
+
+Existing V1 IDs remain supported.
+
+Use:
+
+LegacyID
+
+and/or:
+
+MigrationMap
+
+for old records.
+
+========================================================
+39. INVENTORY BOUNDARY
+========================================================
+
+DO NOT redesign Inventory.
+
+DO NOT copy inventory fields into Requirement.
+
+DO NOT create Property records inside Requirement.
+
+Future:
+
+Requirement
+ ↓
+MatchingResult
+ ↓
+PropertyID
+ ↓
+Inventory
+
+Matching Engine is OUT OF SCOPE for this implementation.
+
+========================================================
+40. BACKWARD COMPATIBILITY
+========================================================
+
+Existing:
+
+Dashboard
+Inventory
+Matching
+Follow-ups
+Activities
+Site Visits
+Negotiation
+Token
+Deal
+Commission
+Authentication
+RBAC
+Public pages
+
+must continue functioning.
+
+Do not rewrite these modules.
+
+Do not remove legacy APIs.
+
+Do not change production data automatically.
+
+========================================================
+41. FEATURE FLAG
+========================================================
+
+Use:
+
+LEAD_V2_ENABLED=false
+
+When OFF:
+
+Existing V1 behavior remains available.
+
+When ON:
+
+New V2 Client/Need/Transaction/Progressive Requirement experience becomes available.
+
+Shared compatibility endpoints must remain safe.
+
+Do not use feature flags as a security boundary.
+
+========================================================
+42. MIGRATION
+========================================================
+
+DO NOT migrate production immediately.
+
+First create:
+
+MigrationMap
+
+Legacy LeadID
+→ V2 LeadID
+
+Legacy TransactionID
+→ V2 TransactionID
+
+Legacy RequirementID
+→ V2 RequirementID
+
+Migration process:
+
+1. Backup
+2. Read
+3. Normalize
+4. Deduplicate safely
+5. Create Lead identities
+6. Create Transactions
+7. Attach Requirements
+8. Validate relationships
+9. Generate report
+10. Dry-run
+11. Review
+12. Only then production migration
+
+Never delete original records.
+
+========================================================
+43. IMPLEMENTATION ORDER
+========================================================
+
+DO NOT blindly use the previous 20-phase plan.
+
+Use this REVISED V2 order:
+
+PHASE 0
+Architecture freeze + baseline
+
+PHASE 1
+Canonical Client/Lead model
+
+PHASE 2
+Central ID engine
+
+PHASE 3
+Repository persistence
+
+PHASE 4
+Client/Lead service
+
+PHASE 5
+Duplicate protection
+
+PHASE 6
+Transaction service
+
+PHASE 7
+Requirement service
+
+PHASE 8
+Dynamic Configuration Engine
+
+PHASE 9
+Form Registry + FormVersion
+
+PHASE 10
+Dynamic Field + Dependency Engine
+
+PHASE 11
+Progressive Requirement / Conversation Capture
+
+PHASE 12
+Question / Next-Best-Question Engine
+
+PHASE 13
+Client Workspace
+
+PHASE 14
+Client List
+
+PHASE 15
+Global Needs/Requirements View
+
+PHASE 16
+Activity + Follow-up + Timeline integration
+
+PHASE 17
+Scoring + Completeness
+
+PHASE 18
+API compatibility + full regression
+
+PHASE 19
+Migration tooling + dry run
+
+PHASE 20
+Feature flag + staging + production rollout
+
+========================================================
+44. PHASE GATE RULE
+========================================================
+
+VERY IMPORTANT.
+
+Do NOT silently implement all 20 phases.
+
+After EACH phase:
+
+STOP.
+
+Report:
+
+PHASE
+OBJECTIVE
+FILES CHANGED
+FUNCTIONS ADDED/MODIFIED
+DATA MODEL CHANGES
+API CHANGES
+UI CHANGES
+TESTS RUN
+PASS/FAIL
+BACKWARD COMPATIBILITY
+RISKS
+NEXT PHASE
+
+Then wait for approval.
+
+========================================================
+45. TESTING
+========================================================
+
+Unit tests:
+
+ID generation
+Normalization
+Duplicate detection
+Lead lifecycle
+Transaction relationships
+Requirement relationships
+Status separation
+Dynamic configuration
+FormVersion
+Dependency engine
+Validation
+Question engine
+Scoring
+Completeness
+
+API tests:
+
+Lead CRUD
+Duplicate check
+Transaction CRUD
+Requirement CRUD
+Workspace
+Global Requirements
+
+Integration:
+
+Client
+→ Transaction
+→ Requirement
+→ Progressive Updates
+
+E2E:
+
+Create Client
+→ Add Need
+→ Save minimum information
+→ Call Client
+→ Add requirement information
+→ Update requirement
+→ Add another need
+→ View workspace
+→ View timeline
+
+Regression:
+
+Authentication
+Dashboard
+Inventory
+Matching
+Follow-up
+Activities
+Site Visit
+Deal
+Commission
+
+========================================================
+46. EXACT EXAMPLE THAT MUST WORK
+========================================================
+
+Create Client:
+
+Rahul Shah
+9876543210
+
+Transaction:
+Purchase
+
+Category:
+Residential
+
+Location:
+Vesu
+
+Budget:
+₹1Cr
+
+SAVE.
+
+System creates:
+
+Lead:
+L000125
+
+Transaction:
+T000125
+
+Requirement:
+R000125
+
+At this point the Requirement is VALID.
+
+Later:
+
+Agent calls Rahul.
+
+Rahul says:
+
+"3BHK chahiye."
+
+Update:
+
+BHK = 3
+
+Later:
+
+"Ready possession."
+
+Update:
+
+Possession = Ready
+
+Later:
+
+"2 parking compulsory."
+
+Update:
+
+Parking = 2
+
+Later:
+
+"Vesu ya City Light."
+
+Update:
+
+Location1 = Vesu
+Location2 = City Light
+
+Later:
+
+"Adajan nahi."
+
+Update:
+
+AvoidLocations = Adajan
+
+Later:
+
+"1.10 crore tak ja sakta hoon."
+
+Update:
+
+BudgetMax = ₹1.10Cr
+
+The SAME:
+
+LeadID
+TransactionID
+RequirementID
+
+remain unchanged.
+
+========================================================
+47. SECOND NEED EXAMPLE
+========================================================
+
+Same Rahul says:
+
+"Mujhe Vesu mein office rent par bhi chahiye."
+
+Do NOT create new Lead.
+
+Create:
+
+Transaction T000126
+
+Requirement R000126
+
+Transaction:
+Rent
+
+Category:
+Commercial
+
+SubCategory:
+Office
+
+Location:
+Vesu
+
+Budget:
+₹60K
+
+Only relevant commercial-office fields become available.
+
+========================================================
+48. UI MUST MAKE THIS OBVIOUS
+========================================================
+
+Client workspace:
+
+RAHUL SHAH
+
+────────────────────────
+
+CLIENT
+
+Mobile
+Status
+Lifecycle
+Score
+Tags
+
+────────────────────────
+
+NEEDS
+
+🏠 BUY HOME
+Purchase • Residential • Flat
+
+3 BHK
+Vesu + City Light
+₹1.10 Cr
+Ready
+2 Parking
+
+[Open]
+
+────────────────────────
+
+🏢 RENT OFFICE
+Rent • Commercial • Office
+
+Vesu
+₹60K
+
+[Open]
+
+────────────────────────
+
+ACTIVITY
+
+Call
+WhatsApp
+Follow-up
+Notes
+
+========================================================
+49. IMPORTANT ARCHITECTURAL DECISION
+========================================================
+
+The UI should not expose the technical hierarchy unnecessarily.
+
+Backend:
+
+Lead
+→ Transaction
+→ Requirement
+
+User experience:
+
+Client
+→ Needs
+
+This is intentional.
+
+Do not remove the backend relationship.
+
+Do not expose database complexity unnecessarily.
+
+========================================================
+50. WHAT NOT TO DO
+========================================================
+
+DO NOT:
+
+- create separate Client + Lead entities
+- create a huge mandatory Lead form
+- create a huge mandatory Requirement form
+- hardcode Residential logic in frontend
+- hardcode Rent logic in frontend
+- hardcode Commercial logic in frontend
+- duplicate client records for multiple needs
+- copy Property data into Requirement
+- redesign Inventory
+- implement Matching Engine
+- implement Deal/Commission redesign
+- replace authentication
+- delete legacy APIs
+- delete legacy data
+- automatically migrate production
+- rewrite unrelated modules
+- silently implement all phases
+- make assumptions about fields the business has not configured
+- treat UNKNOWN as NO
+- force every possible field onto every client
+
+========================================================
+51. MOST IMPORTANT PRODUCT PRINCIPLE
+========================================================
+
+SIGNATURE PROPERTIES V2 IS:
+
+A CLIENT-CENTRIC,
+TRANSACTION-AWARE,
+CONFIGURATION-DRIVEN,
+PROGRESSIVE,
+CONVERSATION-BASED
+REAL ESTATE CRM.
+
+The CRM should remember the client.
+
+The CRM should understand the client's current needs.
+
+The CRM should progressively capture only relevant information.
+
+The CRM should never force irrelevant questions.
+
+The CRM should support ANY real-estate requirement through configurable fields and custom preferences.
+
+========================================================
+52. FINAL INSTRUCTION TO REPLIT
+========================================================
+
+First:
+
+1. Read the existing `replit.md`.
+2. Compare it against this prompt.
+3. Treat THIS PROMPT as the new approved V2 product architecture where conflicts exist.
+4. Do NOT start coding yet.
+5. Do NOT produce another generic audit.
+6. Produce ONLY a concise implementation blueprint showing:
+   - revised architecture
+   - revised data model
+   - revised 20 phases
+   - file-by-file responsibility map
+   - migration/compatibility strategy
+   - test strategy
+   - phase-gate mechanism
+7. Clearly identify which already-implemented Phase 1–6 code must be RETAINED, ADAPTED, or REWORKED because of this revised architecture.
+8. Do not delete working code blindly.
+9. Do not touch Inventory.
+10. Do not touch production data.
+11. Do not start Phase 7 until the revised blueprint is approved.
+
+MOST IMPORTANT:
+
+Do not interpret this as:
+
+"build a better Lead form."
+
+Interpret it as:
+
+"build a Client-centric CRM where a client can have unlimited different needs, each need is transaction-aware, and the requirement progressively evolves as the agent talks to the client."
+
+That is the approved Signature Properties V2 architecture.
+
+STOP AFTER THE BLUEPRINT.
+DO NOT WRITE CODE.

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calculators — Signature Properties</title>
+<style>
+  :root {
+    --clr-brown: #5c3317; --clr-brown-dark: #2c1405; --clr-brown-mid: #7a4a28;
+    --clr-gold: #b8860b; --clr-gold-mid: #d4a017; --clr-gold-soft: #fdf8ec;
+    --clr-bg: #faf7f2; --clr-card: #ffffff; --clr-border: #e8ddd0;
+    --clr-text: #1c0a00; --clr-text-light: #7a6355;
+    --clr-success: #16a34a; --clr-warning: #d97706; --clr-danger: #dc2626;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--clr-bg); color: var(--clr-text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .topnav { background: var(--clr-brown-dark); color: #fff; display: flex; align-items: center; padding: 0 24px; height: 52px; gap: 4px; }
+  .topnav .brand { font-weight: 800; font-size: 15px; color: var(--clr-gold-mid); margin-right: 20px; }
+  .topnav a { color: #d4b896; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 13.5px; }
+  .topnav a.active { background: rgba(212,160,23,.18); color: var(--clr-gold-mid); font-weight: 600; }
+  .topnav a:hover:not(.active) { background: rgba(255,255,255,.08); color: #fff; }
+  .topnav-right { margin-left: auto; }
+  .page { max-width: 1100px; margin: 0 auto; padding: 22px 24px 40px; }
+  .page-title { font-size: 24px; font-weight: 800; color: var(--clr-brown); }
+  .page-sub { font-size: 13px; color: var(--clr-text-light); margin-top: 4px; margin-bottom: 18px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+  .tab-btn { padding: 9px 18px; border-radius: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; background: #fff; border: 1px solid var(--clr-border); color: var(--clr-brown-mid); }
+  .tab-btn.active { background: var(--clr-brown); color: #fff; border-color: var(--clr-brown); }
+  .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .calc-grid { grid-template-columns: 1fr; } }
+  .card { background: #fff; border: 1px solid var(--clr-border); border-radius: 14px; padding: 20px; }
+  .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--clr-brown); margin-bottom: 14px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 11px; font-weight: 700; color: var(--clr-text-light); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
+  .form-group input, .form-group select { width: 100%; padding: 9px 11px; border: 1px solid var(--clr-border); border-radius: 8px; font-size: 14px; font-family: inherit; }
+  .result-row { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--clr-border); font-size: 13.5px; }
+  .result-row:last-child { border-bottom: none; }
+  .result-row .label { color: var(--clr-text-light); }
+  .result-row .value { font-weight: 800; color: var(--clr-brown-dark); }
+  .result-row.hero .value { font-size: 22px; color: var(--clr-brown); }
+  .verdict { margin-top: 14px; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; }
+  .verdict.ok { background: #dcfce7; color: #166534; }
+  .verdict.warn { background: #fef3c7; color: #92400e; }
+  .note { font-size: 11.5px; color: var(--clr-text-light); margin-top: 14px; line-height: 1.5; background: var(--clr-gold-soft); padding: 10px 12px; border-radius: 8px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand" style="display:inline-flex;align-items:center;gap:8px"><img src="/assets/signature-mark.svg" alt="logo" style="width:26px;height:26px;border-radius:50%;object-fit:cover" />Signature Properties</span>
+  <a href="/">Dashboard</a>
+  <a href="/clients">Clients</a>
+  <a href="/inventory">Inventory</a>
+  <a href="/requirements-view">All Requirements</a>
+  <a href="/duplicates">Duplicates</a>
+  <a href="/builder-projects">🏗️ Builder Projects</a>
+  <a href="/broker-network">👥 Broker Network</a>
+  <a href="/calculators" class="active">🧮 Calculators</a>
+  <a href="/digital-card">🪪 Digital Card</a>
+  <div class="topnav-right">
+</div>
+</nav>
+
+<div class="page">
+  <div class="page-title">🧮 Loan & Stamp Duty Calculators</div>
+  <div class="page-sub">Client ko turant estimate dene ke liye — Surat / Gujarat ke current rates ke sath.</div>
+
+  <div class="tabs">
+    <div class="tab-btn active" data-testid="tab-loan" onclick="switchTab('loan')">🏦 Loan Eligibility & EMI</div>
+    <div class="tab-btn" data-testid="tab-stamp" onclick="switchTab('stamp')">🏛️ Stamp Duty & Registration</div>
+  </div>
+
+  <!-- Loan Calculator -->
+  <div id="panel-loan" class="calc-grid">
+    <div class="card">
+      <h3>Enter Details</h3>
+      <div class="form-group">
+        <label>Monthly Income (₹)</label>
+        <input type="number" min="0" id="l-income" data-testid="l-income" placeholder="e.g. 80000" oninput="calcLoan()" />
+      </div>
+      <div class="form-group">
+        <label>Existing Monthly EMIs (₹, if any)</label>
+        <input type="number" min="0" id="l-existing-emi" data-testid="l-existing-emi" placeholder="e.g. 0" oninput="calcLoan()" />
+      </div>
+      <div class="form-group">
+        <label>Property Price (₹)</label>
+        <input type="number" min="0" id="l-price" data-testid="l-price" placeholder="e.g. 6500000" oninput="calcLoan()" />
+      </div>
+      <div class="form-group">
+        <label>Down Payment (₹)</label>
+        <input type="number" min="0" id="l-down" data-testid="l-down" placeholder="e.g. 1300000" oninput="calcLoan()" />
+      </div>
+      <div class="form-group">
+        <label>Interest Rate (% p.a.)</label>
+        <input type="number" min="0" max="30" step="0.05" id="l-rate" data-testid="l-rate" value="8.5" oninput="calcLoan()" />
+      </div>
+      <div class="form-group">
+        <label>Loan Tenure (years)</label>
+        <input type="number" min="1" max="30" id="l-tenure" data-testid="l-tenure" value="20" oninput="calcLoan()" />
+      </div>
+    </div>
+    <div class="card">
+      <h3>Estimate</h3>
+      <div class="result-row hero"><span class="label">Loan Amount Needed</span><span class="value" id="l-out-loan">—</span></div>
+      <div class="result-row"><span class="label">Estimated EMI</span><span class="value" id="l-out-emi">—</span></div>
+      <div class="result-row"><span class="label">Max EMI Bank Allows (~50% income)</span><span class="value" id="l-out-max-emi">—</span></div>
+      <div class="result-row"><span class="label">Total Interest Payable</span><span class="value" id="l-out-interest">—</span></div>
+      <div class="result-row"><span class="label">Total Payment (Principal+Interest)</span><span class="value" id="l-out-total">—</span></div>
+      <div id="l-verdict" class="verdict hidden" data-testid="l-verdict"></div>
+      <div class="note">Estimate hai — bank apni policy ke hisaab se FOIR/CIBIL ke basis pe alag eligibility de sakta hai. Rates default 8.5% p.a. (typical current home loan range 7.25%–9%, lender ke hisaab se badal sakta hai).</div>
+    </div>
+  </div>
+
+  <!-- Stamp Duty Calculator -->
+  <div id="panel-stamp" class="calc-grid hidden">
+    <div class="card">
+      <h3>Enter Details</h3>
+      <div class="form-group">
+        <label>Property Value (₹) — Agreement or Jantri, jo zyada ho</label>
+        <input type="number" min="0" id="s-value" data-testid="s-value" placeholder="e.g. 6500000" oninput="calcStamp()" />
+      </div>
+      <div class="form-group">
+        <label>Ownership</label>
+        <select id="s-ownership" data-testid="s-ownership" onchange="calcStamp()">
+          <option value="male">Male (sole)</option>
+          <option value="female">Female (sole)</option>
+          <option value="joint">Joint (Male + Female / Male + Male)</option>
+        </select>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Estimate</h3>
+      <div class="result-row"><span class="label">Stamp Duty (4.9%)</span><span class="value" id="s-out-duty">—</span></div>
+      <div class="result-row"><span class="label">Registration Fee</span><span class="value" id="s-out-reg">—</span></div>
+      <div class="result-row hero"><span class="label">Total Payable</span><span class="value" id="s-out-total">—</span></div>
+      <div class="note">Gujarat rates (Sep 2026): Stamp duty flat <b>4.9%</b> for everyone. Registration fee <b>1%</b> for male/joint ownership, <b>waived (0%)</b> only when property is in sole name of a female (this waiver may have a value cap per sub-registrar rules). Jantri rate current hone ki wajah se garvi.gujarat.gov.in par verify kar lena final karne se pehle.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-testid="tab-${tab}"]`).classList.add('active');
+    document.getElementById('panel-loan').classList.toggle('hidden', tab !== 'loan');
+    document.getElementById('panel-stamp').classList.toggle('hidden', tab !== 'stamp');
+  }
+
+  function fmtInr(n) {
+    if (n == null || isNaN(n)) return '—';
+    return '₹' + Math.round(n).toLocaleString('en-IN');
+  }
+
+  function calcLoan() {
+    const income = Number(document.getElementById('l-income').value) || 0;
+    const existingEmi = Number(document.getElementById('l-existing-emi').value) || 0;
+    const price = Number(document.getElementById('l-price').value) || 0;
+    const down = Number(document.getElementById('l-down').value) || 0;
+    const rate = Number(document.getElementById('l-rate').value) || 0;
+    const years = Number(document.getElementById('l-tenure').value) || 0;
+
+    const loanAmount = Math.max(0, price - down);
+    const monthlyRate = rate / 12 / 100;
+    const months = years * 12;
+    let emi = 0;
+    if (loanAmount > 0 && monthlyRate > 0 && months > 0) {
+      emi = loanAmount * monthlyRate * Math.pow(1 + monthlyRate, months) / (Math.pow(1 + monthlyRate, months) - 1);
+    }
+    const totalPayment = emi * months;
+    const totalInterest = totalPayment - loanAmount;
+    const maxEmiAllowed = Math.max(0, income * 0.5 - existingEmi);
+
+    document.getElementById('l-out-loan').textContent = loanAmount ? fmtInr(loanAmount) : '—';
+    document.getElementById('l-out-emi').textContent = emi ? fmtInr(emi) + '/mo' : '—';
+    document.getElementById('l-out-max-emi').textContent = income ? fmtInr(maxEmiAllowed) + '/mo' : '—';
+    document.getElementById('l-out-interest').textContent = totalInterest ? fmtInr(totalInterest) : '—';
+    document.getElementById('l-out-total').textContent = totalPayment ? fmtInr(totalPayment) : '—';
+
+    const verdict = document.getElementById('l-verdict');
+    if (income && loanAmount && emi) {
+      if (emi <= maxEmiAllowed) {
+        verdict.className = 'verdict ok';
+        verdict.textContent = '✅ Eligible — EMI is within the ~50% income limit banks typically allow';
+      } else {
+        verdict.className = 'verdict warn';
+        verdict.textContent = '⚠️ EMI zyada hai income ke hisaab se — tenure badhao ya down payment zyada karo';
+      }
+      verdict.classList.remove('hidden');
+    } else {
+      verdict.classList.add('hidden');
+    }
+  }
+
+  function calcStamp() {
+    const value = Number(document.getElementById('s-value').value) || 0;
+    const ownership = document.getElementById('s-ownership').value;
+    const duty = value * 0.049;
+    const regRate = ownership === 'female' ? 0 : 0.01;
+    const reg = value * regRate;
+    const total = duty + reg;
+
+    document.getElementById('s-out-duty').textContent = value ? fmtInr(duty) : '—';
+    document.getElementById('s-out-reg').textContent = value ? (regRate ? fmtInr(reg) : 'Waived (₹0)') : '—';
+    document.getElementById('s-out-total').textContent = value ? fmtInr(total) : '—';
+  }
+
+  calcLoan();
+  calcStamp();
+</script>
+</body>
+</html>

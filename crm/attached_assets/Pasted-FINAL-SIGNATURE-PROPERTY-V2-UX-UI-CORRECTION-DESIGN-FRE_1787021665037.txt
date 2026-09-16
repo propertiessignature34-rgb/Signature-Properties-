@@ -1,0 +1,868 @@
+FINAL SIGNATURE PROPERTY — V2 UX/UI CORRECTION & DESIGN FREEZE
+
+IMPORTANT:
+Do NOT restart Phase 1–20.
+Do NOT redesign the backend architecture.
+Do NOT recreate services that already exist.
+Do NOT migrate production data.
+Do NOT enable LEAD_V2_ENABLED.
+Do NOT run migration --apply.
+
+This task is to correct and finalize the USER EXPERIENCE/UI and the
+existing V2 workflow according to the following FINAL BUSINESS RULES.
+
+Before changing code, inspect the existing V2 implementation and identify
+what already works. Reuse existing services/APIs wherever possible.
+
+========================================================
+1. BRAND NAME — FINAL
+========================================================
+
+The product/company name displayed to users is:
+
+SIGNATURE PROPERTY
+
+NOT:
+
+Signature Realty
+Signature Realty OS
+Signature Reality
+Signature Realty CRM
+
+Replace agent-facing branding/navigation/header/footer/page titles/browser
+titles wherever appropriate.
+
+Use:
+
+SIGNATURE PROPERTY
+
+Do NOT change internal code/entity names merely for cosmetic branding
+unless required.
+
+Backward-compatible API/database/internal names may remain unchanged.
+
+========================================================
+2. CORE BUSINESS MODEL — FINAL
+========================================================
+
+The permanent business model is:
+
+CLIENT
+  ↓
+REQUIREMENT
+
+One Client can have multiple Requirements.
+
+The TransactionType is part of the Requirement/business context:
+
+Purchase
+Sale
+Rent
+Rent Out
+Lease
+Lease Out
+
+Backend Transaction entity may continue to exist as already implemented,
+but the agent-facing UI must remain simple.
+
+The agent should think:
+
+CLIENT → REQUIREMENT
+
+not:
+
+LEAD → TRANSACTION → REQUIREMENT
+
+Do not expose unnecessary technical architecture to agents.
+
+========================================================
+3. CRITICAL RULE — UPDATE VS NEW REQUIREMENT
+========================================================
+
+This is the most important business rule.
+
+A) SAME REQUIREMENT:
+
+If the client is talking about the SAME property need and changes/adds
+information, use:
+
+UPDATE REQUIREMENT
+
+Examples:
+
+3 BHK → 2 BHK
+₹2 Cr → ₹80 Lakh
+Vesu → Vesu + Adajan
+Possession changed
+Parking added
+Furnishing changed
+Facing changed
+Area changed
+Urgency changed
+
+All of these MUST update the SAME RequirementID.
+
+Example:
+
+R000001
+
+must remain:
+
+R000001
+
+Do NOT create R000002.
+
+--------------------------------------------------------
+
+B) NEW REQUIREMENT:
+
+If the SAME CLIENT has a genuinely DIFFERENT property/business need,
+use:
+
++ NEW REQUIREMENT
+
+Examples:
+
+Existing:
+Purchase → Residential → 2 BHK → ₹80L
+
+Client later says:
+"I also need a commercial office."
+
+Create:
+
+R000002
+
+Another example:
+
+Existing:
+Purchase → Residential
+
+Client later says:
+"I also want a rental flat."
+
+Create a new Requirement.
+
+--------------------------------------------------------
+
+HARD RULE:
+
+SAME NEED = UPDATE REQUIREMENT
+
+NEW/DISTINCT NEED = NEW REQUIREMENT
+
+Never confuse these two actions.
+
+========================================================
+4. ONLINE CLIENT FLOW
+========================================================
+
+Online clients will arrive through a portal/form.
+
+Initial online form may contain:
+
+Name
+Mobile
+Transaction
+Category
+Location
+BHK
+Budget
+and other relevant fields depending on the dynamic form.
+
+When submitted:
+
+CREATE:
+
+Client
++
+Initial Requirement
+
+in one logical operation using the existing backend architecture.
+
+The initial Requirement is the working Requirement.
+
+There is NO separate "lead form" concept in the agent UI.
+
+========================================================
+5. ONLINE REQUIREMENT + AGENT CALL
+========================================================
+
+Example:
+
+Online client submits:
+
+Name: Rohan
+Phone: 98765xxxxx
+Purchase
+Residential
+3 BHK
+Vesu
+₹2 Cr
+
+System creates:
+
+Client
++
+Requirement R000001
+
+Then agent calls client.
+
+Client says:
+
+"Actually I need 2 BHK and budget is ₹80 lakh."
+
+Agent MUST use:
+
+UPDATE REQUIREMENT
+
+Result:
+
+R000001
+
+BHK = 2
+Budget = ₹80 lakh
+Location = Vesu
+
+NO new Requirement.
+
+The current Requirement is the working truth.
+
+Do NOT create a special OriginalRequest UI.
+Do NOT create an OriginalRequest snapshot UI.
+Do NOT show old online values as a second requirement.
+Do NOT make the agent compare old vs new.
+
+========================================================
+6. CLIENT WORKSPACE — FINAL DESIGN
+========================================================
+
+Client Workspace must be the main working screen.
+
+Header:
+
+SIGNATURE PROPERTY
+
+Client:
+
+Rohan
+98765xxxxx
+
+Actions:
+
+[ Call ]
+[ WhatsApp ]
+[ Edit Client ]
+
+Then:
+
+REQUIREMENTS
+
+                                      [ + NEW REQUIREMENT ]
+
+--------------------------------------------------------
+
+Requirement card:
+
+REQUIREMENT
+
+Purchase • Residential • Flat
+
+2 BHK
+₹80 Lakh
+Vesu
+
+STATUS: ACTIVE
+
+KNOWN
+✓ BHK
+✓ Budget
+✓ Location
+✓ Possession
+✓ Parking
+
+TO DISCOVER
+? Furnishing
+? Facing
+? Floor
+? Urgency
+
+NEXT QUESTIONS
+
+"Possession kab tak chahiye?"
+"Parking kitni chahiye?"
+
+Actions:
+
+[ UPDATE REQUIREMENT ]
+[ MARK LOST ]
+
+--------------------------------------------------------
+
+The "+ NEW REQUIREMENT" button belongs to the CLIENT level.
+
+The "UPDATE REQUIREMENT" button belongs inside an existing
+Requirement card.
+
+They must never look like the same action.
+
+========================================================
+7. UPDATE REQUIREMENT FORM — CORRECT IT
+========================================================
+
+The current update form/modal must be redesigned.
+
+Title:
+
+UPDATE REQUIREMENT
+
+Show:
+
+Requirement ID
+R000001
+
+Transaction
+[ Purchase ]
+
+Category
+[ Residential ]
+
+Sub Category
+[ Flat ]
+
+Then dynamically render relevant fields.
+
+Example Residential Flat:
+
+BHK
+[ 2 ]
+
+Budget
+[ ₹80,00,000 ]
+
+Location
+[ Vesu ]
+
+Possession
+[ Ready ]
+
+Parking
+[ 2 ]
+
+Furnishing
+[ Semi Furnished ]
+
+Facing
+[ East ]
+
+etc.
+
+IMPORTANT:
+
+The update form MUST preload the CURRENT Requirement values.
+
+It must NOT preload stale online values.
+
+It must NOT reset known fields to blank.
+
+It must NOT create a new Requirement.
+
+PATCH the SAME RequirementID.
+
+Before/after:
+
+R000001 → R000001
+
+========================================================
+8. NEW REQUIREMENT FORM
+========================================================
+
+When user clicks:
+
++ NEW REQUIREMENT
+
+open:
+
+NEW REQUIREMENT
+
+Transaction
+[ Purchase ▼ ]
+
+Category
+[ Residential ▼ ]
+
+Sub Category
+[ Flat ▼ ]
+
+Then dynamically render relevant fields.
+
+The new form must create a NEW RequirementID.
+
+Example:
+
+Existing:
+R000001 Residential Flat
+
+New:
+R000002 Commercial Office
+
+========================================================
+9. DYNAMIC FIELD SYSTEM
+========================================================
+
+Fields MUST depend on:
+
+TransactionType
++
+Category
++
+SubCategory
+
+Examples:
+
+Purchase + Residential + Flat:
+
+BHK
+Budget
+Location
+Possession
+Parking
+Furnishing
+Facing
+Floor
+etc.
+
+Rent + Residential + Flat:
+
+BHK
+Rent Budget
+Location
+Tenant Type
+Furnishing
+Parking
+Possession
+Pets
+Food Preference
+etc.
+
+Purchase + Commercial + Office:
+
+Area
+Budget
+Location
+Business Type
+Power Load
+Fire NOC
+Frontage
+Parking
+etc.
+
+Land:
+
+Plot Area
+Budget
+Location
+Road Width
+Corner
+Zoning
+etc.
+
+Industrial:
+
+Built-up Area
+Budget
+Location
+Power Load
+Ceiling Height
+Loading Dock
+etc.
+
+Do NOT display irrelevant fields.
+
+Do NOT force all fields to be completed.
+
+UNKNOWN is valid.
+
+========================================================
+10. UNKNOWN / KNOWN UI
+========================================================
+
+Use:
+
+KNOWN
+
+and:
+
+TO DISCOVER
+
+Do not expose technical enum names such as:
+
+UNKNOWN
+KNOWN
+NOT_APPLICABLE
+
+to normal agents unless required internally.
+
+Example:
+
+KNOWN
+✓ BHK: 2
+✓ Budget: ₹80L
+✓ Location: Vesu
+
+TO DISCOVER
+? Possession
+? Parking
+? Furnishing
+
+========================================================
+11. NO DUPLICATE INFORMATION
+========================================================
+
+Fix duplicate/confusing UI fields.
+
+Example:
+
+If Budget is displayed as:
+
+₹80 Lakh
+
+do NOT simultaneously show:
+
+Budget
+Budget Min
+Budget Max
+
+as three separate visible agent questions.
+
+Backend may continue using:
+
+BudgetMin
+BudgetMax
+
+but UI should present:
+
+Budget
+
+with the appropriate value/range.
+
+Similarly:
+
+Location
+
+should be presented naturally, not as:
+
+Location1
+Location2
+Location3
+
+unless the UI specifically needs multi-location selection.
+
+BHK should not appear twice in different sections.
+
+Every business field should have ONE clear user-facing representation.
+
+========================================================
+12. LOST REQUIREMENT
+========================================================
+
+Lost is a Requirement-level action.
+
+Inside the Requirement card:
+
+[ MARK LOST ]
+
+When clicked:
+
+Reason:
+
+Bought Elsewhere
+Budget Mismatch
+Location Mismatch
+Requirement Cancelled
+Not Responding
+Other
+
+Notes
+
+[ CONFIRM LOST ]
+
+Only that Requirement becomes LOST.
+
+The Client remains active/available.
+
+Do NOT mark the entire Client as Lost because one Requirement is lost.
+
+After a Requirement is lost:
+
+Client Workspace still shows:
+
+PAST / LOST REQUIREMENTS
+
+and:
+
+[ + NEW REQUIREMENT ]
+
+remains available.
+
+========================================================
+13. CLIENT LIST
+========================================================
+
+Agent-facing terminology:
+
+CLIENTS
+
+NOT:
+
+LEADS
+
+Do not show "Leads" in normal V2 navigation.
+
+Client list columns should be useful:
+
+Client
+Mobile
+Status
+Active Requirements
+Budget
+Location
+Last Activity
+Agent
+
+Avoid technical columns where possible.
+
+========================================================
+14. NAVIGATION CLEANUP
+========================================================
+
+Remove duplicate/confusing V1/V2 navigation from normal agent UI.
+
+Do NOT show:
+
+Leads
+Lead Workspace
+Requirements
+V1
+
+as competing primary navigation items.
+
+Preferred:
+
+SIGNATURE PROPERTY
+
+Dashboard
+
+Clients
+
+Inventory
+
+Matching
+
+Site Visits
+
+Deals
+
+Commission
+
+Follow-ups
+
+Calendar
+
+Reports
+
+Settings
+
+If a global requirement operational screen is required, call it:
+
+All Requirements
+
+or:
+
+All Needs
+
+but keep it separate from the Client Workspace workflow.
+
+Do not expose both:
+
+Requirements
+and
+Needs
+
+as duplicate concepts without a clear purpose.
+
+========================================================
+15. COLOR / BRAND DESIGN
+========================================================
+
+Use a premium real-estate visual identity based on:
+
+BROWN
+GOLD
+YELLOW
+
+The design should feel:
+
+Premium
+Professional
+Trustworthy
+Luxury real estate
+Clean
+Modern
+
+Suggested visual hierarchy:
+
+Dark Brown:
+primary header/navigation/text
+
+Gold:
+primary buttons, active states, borders, important highlights
+
+Warm Yellow:
+secondary highlights, status indicators, attention states
+
+Neutral:
+cream/off-white/light background for content areas
+
+Do NOT make the entire UI bright yellow.
+
+Do NOT use excessive gradients.
+
+Do NOT make text hard to read.
+
+Maintain WCAG-readable contrast.
+
+Buttons:
+
+Primary:
+Brown/Gold premium treatment
+
+Secondary:
+Light/cream with brown border/text
+
+Important actions:
+Gold highlight
+
+Danger/Lost:
+use a clear danger treatment while keeping the overall premium
+theme.
+
+========================================================
+16. MOBILE / TABLET
+========================================================
+
+The user primarily works from mobile/tablet.
+
+Therefore:
+
+- responsive layout
+- large touch targets
+- sticky important actions
+- easy Call button
+- easy WhatsApp button
+- Requirement cards must work on narrow screens
+- forms should be single-column on mobile
+- no horizontal scrolling for normal workflow
+
+========================================================
+17. CLIENT WORKFLOW
+========================================================
+
+The final workflow should be:
+
+ONLINE / MANUAL CLIENT
+        ↓
+CLIENT + INITIAL REQUIREMENT
+        ↓
+CLIENT WORKSPACE
+        ↓
+CALL CLIENT
+        ↓
+UPDATE REQUIREMENT
+        ↓
+NEXT QUESTIONS
+        ↓
+REQUIREMENT BECOMES MORE COMPLETE
+        ↓
+MATCHING
+        ↓
+SITE VISIT
+        ↓
+NEGOTIATION
+        ↓
+TOKEN
+        ↓
+DEAL
+
+If client gives a completely new need:
+
+CLIENT WORKSPACE
+        ↓
++ NEW REQUIREMENT
+        ↓
+NEW RequirementID
+
+========================================================
+18. MATCHING
+========================================================
+
+Matching must use the CURRENT active Requirement.
+
+Do not create matching logic against old online form values.
+
+Do not introduce OriginalRequest matching.
+
+========================================================
+19. BACKEND SAFETY
+========================================================
+
+Reuse existing:
+
+V2RequirementService
+V2TransactionService
+V2LeadService
+V2DependencyService
+V2NextQuestionService
+V2ScoringService
+V2ConfigService
+V2FormRegistryService
+
+Do not rewrite these services unless a real UI/API contract mismatch
+requires a minimal fix.
+
+Do not break existing APIs.
+
+Do not modify Inventory/Matching/Deal/Commission business logic.
+
+========================================================
+20. PREVIEW VERIFICATION
+========================================================
+
+After implementation, verify the ACTUAL browser Preview.
+
+Do not report PASS merely because API tests pass.
+
+Visually verify:
+
+1. Signature Property branding
+2. Clients
+3. New Client
+4. Initial Requirement
+5. Client Workspace
+6. Existing Requirement
+7. Update Requirement
+8. New Requirement
+9. Known
+10. To Discover
+11. Next Questions
+12. Mark Lost
+13. Dynamic fields
+14. Brown/Gold/Yellow theme
+15. Mobile/tablet layout
+
+Use TEST DATA ONLY if creation is required.
+
+DO NOT use production data for destructive tests.
+
+========================================================
+21

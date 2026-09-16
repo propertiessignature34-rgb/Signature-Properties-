@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory — Signature Properties</title>
+  <style>
+    :root {
+      --clr-brown: #5c3317; --clr-brown-dark: #2c1405; --clr-brown-mid: #7a4a28;
+      --clr-gold: #b8860b; --clr-gold-mid: #d4a017; --clr-gold-soft: #fdf8ec;
+      --clr-bg: #faf7f2; --clr-card: #ffffff; --clr-border: #e8ddd0;
+      --clr-text: #1c0a00; --clr-text-light: #7a6355;
+      --clr-success: #16a34a; --clr-warning: #d97706; --clr-danger: #dc2626;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--clr-bg); color: var(--clr-text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .topnav { background: var(--clr-brown-dark); color: #fff; display: flex; align-items: center; padding: 0 24px; height: 52px; gap: 4px; }
+    .topnav .brand { font-weight: 800; font-size: 15px; color: var(--clr-gold-mid); margin-right: 20px; }
+    .topnav a { color: #d4b896; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 13.5px; }
+    .topnav a.active { background: rgba(212,160,23,.18); color: var(--clr-gold-mid); font-weight: 600; }
+    .topnav a:hover:not(.active) { background: rgba(255,255,255,.08); color: #fff; }
+    .topnav-right { margin-left: auto; }
+    .page-header { padding: 22px 28px 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .page-title { font-size: 26px; font-weight: 800; color: var(--clr-brown); letter-spacing: -.02em; }
+    .page-sub { font-size: 13px; color: var(--clr-text-light); margin-top: 4px; }
+    .btn { padding: 8px 16px; font-size: 13px; font-weight: 700; border-radius: 8px; border: 1px solid var(--clr-border); background: #fff; cursor: pointer; transition: all .15s; }
+    .btn-primary { background: var(--clr-brown); color: #fff; border-color: var(--clr-brown); }
+    .btn-primary:hover { background: var(--clr-brown-mid); }
+    .btn-ghost { background: #fff; color: var(--clr-brown); }
+    .btn-danger { background: #fef2f2; color: var(--clr-danger); border-color: #fecaca; }
+    .toolbar { padding: 8px 28px 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .search-input { flex: 1; min-width: 240px; padding: 9px 12px; border: 1px solid var(--clr-border); border-radius: 8px; background: #fff; font-size: 14px; }
+    .chip { padding: 6px 12px; background: #fff; border: 1px solid var(--clr-border); border-radius: 999px; font-size: 12.5px; cursor: pointer; font-weight: 600; color: var(--clr-text-light); }
+    .chip:hover { border-color: var(--clr-gold-mid); color: var(--clr-brown); }
+    .chip.active { background: var(--clr-brown); color: #fff; border-color: var(--clr-brown); }
+
+    .grid { padding: 0 28px 40px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .card { background: #fff; border: 1px solid var(--clr-border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: all .15s; display: flex; flex-direction: column; }
+    .card:hover { border-color: var(--clr-gold-mid); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(92,51,23,.08); }
+    .card-photo { height: 190px; background: #f4ede0; position: relative; overflow: hidden; }
+    .card-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .card-photo .no-photo { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--clr-text-light); font-size: 13px; letter-spacing: .05em; }
+    .card-photo-count { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 11.5px; font-weight: 600; }
+    .badge-status { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 12px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .badge-Available { background: #dcfce7; color: #166534; }
+    .badge-Sold, .badge-Rented { background: #fee2e2; color: #991b1b; }
+    .badge-Reserved, .badge-UnderOffer { background: #fef3c7; color: #92400e; }
+    .badge-Offmarket, .badge-Expired { background: #f1f5f9; color: #475569; }
+
+    /* Source badge on card top-right */
+    .badge-source { position: absolute; top: 8px; right: 8px; padding: 3px 9px; border-radius: 12px; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; box-shadow: 0 2px 4px rgba(0,0,0,.15); }
+    .src-Own      { background: #fef3c7; color: #78350f; border: 1px solid #fbbf24; }
+    .src-Builder  { background: #dbeafe; color: #1e3a8a; border: 1px solid #60a5fa; }
+    .src-Broker   { background: #ede9fe; color: #5b21b6; border: 1px solid #a78bfa; }
+
+    /* Source filter chip highlights */
+    .source-chip.src-own.active     { background: #d97706; border-color: #d97706; }
+    .source-chip.src-builder.active { background: #2563eb; border-color: #2563eb; }
+    .source-chip.src-broker.active  { background: #7c3aed; border-color: #7c3aed; }
+    .card-body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; }
+    .card-title { font-size: 14.5px; font-weight: 700; color: var(--clr-brown); line-height: 1.35; margin-bottom: 4px; }
+    .card-meta { font-size: 12px; color: var(--clr-text-light); margin-bottom: 8px; }
+    .card-price { font-size: 18px; font-weight: 800; color: var(--clr-brown-dark); margin: 4px 0; }
+    .card-price small { font-size: 11px; font-weight: 500; color: var(--clr-text-light); margin-left: 4px; }
+    .card-facts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .card-fact { font-size: 11px; background: var(--clr-gold-soft); color: var(--clr-brown-mid); padding: 3px 8px; border-radius: 12px; font-weight: 600; }
+    .card-footer { padding: 8px 16px; border-top: 1px solid var(--clr-border); font-size: 11.5px; color: var(--clr-text-light); display: flex; justify-content: space-between; align-items: center; }
+    .empty-state { text-align: center; padding: 80px 20px; color: var(--clr-text-light); background: #fff; border-radius: 12px; margin: 12px 28px; border: 1px dashed var(--clr-border); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(28,10,0,.55); display: flex; align-items: flex-start; justify-content: center; padding: 5vh 20px; z-index: 100; overflow-y: auto; }
+    .modal-overlay.hidden { display: none; }
+    .modal { background: #fff; border-radius: 14px; width: 100%; max-width: 820px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--clr-border); }
+    .modal-title { font-size: 17px; font-weight: 800; color: var(--clr-brown); }
+    .modal-close { background: none; border: 0; font-size: 24px; color: var(--clr-text-light); cursor: pointer; padding: 0 8px; }
+    .modal-body { padding: 18px 22px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 22px; border-top: 1px solid var(--clr-border); background: #faf6f0; border-radius: 0 0 14px 14px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 16px; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label { font-size: 11px; font-weight: 700; color: var(--clr-text-light); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+    .form-group input, .form-group select, .form-group textarea { padding: 8px 10px; border: 1px solid var(--clr-border); border-radius: 6px; font-size: 13.5px; font-family: inherit; background: #fff; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--clr-gold-mid); box-shadow: 0 0 0 3px rgba(212,160,23,.15); }
+    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--clr-brown); margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--clr-border); }
+    .form-error { color: var(--clr-danger); font-size: 12.5px; margin-top: 8px; }
+
+    /* Photo upload */
+    .photos-strip { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .photo-thumb { width: 80px; height: 80px; border-radius: 6px; overflow: hidden; position: relative; border: 1px solid var(--clr-border); }
+    .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-thumb .remove { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,.6); color: #fff; border: 0; width: 20px; height: 20px; border-radius: 999px; cursor: pointer; font-size: 12px; line-height: 20px; padding: 0; }
+    .photo-add-btn { width: 80px; height: 80px; border: 2px dashed var(--clr-border); border-radius: 6px; background: #faf6f0; color: var(--clr-text-light); font-size: 24px; cursor: pointer; }
+
+    /* Property workspace lightbox */
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.9); display: flex; align-items: center; justify-content: center; z-index: 200; }
+    .lightbox.hidden { display: none; }
+    .lightbox img { max-width: 90%; max-height: 90%; object-fit: contain; }
+    .lightbox .close { position: absolute; top: 20px; right: 24px; color: #fff; font-size: 36px; cursor: pointer; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--clr-brown-dark); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,.2); opacity: 0; transform: translateY(10px); transition: all .3s; z-index: 300; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { background: var(--clr-danger); }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand" style="display:inline-flex;align-items:center;gap:8px"><img src="/assets/signature-mark.svg" alt="logo" style="width:26px;height:26px;border-radius:50%;object-fit:cover" />Signature Properties</span>
+  <a href="/">Dashboard</a>
+  <a href="/clients">Clients</a>
+  <a href="/inventory" class="active">Inventory</a>
+  <a href="/requirements-view">All Requirements</a>
+  <a href="/duplicates">Duplicates</a>
+  <a href="/builder-projects">🏗️ Builder Projects</a>
+  <a href="/broker-network">👥 Broker Network</a>
+  <a href="/calculators">🧮 Calculators</a>
+  <a href="/digital-card">🪪 Digital Card</a>
+  <div class="topnav-right">
+</div>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Inventory</h1>
+    <div class="page-sub"><span id="count-badge">Loading…</span> properties in your listings</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn" data-testid="refresh-btn" onclick="loadInventory()">↻ Refresh</button>
+    <button class="btn btn-primary" data-testid="add-property-btn" onclick="openAddModal()">＋ Add Property</button>
+  </div>
+</div>
+
+<div class="toolbar">
+  <input class="search-input" id="search-input" data-testid="search-input" type="text" placeholder="Search title / owner / society / area…" oninput="debounceSearch()" />
+  <div class="chip active" data-filter="" data-testid="filter-all" onclick="setFilter(this, 'category', '')">All</div>
+  <div class="chip" data-filter="Residential" data-testid="filter-res" onclick="setFilter(this, 'category', 'Residential')">🏠 Residential</div>
+  <div class="chip" data-filter="Commercial" data-testid="filter-comm" onclick="setFilter(this, 'category', 'Commercial')">🏢 Commercial</div>
+  <div class="chip" data-filter="Industrial" data-testid="filter-ind" onclick="setFilter(this, 'category', 'Industrial')">🏭 Industrial</div>
+  <div class="chip" data-filter="Land" data-testid="filter-land" onclick="setFilter(this, 'category', 'Land')">🌾 Land</div>
+</div>
+
+<div class="toolbar" style="padding-top:0">
+  <span style="font-size:11.5px;color:var(--clr-text-light);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-right:4px">Source:</span>
+  <div class="chip source-chip active" data-source="" data-testid="src-all" onclick="setFilter(this, 'source', '')">All Sources</div>
+  <div class="chip source-chip src-own" data-source="Own" data-testid="src-own" onclick="setFilter(this, 'source', 'Own')">⭐ My Own Inventory</div>
+  <div class="chip source-chip src-builder" data-source="Builder" data-testid="src-builder" onclick="setFilter(this, 'source', 'Builder')">🏗️ Builder Inventory</div>
+  <div class="chip source-chip src-broker" data-source="Broker" data-testid="src-broker" onclick="setFilter(this, 'source', 'Broker')">🤝 Broker Inventory</div>
+</div>
+
+<div id="grid" class="grid"></div>
+
+<!-- Add / Edit Property Modal -->
+<div class="modal-overlay hidden" id="prop-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Add Property</span>
+      <button class="modal-close" data-testid="close-modal" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <!-- Photos (top) -->
+      <div class="section-title">Photos</div>
+      <div class="photos-strip" id="photos-strip"></div>
+      <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none" onchange="onPhotosPicked(event)" />
+      <div style="font-size:11px;color:var(--clr-text-light);margin-top:6px">Click ➕ to add photos (jpeg/png/webp)</div>
+
+      <!-- Basic info -->
+      <div class="section-title">Property Info</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Title *</label>
+          <input id="f-title" data-testid="f-title" type="text" placeholder="e.g. 3 BHK Flat in Ratnakar Nine Square, Vesu" />
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <select id="f-category" data-testid="f-category" onchange="updateSubcats(); loadDynamicFields()">
+            <option value="">Select…</option>
+            <option>Residential</option><option>Commercial</option><option>Industrial</option><option>Land</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sub Category</label>
+          <select id="f-subcategory" data-testid="f-subcategory" onchange="loadDynamicFields()"><option value="">—</option></select>
+        </div>
+        <div class="form-group">
+          <label>Listing For *</label>
+          <select id="f-listing-for" data-testid="f-listing-for">
+            <option>Sale</option><option>Rent</option><option>Lease</option><option>Rent + Sale</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="f-status" data-testid="f-status">
+            <option>Available</option><option>Under Offer</option><option>Reserved</option><option>Sold</option><option>Rented</option><option>Off-market</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Ownership -->
+      <div class="section-title">Ownership</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Inventory Source *</label>
+          <select id="f-inv-source" data-testid="f-inv-source" onchange="onSourceChange()">
+            <option value="Own">⭐ My Own Inventory</option>
+            <option value="Builder">🏗️ Builder Inventory</option>
+            <option value="Broker">🤝 Broker Inventory</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Owner Type</label>
+          <select id="f-owner-type" data-testid="f-owner-type">
+            <option>Direct Owner</option><option>Builder</option><option>Sub-broker</option><option>Investor</option><option>NRI Owner</option><option>Corporate</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Owner / Contact Name</label><input id="f-owner-name" data-testid="f-owner-name" type="text" /></div>
+        <div class="form-group"><label>Owner Mobile</label><input id="f-owner-mobile" data-testid="f-owner-mobile" type="tel" placeholder="+91 98765 43210" /></div>
+
+        <!-- Builder-only extras -->
+        <div class="form-group src-builder-only" style="display:none">
+          <label>Builder Name</label><input id="f-builder-name" data-testid="f-builder-name" type="text" placeholder="e.g. Rustomjee, Ratnakar" />
+        </div>
+        <div class="form-group src-builder-only" style="display:none">
+          <label>Project Name</label><input id="f-project-name" data-testid="f-project-name" type="text" placeholder="e.g. Nine Square, Ratnakar Signature" />
+        </div>
+
+        <!-- Broker-only extras -->
+        <div class="form-group src-broker-only" style="display:none">
+          <label>Broker Name</label><input id="f-broker-name" data-testid="f-broker-name" type="text" placeholder="Sub-broker or partner name" />
+        </div>
+        <div class="form-group src-broker-only" style="display:none">
+          <label>Broker Mobile</label><input id="f-broker-mobile" data-testid="f-broker-mobile" type="tel" />
+        </div>
+        <div class="form-group src-broker-only" style="display:none">
+          <label>Commission Split (%)</label><input id="f-broker-share" data-testid="f-broker-share" type="number" placeholder="e.g. 50" />
+        </div>
+
+        <div class="form-group">
+          <label>Society / Building</label>
+          <input id="f-society" data-testid="f-society" list="dl-society" type="text" placeholder="e.g. Ratnakar Nine Square" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label>Primary Location</label>
+          <input id="f-location1" data-testid="f-location1" list="dl-surat-areas" type="text" placeholder="e.g. Vesu" autocomplete="off" />
+        </div>
+        <div class="form-group full" style="display:flex;align-items:center;gap:8px">
+          <input id="f-exclusive" data-testid="f-exclusive" type="checkbox" style="width:auto" />
+          <label style="margin:0;text-transform:none;font-size:13px;color:var(--clr-text)">Exclusive mandate with me</label>
+        </div>
+      </div>
+
+      <!-- Dynamic category-specific fields -->
+      <div id="dynamic-fields-wrap"></div>
+
+      <div class="form-error" id="form-error"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-testid="cancel-btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" data-testid="save-btn" onclick="saveProperty()" id="save-btn">Save Property</button>
+    </div>
+  </div>
+</div>
+
+<datalist id="dl-surat-areas"></datalist>
+<datalist id="dl-society"></datalist>
+<div class="lightbox hidden" id="lightbox" onclick="closeLightbox()"><span class="close">&times;</span><img id="lightbox-img" src="" alt="" /></div>
+<div class="toast" id="toast"></div>
+
+<script>
+
+  // ── Config ────────────────────────────────────────────────────────────
+  const SUBCATS = {
+    Residential: ['Flat', 'Villa', 'Row House', 'Bungalow', 'Penthouse', 'Studio', 'PG'],
+    Commercial:  ['Office', 'Shop', 'Warehouse', 'Showroom', 'Restaurant'],
+    Industrial:  ['Factory', 'Warehouse', 'Godown', 'Cold Storage'],
+    Land:        ['Residential Plot', 'Commercial Plot', 'Agricultural Land', 'Industrial Plot', 'NA Plot']
+  };
+  const SURAT_AREAS = ['Adajan','Althan','Anand Mahal Road','Athwa','Bhatar','Bhimrad','Causeway Road','City Light','Dumas Road','Ghod Dod Road','Jahangirpura','Kadodara','Kamrej','Katargam','LP Savani Road','Magdalla','Nanpura','New Textile Market','Nikol','Pal','Palanpur Patiya','Parle Point','Piplod','Puna','Rander','Rustampura','Salabatpura','Sarthana','Singanpore','Tapi Road','Udhna','Umra','Varachha','Vesu','VIP Road'];
+
+  // State
+  let allProperties = [];
+  let currentFilter = '';
+  let currentSource = '';
+  let currentSearch = '';
+  let editingId    = null;
+  let pendingPhotos = [];  // dataUrl[] to upload after save
+  let existingPhotos = []; // photos already on server
+
+  const SOURCE_LABEL = { Own: '⭐ Own', Builder: '🏗️ Builder', Broker: '🤝 Broker' };
+  function deriveSource(p) {
+    if (p.InventorySource) return p.InventorySource;
+    if (p.OwnerType === 'Builder') return 'Builder';
+    if (p.OwnerType === 'Sub-broker') return 'Broker';
+    return 'Own';
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('dl-surat-areas').innerHTML = SURAT_AREAS.map(a => `<option value="${a}">`).join('');
+    loadInventory();
+  });
+
+  async function loadInventory() {
+    document.getElementById('grid').innerHTML = '<div class="empty-state">Loading…</div>';
+    try {
+      const res = await fetch('/api/v2/inventory').then(r => r.json());
+      allProperties = res.data || [];
+      // Build society autocomplete from existing data
+      const societies = [...new Set(allProperties.map(p => p.SocietyName).filter(Boolean))];
+      document.getElementById('dl-society').innerHTML = societies.map(s => `<option value="${esc(s)}">`).join('');
+      render();
+    } catch(e) {
+      document.getElementById('grid').innerHTML = `<div class="empty-state" style="color:var(--clr-danger)">Failed to load: ${e.message}</div>`;
+    }
+  }
+
+  function render() {
+    let items = allProperties;
+    if (currentFilter) items = items.filter(p => p.Category === currentFilter);
+    if (currentSource) items = items.filter(p => deriveSource(p) === currentSource);
+    if (currentSearch) {
+      const q = currentSearch.toLowerCase();
+      items = items.filter(p =>
+        (p.Title||'').toLowerCase().includes(q) ||
+        (p.SocietyName||'').toLowerCase().includes(q) ||
+        (p.Location1||'').toLowerCase().includes(q) ||
+        (p.OwnerName||'').toLowerCase().includes(q) ||
+        (p.BrokerName||'').toLowerCase().includes(q) ||
+        (p.BuilderName||'').toLowerCase().includes(q));
+    }
+    const countText = items.length + ' of ' + allProperties.length;
+    const totalsBySource = allProperties.reduce((m, p) => { const s = deriveSource(p); m[s] = (m[s] || 0) + 1; return m; }, {});
+    document.getElementById('count-badge').innerHTML = countText + ` · <span style="color:#d97706">⭐ Own ${totalsBySource.Own||0}</span> · <span style="color:#2563eb">🏗️ Builder ${totalsBySource.Builder||0}</span> · <span style="color:#7c3aed">🤝 Broker ${totalsBySource.Broker||0}</span>`;
+    const grid = document.getElementById('grid');
+    if (!items.length) {
+      grid.innerHTML = `<div class="empty-state" data-testid="empty-state" style="grid-column:1/-1">
+        <div style="font-size:38px;margin-bottom:8px">📦</div>
+        <div style="font-size:16px;font-weight:600;color:var(--clr-brown);margin-bottom:6px">No properties found</div>
+        <div>Click "＋ Add Property" to add your first listing.</div>
+      </div>`;
+      return;
+    }
+    grid.innerHTML = items.map(renderCard).join('');
+  }
+
+  function renderCard(p) {
+    const photos = p.Photos || [];
+    const firstPhoto = photos[0]?.url;
+    const price = p.Fields?.AskingPrice ?? p.AskingPrice;
+    const rate  = p.Fields?.AskingRatePerSqFt ?? p.AskingRatePerSqFt;
+    const carpet = p.Fields?.CarpetArea || p.Fields?.CarpetAreaComm || p.Fields?.IndBuiltUpArea;
+    const bhk = p.Fields?.BHK;
+    const statusClass = 'badge-' + String(p.ListingStatus || 'Available').replace(/[^a-z]/gi, '');
+    const src = deriveSource(p);
+    const facts = [];
+    if (bhk) facts.push(bhk);
+    if (carpet) facts.push(carpet + ' sqft');
+    if (p.Fields?.FurnishingType) facts.push(p.Fields.FurnishingType);
+    if (p.Fields?.Cabins) facts.push(p.Fields.Cabins + ' cabins');
+    if (p.Fields?.FrontageWidth) facts.push(p.Fields.FrontageWidth + 'ft frontage');
+    if (p.Fields?.GIDCApproval === true) facts.push('GIDC');
+    if (p.ExclusiveWithMe) facts.push('★ Exclusive');
+    // Footer content differs by source
+    let footerLeft = p.OwnerName || '—';
+    if (src === 'Builder' && p.BuilderName)  footerLeft = p.BuilderName + (p.ProjectName ? ' • ' + p.ProjectName : '');
+    if (src === 'Broker' && p.BrokerName)    footerLeft = p.BrokerName + (p.BrokerCommissionShare ? ' • Split ' + p.BrokerCommissionShare + '%' : '');
+    return `<div class="card" data-testid="prop-card-${esc(p.PropertyID)}" onclick="openEditModal('${esc(p.PropertyID)}')">
+      <div class="card-photo">
+        ${firstPhoto ? `<img src="${esc(firstPhoto)}" alt="" onerror="this.style.display='none';this.parentElement.innerHTML+='<div class=&quot;no-photo&quot;>NO PHOTO</div>'" />` : '<div class="no-photo">📷 NO PHOTO</div>'}
+        <span class="badge-status ${statusClass}">${esc(p.ListingStatus || 'Available')}</span>
+        <span class="badge-source src-${esc(src)}" data-testid="src-badge-${esc(p.PropertyID)}">${SOURCE_LABEL[src] || src}</span>
+        ${photos.length > 1 ? `<span class="card-photo-count">📷 ${photos.length}</span>` : ''}
+      </div>
+      <div class="card-body">
+        <div class="card-title">${esc(p.Title || 'Untitled')}</div>
+        <div class="card-meta">${esc(p.SubCategory || p.Category || '—')} • ${esc(p.Location1 || '—')}${p.SocietyName ? ' • ' + esc(p.SocietyName) : ''}</div>
+        <div class="card-price">${fmtPrice(price, p.ListingFor)}${rate ? `<small>@ ₹${Number(rate).toLocaleString('en-IN')}/sqft</small>` : ''}</div>
+        <div class="card-facts">${facts.map(f => `<span class="card-fact">${esc(f)}</span>`).join('')}</div>
+      </div>
+      <div class="card-footer">
+        <span>${esc(footerLeft)}</span>
+        <span>${esc(p.PropertyID)}</span>
+      </div>
+    </div>`;
+  }
+
+  function fmtPrice(n, forType) {
+    if (n == null || n === '') return '—';
+    n = Number(n);
+    const rentTypes = ['Rent', 'Lease', 'Rent + Sale'];
+    const isRent = rentTypes.includes(forType);
+    if (isRent) return '₹' + n.toLocaleString('en-IN') + '/mo';
+    if (n >= 1e7) return '₹' + (n/1e7).toFixed(2) + ' Cr';
+    if (n >= 1e5) return '₹' + (n/1e5).toFixed(1) + ' L';
+    return '₹' + n.toLocaleString('en-IN');
+  }
+
+  // ── Filter / Search ───────────────────────────────────────────────────
+  function setFilter(el, kind, val) {
+    if (kind === 'category') {
+      // Toggle only the category chip row (first toolbar)
+      el.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      currentFilter = val;
+    } else if (kind === 'source') {
+      // Only source chips in same toolbar
+      el.parentElement.querySelectorAll('.source-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      currentSource = val;
+    }
+    render();
+  }
+  let searchTimer = null;
+  function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      currentSearch = document.getElementById('search-input').value.trim();
+      render();
+    }, 250);
+  }
+
+  // ── Add / Edit Modal ──────────────────────────────────────────────────
+  function onSourceChange() {
+    const src = document.getElementById('f-inv-source').value;
+    document.querySelectorAll('.src-builder-only').forEach(el => el.style.display = src === 'Builder' ? '' : 'none');
+    document.querySelectorAll('.src-broker-only').forEach(el => el.style.display  = src === 'Broker'  ? '' : 'none');
+    // Auto-select sensible OwnerType default
+    const ownerTypeEl = document.getElementById('f-owner-type');
+    if (src === 'Builder' && ownerTypeEl.value !== 'Builder')     ownerTypeEl.value = 'Builder';
+    else if (src === 'Broker' && ownerTypeEl.value !== 'Sub-broker') ownerTypeEl.value = 'Sub-broker';
+    else if (src === 'Own' && ['Builder','Sub-broker'].includes(ownerTypeEl.value)) ownerTypeEl.value = 'Direct Owner';
+  }
+
+  async function openAddModal() {
+    editingId = null;
+    pendingPhotos = [];
+    existingPhotos = [];
+    document.getElementById('modal-title').textContent = 'Add Property';
+    document.getElementById('form-error').textContent = '';
+    document.getElementById('f-title').value = '';
+    document.getElementById('f-category').value = '';
+    document.getElementById('f-subcategory').innerHTML = '<option value="">—</option>';
+    document.getElementById('f-listing-for').value = 'Sale';
+    document.getElementById('f-status').value = 'Available';
+    document.getElementById('f-inv-source').value = 'Own';
+    document.getElementById('f-owner-name').value = '';
+    document.getElementById('f-owner-mobile').value = '';
+    document.getElementById('f-owner-type').value = 'Direct Owner';
+    document.getElementById('f-builder-name').value = '';
+    document.getElementById('f-project-name').value = '';
+    document.getElementById('f-broker-name').value = '';
+    document.getElementById('f-broker-mobile').value = '';
+    document.getElementById('f-broker-share').value = '';
+    document.getElementById('f-society').value = '';
+    document.getElementById('f-location1').value = '';
+    document.getElementById('f-exclusive').checked = false;
+    document.getElementById('dynamic-fields-wrap').innerHTML = '';
+    document.getElementById('photos-strip').innerHTML = renderPhotoStrip();
+    onSourceChange();
+    document.getElementById('prop-modal').classList.remove('hidden');
+  }
+
+  async function openEditModal(propertyId) {
+    editingId = propertyId;
+    pendingPhotos = [];
+    try {
+      const res = await fetch(`/api/v2/inventory/${encodeURIComponent(propertyId)}`).then(r => r.json());
+      if (!res.ok) { toast(res.error || 'Not found', true); return; }
+      const p = res.data;
+      existingPhotos = p.Photos || [];
+      document.getElementById('modal-title').textContent = 'Edit — ' + (p.Title || p.PropertyID);
+      document.getElementById('form-error').textContent = '';
+      document.getElementById('f-title').value = p.Title || '';
+      document.getElementById('f-category').value = p.Category || '';
+      updateSubcats();
+      document.getElementById('f-subcategory').value = p.SubCategory || '';
+      document.getElementById('f-listing-for').value = p.ListingFor || 'Sale';
+      document.getElementById('f-status').value = p.ListingStatus || 'Available';
+      document.getElementById('f-inv-source').value = p.InventorySource || deriveSource(p);
+      document.getElementById('f-owner-name').value = p.OwnerName || '';
+      document.getElementById('f-owner-mobile').value = p.OwnerMobile || '';
+      document.getElementById('f-owner-type').value = p.OwnerType || 'Direct Owner';
+      document.getElementById('f-builder-name').value = p.BuilderName || '';
+      document.getElementById('f-project-name').value = p.ProjectName || '';
+      document.getElementById('f-broker-name').value = p.BrokerName || '';
+      document.getElementById('f-broker-mobile').value = p.BrokerMobile || '';
+      document.getElementById('f-broker-share').value = p.BrokerCommissionShare || '';
+      document.getElementById('f-society').value = p.SocietyName || '';
+      document.getElementById('f-location1').value = p.Location1 || '';
+      document.getElementById('f-exclusive').checked = !!p.ExclusiveWithMe;
+      document.getElementById('photos-strip').innerHTML = renderPhotoStrip();
+      onSourceChange();
+      await loadDynamicFields(p.Fields || {});
+      document.getElementById('prop-modal').classList.remove('hidden');
+    } catch(e) {
+      toast(e.message, true);
+    }
+  }
+
+  function updateSubcats() {
+    const cat = document.getElementById('f-category').value;
+    const subs = SUBCATS[cat] || [];
+    document.getElementById('f-subcategory').innerHTML = '<option value="">—</option>' + subs.map(s => `<option>${esc(s)}</option>`).join('');
+  }
+
+  async function loadDynamicFields(existingValues = {}) {
+    const cat = document.getElementById('f-category').value;
+    const sub = document.getElementById('f-subcategory').value;
+    const wrap = document.getElementById('dynamic-fields-wrap');
+    if (!cat) { wrap.innerHTML = ''; return; }
+    // Use Sale for listing-side; the form-config API accepts a txnType — use Purchase for Sale listings
+    const txnType = document.getElementById('f-listing-for').value === 'Rent' ? 'Rent' : 'Purchase';
+    try {
+      const url = `/api/v2/form-config?transactionType=${encodeURIComponent(txnType)}&category=${encodeURIComponent(cat)}${sub ? '&subCategory='+encodeURIComponent(sub) : ''}`;
+      const res = await fetch(url).then(r => r.json());
+      if (!res.ok) return;
+      const HEADER = new Set(['TransactionType','Category','SubCategory','Title','Location1','Location2','SocietyName','ClientName','PrimaryMobile']);
+      const fields = (res.data.fields || [])
+        .filter(f => f.Active !== false && !HEADER.has(f.FieldKey))
+        .sort((a,b) => (a.DisplayOrder||99) - (b.DisplayOrder||99));
+
+      // Group by Section
+      const bySection = {};
+      fields.forEach(f => { const s = f.Section || 'Details'; (bySection[s] ||= []).push(f); });
+      const ORDER = ['Pricing','Commission','Property','Ownership','Legal','Project','Details'];
+      const sections = Object.keys(bySection).sort((a,b) => (ORDER.indexOf(a)===-1?99:ORDER.indexOf(a)) - (ORDER.indexOf(b)===-1?99:ORDER.indexOf(b)));
+
+      let html = '';
+      sections.forEach(s => {
+        html += `<div class="section-title">${esc(s)}</div><div class="form-grid">`;
+        bySection[s].forEach(f => { html += renderField(f, existingValues[f.FieldKey]); });
+        html += '</div>';
+      });
+      html += buildDatalists(fields);
+      wrap.innerHTML = html;
+    } catch(e) { console.error(e); }
+  }
+
+  function renderField(f, existingVal) {
+    const fk   = f.FieldKey;
+    const id   = `dyn-${fk}`;
+    const typ  = f.FieldType;
+    const opts = f.Options || [];
+    const hint = f.Placeholder || f.FieldLabel;
+    const isFull = ['Textarea','MultiSelect'].includes(typ) || ['SocietyName','RERANumber','AvoidLocations','Preferences','GujaratRERA','PropertyURL','ExistingBusiness','TPScheme'].includes(fk);
+    const groupClass = isFull ? 'form-group full' : 'form-group';
+    const val = existingVal === undefined || existingVal === null ? '' : String(existingVal);
+    let input;
+    if (typ === 'Select' && opts.length)
+      input = `<select id="${esc(id)}" data-field-key="${esc(fk)}" data-testid="dyn-${esc(fk)}"><option value="">—</option>${opts.map(o => `<option ${String(existingVal)===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+    else if (typ === 'MultiSelect' && opts.length) {
+      const vals = Array.isArray(existingVal) ? existingVal.map(String) : [];
+      input = `<select id="${esc(id)}" data-field-key="${esc(fk)}" data-testid="dyn-${esc(fk)}" multiple size="3">${opts.map(o => `<option ${vals.includes(o)?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+    } else if (typ === 'Boolean')
+      input = `<select id="${esc(id)}" data-field-key="${esc(fk)}" data-testid="dyn-${esc(fk)}"><option value="">—</option><option value="true" ${val==='true'?'selected':''}>Yes</option><option value="false" ${val==='false'?'selected':''}>No</option></select>`;
+    else if (typ === 'Number' || typ === 'Area')
+      input = `<input id="${esc(id)}" data-field-key="${esc(fk)}" data-testid="dyn-${esc(fk)}" type="number" placeholder="${esc(hint)}" value="${esc(val)}" />`;
+    else if (typ === 'Date')
+      input = `<input id="${esc(id)}" data-field-key="${esc(fk)}" data-testid="dyn-${esc(fk)}" type="date" value="${esc((val||'').substring(0,10))}" />`;
+    else if (typ === 'Textarea')
+      input = `<textarea id="${esc(id)}" data-field-key="${esc(fk)}" data-testid="dyn-${esc(fk)}" rows="2" placeholder="${esc(hint)}">${esc(val)}</textarea>`;
+    else if (typ === 'Autocomplete' && opts.length)
+      input = `<input id="${esc(id)}" data-field-key="${esc(fk)}" data-testid="dyn-${esc(fk)}" list="dyn-dl-${esc(fk)}" type="text" placeholder="${esc(hint)}" value="${esc(val)}" autocomplete="off" />`;
+    else
+      input = `<input id="${esc(id)}" data-field-key="${esc(fk)}" data-testid="dyn-${esc(fk)}" type="text" placeholder="${esc(hint)}" value="${esc(val)}" />`;
+    const help = f.HelpText ? `<span style="font-size:11px;color:var(--clr-text-light);margin-top:2px">${esc(f.HelpText)}</span>` : '';
+    return `<div class="${groupClass}"><label>${esc(f.FieldLabel)}</label>${input}${help}</div>`;
+  }
+
+  function buildDatalists(fields) {
+    return fields.filter(f => f.FieldType === 'Autocomplete' && Array.isArray(f.Options) && f.Options.length)
+      .map(f => `<datalist id="dyn-dl-${esc(f.FieldKey)}">${f.Options.map(o => `<option value="${esc(o)}">`).join('')}</datalist>`)
+      .join('');
+  }
+
+  // ── Photos ────────────────────────────────────────────────────────────
+  function renderPhotoStrip() {
+    const existing = existingPhotos.map(ph => `
+      <div class="photo-thumb" onclick="event.stopPropagation()">
+        <img src="${esc(ph.url)}" alt="" onclick="openLightbox('${esc(ph.url)}')" />
+        <button class="remove" data-testid="remove-photo-${esc(ph.id)}" onclick="event.stopPropagation();removeExistingPhoto('${esc(ph.id)}')">×</button>
+      </div>`).join('');
+    const pending = pendingPhotos.map((p, i) => `
+      <div class="photo-thumb">
+        <img src="${p}" alt="" />
+        <button class="remove" onclick="event.stopPropagation();removePendingPhoto(${i})">×</button>
+      </div>`).join('');
+    return existing + pending + `<button class="photo-add-btn" data-testid="add-photo-btn" onclick="event.stopPropagation();document.getElementById('photo-file-input').click()">+</button>`;
+  }
+
+  function onPhotosPicked(e) {
+    const files = Array.from(e.target.files || []);
+    let done = 0;
+    files.forEach(f => {
+      if (!f.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingPhotos.push(reader.result);
+        if (++done === files.length) document.getElementById('photos-strip').innerHTML = renderPhotoStrip();
+      };
+      reader.readAsDataURL(f);
+    });
+    if (!files.length) return;
+    // Trigger a re-render even if all are done synchronously
+    setTimeout(() => document.getElementById('photos-strip').innerHTML = renderPhotoStrip(), 300);
+    e.target.value = '';
+  }
+  function removePendingPhoto(idx) { pendingPhotos.splice(idx, 1); document.getElementById('photos-strip').innerHTML = renderPhotoStrip(); }
+  async function removeExistingPhoto(photoId) {
+    if (!editingId) return;
+    if (!confirm('Delete this photo?')) return;
+    try {
+      const res = await fetch(`/api/v2/inventory/${encodeURIComponent(editingId)}/photos/${encodeURIComponent(photoId)}`, { method: 'DELETE' }).then(r => r.json());
+      if (!res.ok) throw new Error(res.error);
+      existingPhotos = existingPhotos.filter(ph => ph.id !== photoId);
+      document.getElementById('photos-strip').innerHTML = renderPhotoStrip();
+      toast('Photo deleted');
+    } catch(e) { toast(e.message, true); }
+  }
+  function openLightbox(url) { document.getElementById('lightbox-img').src = url; document.getElementById('lightbox').classList.remove('hidden'); }
+  function closeLightbox() { document.getElementById('lightbox').classList.add('hidden'); }
+
+  // ── Save ──────────────────────────────────────────────────────────────
+  async function saveProperty() {
+    const title = document.getElementById('f-title').value.trim();
+    const cat   = document.getElementById('f-category').value;
+    if (!title) { document.getElementById('form-error').textContent = 'Title is required'; return; }
+    if (!cat)   { document.getElementById('form-error').textContent = 'Category is required'; return; }
+
+    const payload = {
+      Title:       title,
+      Category:    cat,
+      SubCategory: document.getElementById('f-subcategory').value || null,
+      ListingFor:  document.getElementById('f-listing-for').value,
+      ListingStatus: document.getElementById('f-status').value,
+      InventorySource: document.getElementById('f-inv-source').value,
+      OwnerName:   document.getElementById('f-owner-name').value.trim() || null,
+      OwnerMobile: document.getElementById('f-owner-mobile').value.trim() || null,
+      OwnerType:   document.getElementById('f-owner-type').value,
+      BuilderName: document.getElementById('f-builder-name').value.trim() || null,
+      ProjectName: document.getElementById('f-project-name').value.trim() || null,
+      BrokerName:  document.getElementById('f-broker-name').value.trim() || null,
+      BrokerMobile:document.getElementById('f-broker-mobile').value.trim() || null,
+      BrokerCommissionShare: numOrNull(document.getElementById('f-broker-share').value),
+      SocietyName: document.getElementById('f-society').value.trim() || null,
+      Location1:   document.getElementById('f-location1').value.trim() || null,
+      ExclusiveWithMe: document.getElementById('f-exclusive').checked
+    };
+
+    // Collect all dynamic fields
+    document.querySelectorAll('#dynamic-fields-wrap [data-field-key]').forEach(el => {
+      const key = el.dataset.fieldKey;
+      let v;
+      if (el.tagName === 'SELECT' && el.multiple) {
+        v = Array.from(el.selectedOptions).map(o => o.value).filter(Boolean);
+        if (!v.length) return;
+      } else {
+        v = el.value?.trim ? el.value.trim() : el.value;
+        if (v === '' || v == null) return;
+        if (el.type === 'number') { const n = Number(v); if (isNaN(n)) return; v = n; }
+        if (v === 'true') v = true;
+        if (v === 'false') v = false;
+      }
+      payload[key] = v;
+    });
+
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      let propertyId = editingId;
+      if (editingId) {
+        const res = await fetch(`/api/v2/inventory/${encodeURIComponent(editingId)}`, {
+          method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        }).then(r => r.json());
+        if (!res.ok) throw new Error(res.error || 'Update failed');
+      } else {
+        const res = await fetch('/api/v2/inventory', {
+          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        }).then(r => r.json());
+        if (!res.ok) throw new Error(res.error || 'Create failed');
+        propertyId = res.data.PropertyID;
+      }
+      // Upload pending photos if any
+      if (pendingPhotos.length) {
+        await fetch(`/api/v2/inventory/${encodeURIComponent(propertyId)}/photos`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ photos: pendingPhotos })
+        }).then(r => r.json());
+      }
+      closeModal();
+      toast(editingId ? 'Property updated' : 'Property added');
+      loadInventory();
+    } catch(e) {
+      document.getElementById('form-error').textContent = e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Property';
+    }
+  }
+
+  function closeModal() { document.getElementById('prop-modal').classList.add('hidden'); }
+
+  function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function numOrNull(v) { if (v === '' || v == null) return null; const n = Number(v); return isNaN(n) ? null : n; }
+  function toast(msg, isError) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => { t.className = 'toast'; }, 2500);
+  }
+</script>
+</body>
+</html>

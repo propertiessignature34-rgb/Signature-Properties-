@@ -1,0 +1,556 @@
+PHASE 15 ONLY — CLIENT LIST / QUERY VIEW
+
+PHASE 1–14 ARE COMPLETED.
+Do NOT repeat or redesign completed phases.
+Do NOT start Phase 16.
+
+OBJECTIVE
+
+Redesign the Client List so the agent works with CLIENTS,
+not with a confusing Lead/Requirement database screen.
+
+Core model remains:
+
+ONE CLIENT = ONE LEAD
+
+CLIENT
+ └── TRANSACTIONS
+      └── REQUIREMENTS / NEEDS
+
+Requirements are living Needs and can be used as a
+query/filter/view layer, but must NOT become a separate
+primary client entity.
+
+==================================================
+1. CLIENTS — NOT LEADS
+==================================================
+
+The primary navigation label must be:
+
+CLIENTS
+
+Not:
+
+Leads
+
+Where the UI is user-facing, replace "Lead" terminology with
+"Client" unless the technical/API field name must remain LeadID.
+
+Technical compatibility may continue using:
+
+LeadID
+
+But UI language should use:
+
+Client
+Client ID
+Client Status
+Client Lifecycle
+Client Needs
+
+==================================================
+2. CLIENT LIST DESIGN
+==================================================
+
+Create a clean agent-first client table/list.
+
+Default columns:
+
+- Client
+- Mobile
+- Active Needs
+- Primary Need
+- Budget
+- Location
+- Client Status
+- Client Lifecycle
+- Client Score
+- Last Contact
+- Next Follow-up
+- Assigned Agent
+
+Do NOT show 30+ database fields.
+
+The default list must be fast and readable.
+
+Example:
+
+------------------------------------------------------------
+Rahul Shah
++91 ******3210
+
+3 BHK • Purchase
+₹80L–₹1.20Cr
+Vesu, Piplod
+
+Active
+Prospect
+
+Score 72
+Last Contact: Today
+Follow-up: Tomorrow
+------------------------------------------------------------
+
+Clicking the client opens:
+
+/client-workspace.html?leadId=...
+
+==================================================
+3. SEARCH
+==================================================
+
+Provide one global client search.
+
+Search by:
+
+- Client Name
+- Primary Mobile
+- Alternate Mobile
+- WhatsApp
+- Email
+- LeadID
+- LegacyID
+
+Search must be normalized.
+
+Example:
+
+"98765 43210"
+
+should find:
+
+"+91 9876543210"
+
+Do not create duplicate search logic if an existing
+service can be reused.
+
+==================================================
+4. FILTER PRESETS
+==================================================
+
+Provide useful agent filters.
+
+Required presets:
+
+[All Clients]
+
+[New]
+
+[Active]
+
+[Hot]
+
+[Follow-up Due]
+
+[No Follow-up]
+
+[No Active Need]
+
+[Recently Contacted]
+
+[Inactive]
+
+[Archived]
+
+If the existing status configuration uses different
+valid values, use the actual configured values.
+
+Do NOT hardcode conflicting status values.
+
+==================================================
+5. NEED-BASED QUERY VIEW
+==================================================
+
+Requirements should be usable as a CLIENT QUERY VIEW.
+
+The UI may provide:
+
+[Need Filters]
+
+Examples:
+
+Transaction:
+Purchase
+
+Category:
+Residential
+
+SubCategory:
+Flat
+
+Budget:
+₹80L–₹1.20Cr
+
+Location:
+Vesu
+
+BHK:
+3+
+
+Possession:
+0–6 Months
+
+This query should return CLIENTS whose active Requirements
+match the selected criteria.
+
+IMPORTANT:
+
+The result is a CLIENT LIST.
+
+Not a Requirement List.
+
+Example:
+
+SEARCH:
+
+3 BHK
+Vesu
+Budget <= ₹1.2Cr
+Purchase
+
+RESULT:
+
+12 Clients
+
+Rahul Shah
+Amit Patel
+Neha Shah
+...
+
+Each result opens the Client Workspace.
+
+==================================================
+6. REQUIREMENT QUERY IS NOT A NEW ENTITY
+==================================================
+
+Do NOT create:
+
+"Requirement Client"
+
+"Requirement Customer"
+
+or another Lead/Client record.
+
+The query works through:
+
+Client
+→ Transaction
+→ Requirement
+
+and returns the parent Client.
+
+One client may appear only once in the result even if multiple
+Requirements match.
+
+Example:
+
+Rahul has:
+
+Requirement R001
+3 BHK Vesu
+
+Requirement R002
+4 BHK Vesu
+
+Both match.
+
+Result:
+
+Rahul Shah
+
+NOT:
+
+Rahul Shah
+Rahul Shah
+
+Deduplicate by LeadID.
+
+==================================================
+7. ACTIVE NEED SUMMARY
+==================================================
+
+Each client row should show a compact active-need summary.
+
+Example:
+
+ACTIVE NEEDS: 2
+
+1. Purchase • Residential • Flat
+   ₹80L–₹1.2Cr • Vesu • 3 BHK
+
+2. Rent • Commercial • Office
+   ₹40k–₹60k • Vesu
+
+If more than 2:
+
++2 more
+
+Clicking the summary opens the Client Workspace.
+
+==================================================
+8. CLIENT SCORE
+==================================================
+
+Use existing V2 ClientScore.
+
+Display:
+
+72
+
+or:
+
+72 / 100
+
+Do NOT create a new score calculation.
+
+If score breakdown exists, clicking the score may show it.
+
+==================================================
+9. REQUIREMENT SCORE
+==================================================
+
+Do not make Requirement Score the main client-list score.
+
+If useful, show:
+
+Need completeness:
+68%
+
+inside the Active Need summary.
+
+ClientScore remains the client-level score.
+
+RequirementScore remains requirement-level.
+
+Do NOT mix the two.
+
+==================================================
+10. FOLLOW-UP DUE
+==================================================
+
+Provide a clear visual indicator:
+
+FOLLOW-UP DUE
+
+Today
+Tomorrow
+Overdue
+
+Use existing Follow-up/Activity data where available.
+
+Do NOT redesign the entire Conversation/Activity Engine
+in Phase 15.
+
+That belongs to Phase 16.
+
+==================================================
+11. NO ACTIVE NEED
+==================================================
+
+A client can exist without an active need.
+
+Example:
+
+Rahul Shah
++91 ******3210
+
+No active need
+
+[+ Add Need]
+
+Do NOT force creation of a Transaction or Requirement merely
+because the client appears in the Client List.
+
+==================================================
+12. ADD CLIENT
+==================================================
+
+Keep:
+
+[+ Add Client]
+
+But this must remain a SMALL client capture action.
+
+Minimum client information:
+
+Client Name
+Primary Mobile
+
+Optional:
+
+Alternate Mobile
+WhatsApp
+Email
+
+Do NOT turn Add Client into a giant Requirement form.
+
+After creating a client:
+
+Optionally show:
+
+"Add a Need?"
+
+[Add Need]
+[Done]
+
+Do NOT silently create a Transaction/Requirement.
+
+==================================================
+13. DUPLICATE PROTECTION
+==================================================
+
+Use existing duplicate detection.
+
+When adding a Client:
+
+check:
+
+POST /api/leads/check-duplicate
+
+Exact match:
+
+show existing Client.
+
+Possible match:
+
+show masked candidates.
+
+No match:
+
+allow creation.
+
+Do NOT create a second duplicate engine.
+
+Do NOT bypass Phase 5 duplicate protection.
+
+==================================================
+14. CLIENT LIST SORTING
+==================================================
+
+Provide useful sorting:
+
+- Recently Updated
+- Last Contact
+- Follow-up Due
+- Client Score
+- Name
+- Created Date
+
+Default:
+
+Recently Updated / Follow-up relevance.
+
+Do not make arbitrary database fields the default.
+
+==================================================
+15. PAGINATION / PERFORMANCE
+==================================================
+
+The Client List must not load every Requirement and every Activity
+for every client on every page if the dataset is large.
+
+Use:
+
+pagination
+server-side filtering
+server-side sorting where existing APIs support it
+
+If the current repository/API does not support efficient query
+operations, implement the smallest compatible query method required.
+
+Do NOT redesign the database layer in Phase 15.
+
+==================================================
+16. MOBILE / TABLET
+==================================================
+
+The user may operate the CRM from a tablet/mobile.
+
+Desktop:
+
+table view
+
+Tablet:
+
+compact table/card hybrid
+
+Mobile:
+
+client cards
+
+Example:
+
+--------------------------------
+Rahul Shah
++91 ******3210
+
+🏠 Purchase • 3 BHK
+₹80L–₹1.2Cr
+Vesu
+
+Score 72
+Follow-up: Tomorrow
+
+[Call] [WhatsApp] [Open]
+--------------------------------
+
+Do not make horizontal scrolling mandatory for basic client work.
+
+==================================================
+17. EMPTY STATES
+==================================================
+
+No clients:
+
+"No clients yet."
+
+[+ Add Client]
+
+No search results:
+
+"No clients match these filters."
+
+[Clear Filters]
+
+No active needs:
+
+"This client has no active needs."
+
+[+ Add Need]
+
+==================================================
+18. FILTER STATE
+==================================================
+
+When filters are active, show chips:
+
+Purchase
+Residential
+Flat
+3 BHK+
+Vesu
+₹80L–₹1.2Cr
+
+[Clear All]
+
+The user must immediately understand why a client appears
+in the result.
+
+==================================================
+19. QUERY RESULT HEADER
+==================================================
+
+For a Need Query:
+
+show:
+
+CLIENTS MATCHING NEED
+
+12 Clients
+
+Purchase
+Residential
+Flat
+3 BHK+
+Vesu
+₹

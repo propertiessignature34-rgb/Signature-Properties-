@@ -1,0 +1,316 @@
+PHASE 20 — PREVIEW / FRONTEND VERIFICATION ONLY
+
+IMPORTANT:
+
+The backend V2 implementation and tests are passing, but the Replit
+Preview is NOT showing the V2 changes I expect to see.
+
+DO NOT change the database.
+DO NOT run migration --apply.
+DO NOT enable LEAD_V2_ENABLED.
+DO NOT change production data.
+DO NOT redesign the V2 architecture.
+
+I need you to diagnose why the CURRENT Replit Preview is still showing
+the old/legacy UI instead of the implemented V2 UI.
+
+==================================================
+1. VERIFY WHAT PREVIEW IS ACTUALLY SERVING
+==================================================
+
+Check:
+
+- Replit Preview URL
+- server port
+- server entry point
+- static-file directory
+- index.html being served
+- clients.html being served
+- client-workspace.html being served
+- requirements-view.html being served
+- V2 API availability
+- feature flag behavior
+- browser console errors
+- network/API errors
+- frontend JavaScript loading errors
+
+Do not assume the Preview is using the latest files.
+
+Prove which files and routes the Preview is actually loading.
+
+==================================================
+2. VERIFY V2 UI ROUTES
+==================================================
+
+Open/test the actual Preview and verify these user-facing flows:
+
+CLIENTS:
+
+- Clients page opens
+- "Clients" terminology is visible
+- Add Client / Quick Capture UI is visible
+- Client creation UI follows the V2 minimal-capture model
+
+NEW CLIENT FLOW:
+
+The initial form must NOT ask for dozens of fields.
+
+Minimum concept:
+
+Name
+Phone
+Transaction Type
+Category
+Location(s)
+Budget
+
+Only fields appropriate to the selected transaction/category should
+appear.
+
+Everything else should remain UNKNOWN until the agent speaks with the
+client.
+
+==================================================
+3. CLIENT WORKSPACE
+
+Open an actual Client Workspace in Preview.
+
+Verify that the V2 workspace visibly contains:
+
+- Client identity
+- Call button
+- WhatsApp
+- Transaction
+- Requirement / Need
+- Known information
+- To Discover / UNKNOWN information
+- Next Questions
+- Score / completeness
+- Activities
+- Follow-ups
+- Timeline
+
+The agent should NOT have to navigate through unrelated legacy tabs
+to understand the client's current requirement.
+
+==================================================
+4. PROGRESSIVE REQUIREMENT UPDATE
+
+Verify visually:
+
+Example:
+
+Client initially says:
+
+"Vesu mein 1 crore ka ghar chahiye."
+
+Initial saved state:
+
+Location = Vesu
+Budget = 1 Crore
+Category = Residential
+Transaction = Purchase
+
+Other fields:
+
+BHK = UNKNOWN
+Possession = UNKNOWN
+Parking = UNKNOWN
+Furnishing = UNKNOWN
+
+After the agent calls the client and learns:
+
+3 BHK
+Ready possession
+2 parking
+
+The UI must allow the agent to update ONLY those fields and save them
+to the SAME RequirementID.
+
+No new Requirement should be unnecessarily created.
+
+==================================================
+5. NEXT QUESTION
+
+Verify the actual Preview shows the Next Question Engine.
+
+Example:
+
+If BHK is UNKNOWN and relevant:
+
+"Kitne BHK chahiye?"
+
+After BHK is known:
+
+the question should disappear from unanswered questions and the
+next relevant UNKNOWN question should appear.
+
+==================================================
+6. DYNAMIC FIELDS
+
+Verify fields dynamically change according to:
+
+TransactionType
++
+Category
++
+SubCategory
+
+Examples:
+
+Purchase + Residential + Flat
+
+Rent + Residential + Flat
+
+Purchase + Commercial + Office
+
+Purchase + Land + Plot
+
+Purchase + Agriculture + Farm House
+
+Do NOT show irrelevant fields.
+
+UNKNOWN is valid.
+
+Do NOT make every field required.
+
+==================================================
+7. CHECK FEATURE FLAG CORRECTLY
+
+The V2 feature flag may be OFF for production safety.
+
+Do NOT enable it globally just to make Preview work.
+
+Instead determine how Preview can safely display/test V2 without
+changing production activation.
+
+If a development/test environment variable can be used, use only
+the Preview/development environment.
+
+If Preview is currently running with LEAD_V2_ENABLED=false, explain
+exactly which routes/pages therefore fall back to V1.
+
+==================================================
+8. CHECK FRONTEND → API CONNECTION
+
+For every V2 UI page:
+
+Browser
+  ↓
+HTTP API
+  ↓
+V2Router
+  ↓
+V2 Service
+  ↓
+Repository
+
+Verify there is no mismatch such as:
+
+- frontend calling old endpoint
+- endpoint returning old response shape
+- frontend expecting data property that API doesn't return
+- V2Router not being reached
+- static HTML loading old JS
+- cached frontend bundle
+- wrong server port
+- wrong working directory
+
+==================================================
+9. DO NOT FIX BACKEND JUST TO HIDE A PREVIEW PROBLEM
+
+First identify the exact root cause.
+
+Return:
+
+ROOT CAUSE:
+...
+
+PREVIEW CURRENTLY SERVES:
+...
+
+EXPECTED V2 PAGE:
+...
+
+MISSING CONNECTION:
+...
+
+Then make ONLY the minimum frontend/runtime wiring fix required.
+
+Do not redesign backend services.
+
+==================================================
+10. TEST AFTER FIX
+
+Run:
+
+- relevant V2 UI/API tests
+- full regression suite
+- syntax checks
+- git diff --check
+
+Do not modify production database.
+
+Do not run migration --apply.
+
+Do not enable production V2.
+
+==================================================
+11. FINAL REPORT
+
+Return:
+
+PHASE 20 — PREVIEW VERIFICATION
+
+PREVIEW:
+PASS / FAIL
+
+CLIENT LIST:
+PASS / FAIL
+
+NEW CLIENT / QUICK CAPTURE:
+PASS / FAIL
+
+CLIENT WORKSPACE:
+PASS / FAIL
+
+TRANSACTION:
+PASS / FAIL
+
+REQUIREMENT:
+PASS / FAIL
+
+PROGRESSIVE UPDATE:
+PASS / FAIL
+
+NEXT QUESTIONS:
+PASS / FAIL
+
+DYNAMIC FIELDS:
+PASS / FAIL
+
+V2 API CONNECTION:
+PASS / FAIL
+
+FEATURE FLAG:
+PASS / FAIL
+
+FULL REGRESSION:
+X/X
+
+ROOT CAUSE:
+...
+
+FILES CHANGED:
+...
+
+DATABASE MODIFIED:
+YES / NO
+
+MIGRATION APPLIED:
+YES / NO
+
+V2 PRODUCTION FLAG:
+ON / OFF
+
+STOP.

@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Digital Card — Signature Properties</title>
+<script src="/vendor/qrcode.js"></script>
+<script src="/vendor/html2canvas.min.js"></script>
+<style>
+  :root {
+    --clr-brown: #5c3317; --clr-brown-dark: #2c1405; --clr-brown-mid: #7a4a28;
+    --clr-gold: #b8860b; --clr-gold-mid: #d4a017; --clr-gold-soft: #fdf8ec;
+    --clr-bg: #faf7f2; --clr-card: #ffffff; --clr-border: #e8ddd0;
+    --clr-text: #1c0a00; --clr-text-light: #7a6355;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--clr-bg); color: var(--clr-text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .topnav { background: var(--clr-brown-dark); color: #fff; display: flex; align-items: center; padding: 0 24px; height: 52px; gap: 4px; overflow-x: auto; }
+  .topnav .brand { font-weight: 800; font-size: 15px; color: var(--clr-gold-mid); margin-right: 20px; white-space: nowrap; }
+  .topnav a { color: #d4b896; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 13.5px; white-space: nowrap; }
+  .topnav a.active { background: rgba(212,160,23,.18); color: var(--clr-gold-mid); font-weight: 600; }
+  .topnav a:hover:not(.active) { background: rgba(255,255,255,.08); color: #fff; }
+  .topnav-right { margin-left: auto; }
+  .page { max-width: 920px; margin: 0 auto; padding: 30px 24px 50px; display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; }
+  .page-title { font-size: 24px; font-weight: 800; color: var(--clr-brown); }
+  .page-sub { font-size: 13px; color: var(--clr-text-light); margin: 4px 0 22px; }
+  .header-block { width: 100%; }
+
+  /* The Card */
+  .card-wrap { flex: 0 0 340px; }
+  .biz-card {
+    width: 340px; border-radius: 20px; overflow: hidden;
+    background: linear-gradient(155deg, var(--clr-brown-dark) 0%, var(--clr-brown) 55%, var(--clr-brown-mid) 100%);
+    color: #f6ead7; box-shadow: 0 18px 40px rgba(44,20,5,.35); position: relative;
+  }
+  .biz-card::before { content:''; position:absolute; inset:0; background-image: radial-gradient(circle at 85% 10%, rgba(212,160,23,.18), transparent 45%); }
+  .biz-card-inner { position: relative; padding: 26px 24px 22px; }
+  .biz-logo { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; margin-bottom: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.3); }
+  .biz-agency { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--clr-gold-mid); font-weight: 700; }
+  .biz-photo-row { display: flex; align-items: center; gap: 14px; margin: 14px 0 16px; }
+  .biz-photo { width: 62px; height: 62px; border-radius: 50%; object-fit: cover; border: 2px solid var(--clr-gold-mid); background: rgba(255,255,255,.12); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: var(--clr-gold-mid); }
+  .biz-name { font-size: 19px; font-weight: 800; color: #fff; }
+  .biz-role { font-size: 12px; color: #d7bfa2; margin-top: 2px; }
+  .biz-divider { height: 1px; background: rgba(212,160,23,.3); margin: 14px 0; }
+  .biz-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #ecdfd0; margin-bottom: 8px; }
+  .biz-row .ic { width: 16px; text-align: center; }
+  .biz-qr-wrap { display: flex; justify-content: center; margin-top: 16px; }
+  .biz-qr-wrap img { border-radius: 10px; background: #fff; padding: 8px; width: 120px; height: 120px; }
+  .biz-qr-label { text-align: center; font-size: 10px; color: #c9ac86; margin-top: 6px; letter-spacing: .04em; }
+
+  .card-actions { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .btn { border: none; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-whatsapp { background: #dcfce7; color: #166534; }
+  .btn-vcf { background: var(--clr-gold-soft); color: var(--clr-brown); border: 1px solid #f0dca0; }
+  .btn-download { background: var(--clr-brown); color: #fff; }
+  .btn-edit { background: #fff; color: var(--clr-brown-mid); border: 1px solid var(--clr-border); }
+
+  /* Edit Form */
+  .edit-panel { flex: 1; min-width: 300px; background: #fff; border: 1px solid var(--clr-border); border-radius: 16px; padding: 22px; }
+  .edit-panel h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--clr-brown); margin-bottom: 16px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 11px; font-weight: 700; color: var(--clr-text-light); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
+  .form-group input { width: 100%; padding: 9px 11px; border: 1px solid var(--clr-border); border-radius: 8px; font-size: 14px; font-family: inherit; }
+  .photo-upload-btn { border: 1.5px dashed #fbbf24; background: var(--clr-gold-soft); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 700; color: var(--clr-brown); cursor: pointer; display: inline-block; }
+  .photo-upload-btn input { display: none; }
+  .save-status { font-size: 12px; color: #16a34a; margin-top: 10px; height: 16px; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand" style="display:inline-flex;align-items:center;gap:8px"><img src="/assets/signature-mark.svg" alt="logo" style="width:26px;height:26px;border-radius:50%;object-fit:cover" />Signature Properties</span>
+  <a href="/">Dashboard</a>
+  <a href="/clients">Clients</a>
+  <a href="/inventory">Inventory</a>
+  <a href="/requirements-view">All Requirements</a>
+  <a href="/duplicates">Duplicates</a>
+  <a href="/builder-projects">🏗️ Builder Projects</a>
+  <a href="/broker-network">👥 Broker Network</a>
+  <a href="/calculators">🧮 Calculators</a>
+  <a href="/digital-card" class="active">🪪 Digital Card</a>
+  <div class="topnav-right">
+</div>
+</nav>
+
+<div class="page">
+  <div class="header-block">
+    <div class="page-title">🪪 Digital Business Card</div>
+    <div class="page-sub">Client ko WhatsApp par apna digital card bhejo, ya QR scan karwa ke instant WhatsApp chat shuru karo.</div>
+  </div>
+
+  <div class="card-wrap">
+    <div class="biz-card" id="biz-card" data-testid="biz-card">
+      <div class="biz-card-inner">
+        <img class="biz-logo" id="c-logo" data-testid="c-logo" src="" alt="Logo" />
+        <div class="biz-agency" id="c-agency" data-testid="c-agency">Signature Properties</div>
+        <div class="biz-photo-row">
+          <div class="biz-photo" id="c-photo" data-testid="c-photo">VB</div>
+          <div>
+            <div class="biz-name" id="c-name" data-testid="c-name">Vikash Bhatter</div>
+            <div class="biz-role" id="c-role" data-testid="c-role">Founder & Broker</div>
+          </div>
+        </div>
+        <div class="biz-divider"></div>
+        <div class="biz-row"><span class="ic">📱</span><span id="c-mobile" data-testid="c-mobile">—</span></div>
+        <div class="biz-row"><span class="ic">✉️</span><span id="c-email" data-testid="c-email">—</span></div>
+        <div class="biz-row"><span class="ic">📍</span><span>Surat, Gujarat</span></div>
+        <div class="biz-qr-wrap"><img id="c-qr" data-testid="c-qr" alt="QR" /></div>
+        <div class="biz-qr-label">SCAN TO WHATSAPP</div>
+      </div>
+    </div>
+
+    <div class="card-actions">
+      <button class="btn btn-whatsapp" data-testid="share-whatsapp-btn" onclick="shareOnWhatsApp()">📱 Share on WhatsApp</button>
+      <button class="btn btn-vcf" data-testid="save-contact-btn" onclick="downloadVCard()">📇 Save as Contact (.vcf)</button>
+      <button class="btn btn-download" data-testid="download-card-btn" onclick="downloadCardImage()">🖼️ Download Card Image</button>
+    </div>
+  </div>
+
+  <div class="edit-panel">
+    <h3>✏️ Edit Card Details</h3>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="e-name" data-testid="e-name" />
+    </div>
+    <div class="form-group">
+      <label>Designation</label>
+      <input type="text" id="e-role" data-testid="e-role" />
+    </div>
+    <div class="form-group">
+      <label>Agency Name</label>
+      <input type="text" id="e-agency" data-testid="e-agency" />
+    </div>
+    <div class="form-group">
+      <label>Mobile (with country code)</label>
+      <input type="text" id="e-mobile" data-testid="e-mobile" placeholder="+91 90000 00001" />
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="e-email" data-testid="e-email" />
+    </div>
+    <div class="form-group">
+      <label>Photo</label>
+      <label class="photo-upload-btn">📷 Upload Photo<input type="file" accept="image/*" data-testid="e-photo-input" onchange="onPhotoPicked(this.files[0])" /></label>
+    </div>
+    <button class="btn btn-download" data-testid="save-profile-btn" onclick="saveProfile()" style="width:100%">💾 Save Changes</button>
+    <div class="save-status" id="save-status" data-testid="save-status"></div>
+  </div>
+</div>
+
+<script>
+
+  let profile = {};
+
+  function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function digitsOnly(s) { return String(s || '').replace(/\D/g, ''); }
+
+  async function loadProfile() {
+    const res = await fetch('/api/v2/broker-profile').then(r => r.json());
+    if (res.ok) { profile = res.data; renderCard(); fillForm(); }
+  }
+
+  function renderCard() {
+    document.getElementById('c-logo').src = profile.LogoUrl || '';
+    document.getElementById('c-agency').textContent = profile.Agency || 'Signature Properties';
+    document.getElementById('c-name').textContent = profile.Name || '—';
+    document.getElementById('c-role').textContent = profile.Designation || '';
+    document.getElementById('c-mobile').textContent = profile.Mobile || '—';
+    document.getElementById('c-email').textContent = profile.Email || '—';
+    const photoEl = document.getElementById('c-photo');
+    if (profile.PhotoUrl) {
+      photoEl.innerHTML = `<img src="${esc(profile.PhotoUrl)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" />`;
+    } else {
+      const initials = (profile.Name || 'VB').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+      photoEl.textContent = initials;
+    }
+    const waLink = `https://wa.me/${digitsOnly(profile.Mobile)}`;
+    if (window.qrcode) {
+      const qr = qrcode(0, 'M');
+      qr.addData(waLink);
+      qr.make();
+      document.getElementById('c-qr').src = qr.createDataURL(5, 6);
+    }
+  }
+
+  function fillForm() {
+    document.getElementById('e-name').value = profile.Name || '';
+    document.getElementById('e-role').value = profile.Designation || '';
+    document.getElementById('e-agency').value = profile.Agency || '';
+    document.getElementById('e-mobile').value = profile.Mobile || '';
+    document.getElementById('e-email').value = profile.Email || '';
+  }
+
+  async function saveProfile() {
+    const payload = {
+      Name: document.getElementById('e-name').value.trim(),
+      Designation: document.getElementById('e-role').value.trim(),
+      Agency: document.getElementById('e-agency').value.trim(),
+      Mobile: document.getElementById('e-mobile').value.trim(),
+      Email: document.getElementById('e-email').value.trim()
+    };
+    const statusEl = document.getElementById('save-status');
+    try {
+      const res = await fetch('/api/v2/broker-profile', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then(r => r.json());
+      if (!res.ok) throw new Error(res.error);
+      profile = res.data;
+      renderCard();
+      statusEl.textContent = '✅ Saved!';
+      setTimeout(() => statusEl.textContent = '', 2000);
+    } catch (e) {
+      statusEl.style.color = '#dc2626';
+      statusEl.textContent = 'Failed: ' + e.message;
+    }
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function onPhotoPicked(file) {
+    if (!file) return;
+    const statusEl = document.getElementById('save-status');
+    statusEl.style.color = '#16a34a';
+    statusEl.textContent = '⏳ Uploading photo…';
+    try {
+      const fileBase64 = await fileToBase64(file);
+      const res = await fetch('/api/v2/broker-profile/photo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileBase64 }) }).then(r => r.json());
+      if (!res.ok) throw new Error(res.error);
+      profile = res.data;
+      renderCard();
+      statusEl.textContent = '✅ Photo updated!';
+      setTimeout(() => statusEl.textContent = '', 2000);
+    } catch (e) {
+      statusEl.style.color = '#dc2626';
+      statusEl.textContent = 'Upload failed: ' + e.message;
+    }
+  }
+
+  function shareOnWhatsApp() {
+    const lines = [
+      `🪪 *${profile.Name || 'Vikash Bhatter'}*`,
+      profile.Designation || '',
+      `🏘️ ${profile.Agency || 'Signature Properties'}, Surat`,
+      '',
+      `📱 ${profile.Mobile || ''}`,
+      `✉️ ${profile.Email || ''}`,
+      '',
+      'Property ke liye kabhi bhi WhatsApp karo! 🙏'
+    ].filter(Boolean);
+    const url = `https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`;
+    window.open(url, '_blank', 'noopener');
+  }
+
+  function downloadVCard() {
+    const vcf = [
+      'BEGIN:VCARD',
+      'VERSION:3.0',
+      `FN:${profile.Name || ''}`,
+      `ORG:${profile.Agency || 'Signature Properties'}`,
+      `TITLE:${profile.Designation || ''}`,
+      `TEL;TYPE=CELL:${profile.Mobile || ''}`,
+      `EMAIL:${profile.Email || ''}`,
+      'END:VCARD'
+    ].join('\n');
+    const blob = new Blob([vcf], { type: 'text/vcard' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${(profile.Name || 'contact').replace(/\s+/g, '_')}.vcf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function downloadCardImage() {
+    html2canvas(document.getElementById('biz-card'), { scale: 2, backgroundColor: null }).then(canvas => {
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `${(profile.Name || 'digital-card').replace(/\s+/g, '_')}_card.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+  }
+
+  loadProfile();
+</script>
+</body>
+</html>

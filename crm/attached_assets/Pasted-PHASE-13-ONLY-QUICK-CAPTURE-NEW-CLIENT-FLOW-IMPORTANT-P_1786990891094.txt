@@ -1,0 +1,913 @@
+PHASE 13 ONLY — QUICK CAPTURE / NEW CLIENT FLOW
+
+IMPORTANT:
+Phase 1–12 are already implemented/passed.
+Implement ONLY Phase 13.
+
+DO NOT redesign or repeat Phases 1–12.
+DO NOT start Phase 14.
+DO NOT modify Inventory, Matching, Deal, Commission, Authentication, RBAC, or Migration.
+
+==================================================
+1. READ CURRENT CODE FIRST
+==================================================
+
+Before writing code, inspect:
+
+- replit.md
+- docs/V2-BLUEPRINT.md
+- current clients.html
+- current client-workspace.html
+- current requirements-view.html
+- current server.js
+- src/api/v2Router.js
+- src/services/v2LeadService.js
+- src/services/v2TransactionService.js
+- src/services/v2RequirementService.js
+- src/services/v2FormRegistryService.js
+- src/services/v2DependencyService.js
+- src/services/v2NextQuestionService.js
+- Phase 12 scoring implementation
+- repository.js
+- all Phase 1–12 tests
+
+Verify actual APIs before coding.
+
+==================================================
+2. BUSINESS MODEL — NON-NEGOTIABLE
+==================================================
+
+The business model is:
+
+ONE CLIENT = ONE LEAD
+
+A Client/Lead can have:
+
+ONE OR MANY TRANSACTIONS
+
+A Transaction can have:
+
+ONE OR MANY REQUIREMENTS
+
+Therefore:
+
+CLIENT
+  ↓
+LEAD
+  ↓
+TRANSACTION
+  ↓
+REQUIREMENT
+
+Do NOT create another Client entity.
+
+Do NOT create another Lead for every requirement.
+
+Do NOT create a separate Requirement-only client record.
+
+==================================================
+3. QUICK CAPTURE PURPOSE
+==================================================
+
+The current "Add Client" form is too large and creates only a Lead.
+
+Replace/adapt it into a SMALL Quick Capture flow.
+
+The agent should be able to save a new client in approximately one short interaction.
+
+The first capture is NOT supposed to collect the complete requirement.
+
+The first capture only records what the agent knows at that moment.
+
+Everything else remains UNKNOWN.
+
+==================================================
+4. QUICK CAPTURE UI
+==================================================
+
+Create/adapt:
+
+Quick Capture / New Client
+
+The initial form should contain ONLY:
+
+CLIENT INFORMATION
+
+- Client Name
+- Primary Mobile
+
+TRANSACTION INFORMATION
+
+- Transaction Type
+- Category
+- Location(s)
+- Budget
+
+OPTIONAL fields may be included ONLY if already approved/configured.
+
+Do NOT force:
+
+BHK
+Area
+Possession
+Furnishing
+Parking
+Facing
+Tenant Type
+Business Type
+Power Load
+Fire NOC
+etc.
+
+Those belong to the later conversation/dynamic requirement capture.
+
+==================================================
+5. USER-CONTROLLED FIELDS
+==================================================
+
+The Quick Capture form must be configurable.
+
+The agent/admin should be able to decide which initial fields are shown.
+
+Do NOT hardcode a huge form.
+
+Use the existing configuration architecture where appropriate.
+
+At minimum support:
+
+- Name
+- Mobile
+- TransactionType
+- Category
+- Location
+- Budget
+
+The design must allow future addition/removal of Quick Capture fields without rewriting business logic.
+
+==================================================
+6. TRANSACTION TYPE
+==================================================
+
+Use the existing configured TransactionType values:
+
+Purchase
+Sale
+Rent
+Rent Out
+Lease
+Lease Out
+
+Do NOT create a new set of transaction types.
+
+==================================================
+7. CATEGORY
+==================================================
+
+Use existing configured categories.
+
+Examples:
+
+Residential
+Commercial
+Industrial
+Land
+Agriculture
+
+Do NOT hardcode a separate category system.
+
+==================================================
+8. LOCATION
+==================================================
+
+Location must support MULTIPLE locations.
+
+Example:
+
+Location 1:
+Vesu
+
+Location 2:
+Adajan
+
+Location 3:
+City Light
+
+The agent should be able to:
+
++ Add Location
+
+and remove a location before saving.
+
+Do NOT limit the architecture to one location.
+
+Store locations using the canonical Requirement representation already implemented.
+
+Do not create duplicate location fields outside Requirement unless required for compatibility.
+
+==================================================
+9. BUDGET
+==================================================
+
+Budget should support:
+
+BudgetMin
+BudgetMax
+
+The UI may offer convenient input such as:
+
+₹50 Lakh – ₹1 Crore
+
+but the canonical stored values must remain structured.
+
+Do not store formatted display strings as the only budget value.
+
+If only one budget value is provided:
+
+store it according to the existing BudgetType/configuration.
+
+Do not force the agent to provide both min and max.
+
+Missing budget remains UNKNOWN.
+
+==================================================
+10. ATOMIC CREATION
+==================================================
+
+THIS IS THE MOST IMPORTANT PART.
+
+One Quick Capture save must create:
+
+Lead
++
+Transaction
++
+Requirement
+
+as ONE logical operation.
+
+Flow:
+
+Quick Capture
+   ↓
+Duplicate Check
+   ↓
+Existing Lead?
+   ├─ YES → use existing Lead
+   └─ NO  → create Lead
+   ↓
+Create Transaction under Lead
+   ↓
+Create Requirement under Transaction
+   ↓
+Populate only supplied initial fields
+   ↓
+Everything else = UNKNOWN
+   ↓
+Calculate scores
+   ↓
+Return Client Workspace reference
+
+Do NOT create a Requirement without a Transaction.
+
+Do NOT create a Transaction without a Lead.
+
+==================================================
+11. DUPLICATE CLIENT
+==================================================
+
+Use Phase 5 duplicate protection.
+
+Before creating Lead:
+
+EXACT_MATCH
+→ NEVER create another Lead.
+
+Instead:
+
+existing Lead
+→ create new Transaction under existing Lead
+→ create new Requirement under that Transaction
+
+Example:
+
+Existing client:
+
+L000123
+Rahul
++91XXXXXXXXXX
+
+Agent receives a new requirement:
+
+Purchase
+Residential
+Vesu
+₹1 Cr
+
+DO NOT create:
+
+L000124
+
+Instead:
+
+L000123
+  └── T000456
+       └── R000789
+
+The client remains one Lead.
+
+==================================================
+12. POSSIBLE DUPLICATE
+==================================================
+
+If duplicate engine returns:
+
+POSSIBLE_MATCH
+
+show confirmation.
+
+Example:
+
+"Possible existing client found."
+
+Show only the existing masked information allowed by Phase 5.
+
+Buttons:
+
+Use Existing Client
+
+Create New Client
+
+If Use Existing Client:
+
+use existing Lead.
+
+If Create New Client:
+
+respect the existing duplicate-resolution rules.
+
+Do not silently merge clients.
+
+==================================================
+13. ATOMICITY / ROLLBACK
+==================================================
+
+The Quick Capture operation must behave atomically.
+
+If:
+
+Lead created
+Transaction creation fails
+
+the system must not leave a partially-created Lead if the repository supports rollback.
+
+If:
+
+Lead + Transaction created
+Requirement creation fails
+
+the system must not leave an incomplete Quick Capture transaction.
+
+Implement this using the repository's existing safe write/transaction pattern.
+
+If true database transactions are not available because the system uses JSON:
+
+implement a safe snapshot/rollback mechanism at the repository/service boundary.
+
+Do NOT claim atomicity if the implementation cannot guarantee it.
+
+Write tests specifically for partial failure.
+
+==================================================
+14. MINIMAL REQUIREMENT
+==================================================
+
+The created Requirement must follow Phase 7.
+
+Example:
+
+User enters:
+
+Name:
+Rahul Shah
+
+Mobile:
++91 98765 43210
+
+Transaction:
+Purchase
+
+Category:
+Residential
+
+Location:
+Vesu
+Adajan
+
+Budget:
+₹1 Crore
+
+Stored Requirement may contain:
+
+TransactionType = Purchase
+Category = Residential
+Location1 = Vesu
+Location2 = Adajan
+BudgetMax = 10000000
+
+Everything else:
+
+UNKNOWN
+
+Do NOT reject creation because:
+
+BHK missing
+Possession missing
+Parking missing
+Furnishing missing
+Facing missing
+
+==================================================
+15. FORM REGISTRY
+==================================================
+
+After TransactionType + Category are selected:
+
+resolve available SubCategories through Phase 9 FormRegistry.
+
+Do NOT force SubCategory if the agent doesn't know it.
+
+Example:
+
+Purchase
+→ Residential
+
+Agent may say:
+
+"Residential property chahiye"
+
+without knowing Flat/Villa/Plot.
+
+This must be valid.
+
+SubCategory remains UNKNOWN.
+
+If agent knows:
+
+Flat
+
+store it.
+
+==================================================
+16. DEPENDENCY ENGINE
+==================================================
+
+After initial Requirement creation:
+
+run Phase 10 DependencyEngine.
+
+Do NOT manually decide which fields are relevant in Quick Capture.
+
+DependencyEngine determines:
+
+RELEVANT
+VISIBLE
+HIDDEN
+NOT_RELEVANT
+
+Quick Capture does NOT ask all relevant questions.
+
+It only captures the initial known information.
+
+Later Phase 14 will expose:
+
+Known
+To Discover
+Next Questions
+
+==================================================
+17. NEXT QUESTION ENGINE
+==================================================
+
+Do NOT build a new question system.
+
+Phase 11 already provides:
+
+GET /api/v2/requirements/:requirementId/next-questions
+
+Quick Capture may optionally return:
+
+nextQuestions
+
+after creation.
+
+But:
+
+DO NOT duplicate ranking logic.
+
+Call the existing service/API.
+
+==================================================
+18. SCORING
+==================================================
+
+Use Phase 12 scoring.
+
+After Quick Capture:
+
+RequirementScore should be calculated.
+
+ClientScore should be calculated where supported.
+
+Do not create another scoring engine.
+
+Do not mix:
+
+Completeness
+RequirementScore
+ClientScore
+
+==================================================
+19. SUCCESS RESPONSE
+==================================================
+
+Quick Capture should return something similar to:
+
+{
+  ok: true,
+
+  client: {
+    leadId: "L000123",
+    name: "Rahul Shah"
+  },
+
+  transaction: {
+    transactionId: "T000456",
+    transactionType: "Purchase"
+  },
+
+  requirement: {
+    requirementId: "R000789",
+    category: "Residential",
+    locations: ["Vesu", "Adajan"],
+    budgetMin: null,
+    budgetMax: 10000000
+  },
+
+  scores: {
+    clientScore: 72,
+    requirementScore: 81
+  },
+
+  nextQuestions: []
+}
+
+Use actual existing response conventions if different.
+
+Do not break compatibility.
+
+==================================================
+20. API
+==================================================
+
+Add a dedicated endpoint:
+
+POST /api/v2/quick-capture
+
+Request example:
+
+{
+  "client": {
+    "name": "Rahul Shah",
+    "primaryMobile": "+91 98765 43210"
+  },
+
+  "transaction": {
+    "transactionType": "Purchase"
+  },
+
+  "requirement": {
+    "category": "Residential",
+    "locations": [
+      "Vesu",
+      "Adajan"
+    ],
+    "budgetMax": 10000000
+  }
+}
+
+The endpoint must:
+
+1. authenticate actor
+2. validate payload
+3. perform duplicate resolution
+4. resolve/create Lead
+5. create Transaction
+6. create Requirement
+7. calculate scores
+8. evaluate dependencies
+9. optionally return next questions
+10. return canonical IDs
+
+==================================================
+21. EXISTING API COMPATIBILITY
+==================================================
+
+DO NOT remove:
+
+POST /api/leads
+
+DO NOT change legacy API response shapes unnecessarily.
+
+Quick Capture is additive.
+
+If the feature flag is required:
+
+respect existing LEAD_V2_ENABLED behavior.
+
+Do not silently enable V2 globally.
+
+==================================================
+22. UI FLOW
+==================================================
+
+Recommended UI:
+
+[ + New Client ]
+
+opens:
+
+┌──────────────────────────────┐
+│       New Client             │
+├──────────────────────────────┤
+│ Name                         │
+│ [ Rahul Shah              ]  │
+│                              │
+│ Mobile                       │
+│ [ +91 98765 43210         ]  │
+│                              │
+│ Transaction                  │
+│ [ Purchase ▼              ]  │
+│                              │
+│ Category                     │
+│ [ Residential ▼           ]  │
+│                              │
+│ Locations                    │
+│ [ Vesu                    ]  │
+│ [ Adajan                  ]  │
+│ [+ Add Location]             │
+│                              │
+│ Budget                       │
+│ [ Min ]   [ Max ]            │
+│                              │
+│          [ Save Client ]     │
+└──────────────────────────────┘
+
+Keep it SMALL.
+
+The agent should not feel like they are filling a government form.
+
+==================================================
+23. AFTER SAVE
+==================================================
+
+After successful Quick Capture:
+
+DO NOT keep the agent on the form.
+
+Open the Client Workspace:
+
+Client:
+Rahul Shah
+
+Transaction:
+Purchase
+
+Requirement:
+Residential — Vesu / Adajan — ₹1 Cr
+
+Then later Phase 14 will show:
+
+KNOWN
+- Location
+- Budget
+- Category
+
+TO DISCOVER
+- BHK
+- Possession
+- Parking
+- Furnishing
+
+NEXT QUESTIONS
+- "Kitne BHK chahiye?"
+- "Possession kab tak chahiye?"
+- "Parking kitni chahiye?"
+
+Phase 13 itself does NOT implement the full Phase 14 workspace redesign.
+
+==================================================
+24. UI VALIDATION
+==================================================
+
+Validate only what is necessary for Quick Capture.
+
+Required:
+
+Name:
+required
+
+Mobile:
+required and normalized
+
+TransactionType:
+required
+
+Category:
+required
+
+Location:
+at least one OR explicitly allowed UNKNOWN if configuration permits
+
+Budget:
+optional
+
+Do NOT force advanced requirement fields.
+
+==================================================
+25. TESTS
+==================================================
+
+Create:
+
+test/v2Phase13.test.js
+
+Minimum tests:
+
+1. Quick Capture creates Lead + Transaction + Requirement
+2. Correct LeadID relationship
+3. Correct TransactionID relationship
+4. Correct RequirementID relationship
+5. One Lead only
+6. Duplicate exact match reuses Lead
+7. New Transaction created for reused Lead
+8. New Requirement created for new Transaction
+9. Possible duplicate requires confirmation
+10. Multiple locations
+11. BudgetMin only
+12. BudgetMax only
+13. Budget range
+14. Missing optional fields remain UNKNOWN
+15. Missing BHK does not fail
+16. Missing Possession does not fail
+17. Missing Parking does not fail
+18. Unknown SubCategory is valid
+19. Known SubCategory is stored
+20. Dependency evaluation runs
+21. RequirementScore integration
+22. ClientScore integration
+23. NextQuestion integration if returned
+24. Atomic rollback when Transaction creation fails
+25. Atomic rollback when Requirement creation fails
+26. Invalid TransactionType rejected
+27. Invalid Category rejected
+28. Invalid mobile rejected according to existing rules
+29. Authentication enforced
+30. RBAC enforced
+31. Legacy Lead compatibility
+32. Legacy records remain readable
+33. Existing Phase 1–12 tests remain green
+34. API success response
+35. API error response
+
+Do NOT weaken existing tests.
+
+==================================================
+26. PROTECTED MODULES
+==================================================
+
+DO NOT redesign:
+
+Inventory
+Matching
+Site Visit
+Negotiation
+Token
+Deal
+Commission
+Authentication
+RBAC
+Migration
+
+DO NOT modify:
+
+V2DependencyService
+V2NextQuestionService
+
+unless a direct Phase 13 integration bug requires a minimal compatibility fix.
+
+==================================================
+27. DATA SAFETY
+==================================================
+
+No production migration.
+
+No deletion.
+
+No Lead merging.
+
+No ID rewriting.
+
+No modification of existing client records unless explicitly selecting an existing Lead for the new Transaction.
+
+==================================================
+28. PHASE GATE
+==================================================
+
+After implementation:
+
+Run:
+
+- Phase 13 tests
+- ALL Phase 1–12 tests
+- API tests
+- integration tests
+- browser smoke if available
+
+Do not stop at only the new tests.
+
+If anything fails, diagnose and repair Phase 13 only.
+
+At the end STOP.
+
+Return:
+
+PHASE:
+Phase 13 — Quick Capture
+
+STATUS:
+PASS / FAIL
+
+FILES CHANGED:
+exact files
+
+FUNCTIONS ADDED/MODIFIED:
+exact functions
+
+API CHANGES:
+exact routes
+
+UI CHANGES:
+exact pages/components
+
+DATA FLOW:
+Quick Capture → Lead → Transaction → Requirement
+
+DUPLICATE BEHAVIOUR:
+exact behavior
+
+ATOMICITY:
+exact implementation and tests
+
+SCORING:
+how Phase 12 was integrated
+
+DEPENDENCY:
+how Phase 10 was integrated
+
+NEXT QUESTIONS:
+how Phase 11 was integrated
+
+TESTS:
+exact commands and counts
+
+REGRESSION:
+PASS / FAIL
+
+BACKWARD COMPATIBILITY:
+exact details
+
+PROTECTED MODULES:
+confirm untouched
+
+RISKS:
+only actual risks
+
+NEXT PHASE:
+Phase 14 — Client Workspace / Needs UI
+
+IMPORTANT:
+
+DO NOT implement Phase 14.
+
+DO NOT redesign Phases 1–12.
+
+DO NOT create duplicate Lead/Client entities.
+
+DO NOT create duplicate Requirement records.
+
+DO NOT turn Quick Capture into a large requirement form.
+
+The purpose of Phase 13 is SPEED:
+capture what the agent knows NOW,
+save it correctly,
+and continue the conversation later.

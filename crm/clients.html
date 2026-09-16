@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signature Properties — Clients</title>
+  <style>
+    :root {
+      --clr-brown: #5c3317;
+      --clr-brown-dark: #2c1405;
+      --clr-brown-mid: #7a4a28;
+      --clr-gold: #b8860b;
+      --clr-gold-mid: #d4a017;
+      --clr-gold-soft: #fdf8ec;
+      --clr-yellow: #f59e0b;
+      --clr-yellow-soft: #fffbeb;
+      --clr-success: #16a34a;
+      --clr-warning: #d97706;
+      --clr-danger: #dc2626;
+      --clr-neutral: #6b7280;
+      --clr-bg: #faf7f2;
+      --clr-card: #ffffff;
+      --clr-border: #e8ddd0;
+      --clr-text: #1c0a00;
+      --clr-text-light: #7a6355;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--clr-bg); color: var(--clr-text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+    /* ── Top Nav ── */
+    .topnav { background: var(--clr-brown-dark); color: #fff; display: flex; align-items: center; padding: 0 24px; height: 52px; gap: 4px; flex-wrap: nowrap; }
+    .topnav .brand { font-weight: 800; font-size: 15px; color: var(--clr-gold-mid); margin-right: 20px; letter-spacing: .02em; white-space: nowrap; }
+    .topnav a { color: #d4b896; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 13.5px; white-space: nowrap; }
+    .topnav a.active { background: rgba(212,160,23,.18); color: var(--clr-gold-mid); font-weight: 600; }
+    .topnav a:hover:not(.active) { background: rgba(255,255,255,.08); color: #fff; }
+    .topnav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+    /* ── Page layout ── */
+    .page { display: flex; flex-direction: column; min-height: calc(100vh - 52px); }
+    .page-header { padding: 20px 24px 0; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .page-title { font-size: 22px; font-weight: 800; margin: 0; color: var(--clr-brown); }
+    .content-area { flex: 1; padding: 0 24px 32px; }
+
+    /* ── Stats bar ── */
+    .stats-bar { display: flex; gap: 14px; padding: 16px 0 0; flex-wrap: wrap; margin-bottom: 4px; }
+    .stat { background: #fff; border: 1px solid var(--clr-border); border-radius: 8px; padding: 12px 18px; min-width: 100px; }
+    .stat-val { font-size: 24px; font-weight: 800; color: var(--clr-gold); }
+    .stat-lbl { font-size: 11px; color: var(--clr-text-light); text-transform: uppercase; letter-spacing: .05em; margin-top: 1px; }
+
+    /* ── Toolbar ── */
+    .toolbar { display: flex; align-items: center; gap: 10px; padding: 14px 0; flex-wrap: wrap; }
+    .search-box { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--clr-border); border-radius: 8px; padding: 7px 12px; min-width: 260px; }
+    .search-box input { border: none; outline: none; font-size: 14px; flex: 1; background: transparent; color: var(--clr-text); }
+    .filter-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-chip { padding: 5px 14px; border-radius: 20px; border: 1px solid var(--clr-border); background: #fff; font-size: 13px; cursor: pointer; white-space: nowrap; transition: all .15s; color: var(--clr-text-light); }
+    .filter-chip.active { background: var(--clr-brown); color: #fff; border-color: var(--clr-brown); }
+    .filter-chip:hover:not(.active) { background: var(--clr-gold-soft); border-color: var(--clr-gold-mid); color: var(--clr-brown); }
+
+    /* ── Table ── */
+    .table-wrap { background: #fff; border-radius: var(--radius); border: 1px solid var(--clr-border); overflow: hidden; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    thead th { background: #faf6f0; text-align: left; padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--clr-text-light); border-bottom: 1px solid var(--clr-border); white-space: nowrap; cursor: pointer; user-select: none; }
+    thead th:hover { background: #f5ede0; color: var(--clr-brown); }
+    tbody tr { border-bottom: 1px solid var(--clr-border); transition: background .1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--clr-gold-soft); }
+    td { padding: 11px 14px; vertical-align: middle; }
+
+    /* ── Status badges ── */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+    .badge-new        { background: #e0f2fe; color: #0369a1; }
+    .badge-contacted  { background: #dcfce7; color: #15803d; }
+    .badge-follow-up  { background: #fef3c7; color: #b45309; }
+    .badge-qualified  { background: #d1fae5; color: #047857; }
+    .badge-requirement-created { background: #ede9fe; color: #6d28d9; }
+    .badge-site-visit { background: #cffafe; color: #0f766e; }
+    .badge-negotiation{ background: #fce7f3; color: #be185d; }
+    .badge-won        { background: #dcfce7; color: #166534; }
+    .badge-lost       { background: #fee2e2; color: #991b1b; }
+
+    /* ── Active Reqs pill ── */
+    .reqs-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 22px; padding: 0 7px; border-radius: 11px; font-size: 12px; font-weight: 700; background: var(--clr-gold-soft); color: var(--clr-gold); border: 1px solid #e8d07a; }
+    .reqs-pill.zero { background: #f3f4f6; color: #9ca3af; border-color: #e5e7eb; }
+
+    /* ── Buttons ── */
+    .btn-primary { background: var(--clr-gold); color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background .15s; }
+    .btn-primary:hover { background: var(--clr-gold-mid); }
+
+    /* ── Client link ── */
+    .client-link { font-weight: 700; color: var(--clr-brown); text-decoration: none; }
+    .client-link:hover { color: var(--clr-gold); text-decoration: underline; }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 48px 24px; color: var(--clr-text-light); }
+
+    /* ── Loader ── */
+    .loader { text-align: center; padding: 48px; color: var(--clr-text-light); }
+
+    /* ── Pagination ── */
+    .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 14px 0; font-size: 13px; color: var(--clr-text-light); }
+    .page-btn { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--clr-border); background: #fff; cursor: pointer; font-size: 13px; transition: all .15s; }
+    .page-btn.active { background: var(--clr-brown); color: #fff; border-color: var(--clr-brown); }
+    .page-btn:hover:not(.active) { background: var(--clr-gold-soft); border-color: var(--clr-gold-mid); }
+
+    /* ── Modal ── */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modal-overlay.hidden { display: none; }
+    .modal { background: #fff; border-radius: 14px; width: 560px; max-width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,.22); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--clr-border); }
+    .modal-title { font-size: 17px; font-weight: 800; color: var(--clr-brown); }
+    .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--clr-text-light); padding: 0 4px; }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--clr-border); display: flex; justify-content: flex-end; gap: 10px; }
+
+    /* ── Form ── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.full { grid-column: 1/-1; }
+    label { font-size: 12px; font-weight: 700; color: var(--clr-text-light); text-transform: uppercase; letter-spacing: .05em; }
+    input, select, textarea { border: 1px solid var(--clr-border); border-radius: 7px; padding: 9px 12px; font-size: 14px; outline: none; font-family: inherit; width: 100%; box-sizing: border-box; color: var(--clr-text); }
+    input:focus, select:focus, textarea:focus { border-color: var(--clr-gold); box-shadow: 0 0 0 3px rgba(184,134,11,.12); }
+    .form-error { color: var(--clr-danger); font-size: 12px; margin-top: 2px; }
+    .section-divider { border-top: 1px solid var(--clr-border); margin: 16px 0 12px; padding-top: 14px; }
+    .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--clr-text-light); margin-bottom: 12px; }
+    .btn-cancel { background: #f3f4f6; color: var(--clr-text-light); border: 1px solid var(--clr-border); border-radius: 8px; padding: 9px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-cancel:hover { background: #e5e7eb; }
+
+    /* ── Dynamic fields grid ── */
+    .nc-dyn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 520px) { .nc-dyn-grid { grid-template-columns: 1fr; } }
+
+    /* ── Dup warning ── */
+    .dup-warning { background: var(--clr-yellow-soft); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; }
+    .dup-warning-title { font-weight: 700; color: #92400e; margin-bottom: 6px; }
+    .dup-candidate { padding: 6px 0; border-bottom: 1px solid #fde68a; font-size: 13px; }
+    .dup-candidate:last-child { border-bottom: none; }
+
+    @media (max-width: 768px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .stats-bar { gap: 10px; }
+      .stat { min-width: 80px; padding: 10px 14px; }
+      td:nth-child(4), th:nth-child(4) { display: none; } /* hide Active Reqs on mobile */
+      .topnav a { display: none; }
+      .topnav a.active, .topnav .brand { display: block; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topnav">
+  <span class="brand" style="display:inline-flex;align-items:center;gap:8px"><img src="/assets/signature-mark.svg" alt="logo" style="width:26px;height:26px;border-radius:50%;object-fit:cover" />Signature Properties</span>
+  <a href="/">Dashboard</a>
+  <a href="/clients" class="active">Clients</a>
+  <a href="/inventory" data-testid="nav-inventory">Inventory</a>
+  <a href="/requirements-view">All Requirements</a>
+  <a href="/duplicates" id="nav-duplicates" data-testid="nav-duplicates">Duplicates <span id="dup-count-badge" style="display:none;background:var(--clr-danger);color:#fff;padding:1px 6px;border-radius:10px;font-size:11px;margin-left:2px;font-weight:700"></span></a>
+  <a href="/builder-projects">🏗️ Builder Projects</a>
+  <a href="/broker-network">👥 Broker Network</a>
+  <a href="/calculators">🧮 Calculators</a>
+  <a href="/digital-card">🪪 Digital Card</a>
+  <div class="topnav-right">
+</div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1 class="page-title">Clients</h1>
+    <button class="btn-primary" data-testid="add-client-btn" onclick="openAddModal()">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+      Add Client
+    </button>
+  </div>
+
+  <div class="content-area">
+    <!-- Stats -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat"><div class="stat-val" id="stat-total">—</div><div class="stat-lbl">Total</div></div>
+      <div class="stat"><div class="stat-val" id="stat-contacted">—</div><div class="stat-lbl">Contacted</div></div>
+      <div class="stat"><div class="stat-val" id="stat-new">—</div><div class="stat-lbl">New</div></div>
+      <div class="stat"><div class="stat-val" id="stat-reqs">—</div><div class="stat-lbl">Active Needs</div></div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#94a3b8"><circle cx="11" cy="11" r="8" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke-width="2"/></svg>
+        <input id="search-input" data-testid="clients-search" type="text" placeholder="Search clients…" oninput="debounceSearch()" />
+      </div>
+      <div class="filter-bar" id="filter-bar">
+        <button class="filter-chip active" data-filter="" data-testid="filter-all">All</button>
+        <button class="filter-chip" data-filter="New" data-testid="filter-new">New</button>
+        <button class="filter-chip" data-filter="Contacted" data-testid="filter-contacted">Contacted</button>
+        <button class="filter-chip" data-filter="Follow-up" data-testid="filter-followup">Follow-up</button>
+        <button class="filter-chip" data-filter="Qualified" data-testid="filter-qualified">Qualified</button>
+        <button class="filter-chip" data-filter="Requirement Created" data-testid="filter-requirement-created">Requirement Created</button>
+        <button class="filter-chip" data-filter="Site Visit" data-testid="filter-site-visit">Site Visit</button>
+        <button class="filter-chip" data-filter="Negotiation" data-testid="filter-negotiation">Negotiation</button>
+        <button class="filter-chip" data-filter="Won" data-testid="filter-won">Won</button>
+        <button class="filter-chip" data-filter="Lost" data-testid="filter-lost">Lost</button>
+        <button class="filter-chip" data-filter="tag:Hot" data-testid="filter-hot">🔥 Hot</button>
+        <button class="filter-chip" data-filter="tag:Investor" data-testid="filter-investor">💰 Investor</button>
+        <button class="filter-chip" data-filter="tag:Buyer" data-testid="filter-buyer">🧾 Buyer</button>
+        <button class="filter-chip" data-filter="tag:VIP" data-testid="filter-vip">⭐ VIP</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table data-testid="clients-table">
+        <thead>
+          <tr>
+            <th onclick="sort('ClientName')">Client ▾</th>
+            <th>Mobile</th>
+            <th onclick="sort('ClientStatus')">Status</th>
+            <th>Active Requirements</th>
+            <th>Budget</th>
+            <th>Rate/Sqft</th>
+            <th>Location</th>
+            <th>Source</th>
+            <th onclick="sort('UpdatedAt')">Last Activity</th>
+          </tr>
+        </thead>
+        <tbody id="clients-tbody">
+          <tr><td colspan="9" class="loader">Loading clients…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- Add Client Modal -->
+<div class="modal-overlay hidden" id="add-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Add Client</span>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <!-- Dup warning -->
+      <div id="dup-warning" style="display:none" class="dup-warning">
+        <div class="dup-warning-title" id="dup-title">⚠️ Possible duplicate detected</div>
+        <div id="dup-candidates"></div>
+        <div style="margin-top:10px;font-size:13px;">
+          <label style="text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:#92400e;cursor:pointer">
+            <input type="checkbox" id="confirm-dup" /> &nbsp;This is a new client — create anyway
+          </label>
+        </div>
+      </div>
+
+      <!-- Identity -->
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Client Name *</label>
+          <input id="f-name" data-testid="new-client-name" type="text" placeholder="Full name" />
+        </div>
+        <div class="form-group">
+          <label>Primary Mobile *</label>
+          <input id="f-mobile" data-testid="new-client-mobile" type="tel" placeholder="+91 98765 43210" onblur="checkDuplicate()" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input id="f-email" data-testid="new-client-email" type="email" placeholder="client@example.com" />
+        </div>
+        <div class="form-group">
+          <label>City</label>
+          <input id="f-city" data-testid="new-client-city" type="text" value="Surat" placeholder="Surat" />
+        </div>
+        <div class="form-group full">
+          <label>Lead Source</label>
+          <select id="f-source" data-testid="new-client-source">
+            <option value="">— Select source —</option>
+            <option>Walk-in</option>
+            <option>Referral</option>
+            <option>WhatsApp</option>
+            <option>Facebook / Instagram</option>
+            <option>Google</option>
+            <option>99Acres</option>
+            <option>MagicBricks</option>
+            <option>Housing.com</option>
+            <option>OLX</option>
+            <option>Newspaper Ad</option>
+            <option>Hoarding</option>
+            <option>Cold Call</option>
+            <option>Existing Client</option>
+            <option>Sub-broker</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Initial Requirement — uses same dynamic form-config as workspace -->
+      <div class="section-divider">
+        <div class="section-label">Initial Requirement</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Transaction *</label>
+            <select id="f-txn-type" onchange="ncOnTxnOrCatChange()">
+              <option value="">— Not specified —</option>
+              <option>Purchase</option>
+              <option>Sale</option>
+              <option>Rent</option>
+              <option>Rent Out</option>
+              <option>Lease</option>
+              <option>Lease Out</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Category *</label>
+            <select id="f-category" onchange="ncOnTxnOrCatChange()">
+              <option value="">— Not specified —</option>
+              <option>Residential</option>
+              <option>Commercial</option>
+              <option>Land</option>
+              <option>Industrial</option>
+              <option>Agriculture</option>
+            </select>
+          </div>
+          <div class="form-group full" id="f-subcategory-wrap" style="display:none">
+            <label>Sub Category</label>
+            <select id="f-subcategory" onchange="ncLoadFormConfig()">
+              <option value="">— Not sure yet —</option>
+            </select>
+          </div>
+        </div>
+        <!-- Dynamic requirement fields (BHK, Budget, Location, etc.) -->
+        <div id="nc-dynamic-fields" style="margin-top:12px"></div>
+      </div>
+      <div id="form-error" class="form-error"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" data-testid="cancel-btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" data-testid="save-client-btn" onclick="submitClient()">Save Client</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  const PAGE_SIZE = 25;
+  let allClients  = [];
+  let filtered    = [];
+  let currentPage = 1;
+  let sortKey     = 'UpdatedAt';
+  let sortDir     = -1;
+  let activeFilter = '';
+  let searchQ      = '';
+  let searchTimer  = null;
+
+  async function init() {
+    await loadClients();
+    setupFilterChips();
+    loadDupCount();
+  }
+
+  async function loadDupCount() {
+    try {
+      const res = await fetch('/api/v2/duplicates/pending').then(r => r.json());
+      const badge = document.getElementById('dup-count-badge');
+      if (res.count > 0) {
+        badge.textContent = res.count;
+        badge.style.display = 'inline-block';
+      }
+    } catch(e) { /* silent */ }
+  }
+
+  async function loadClients() {
+    try {
+      const res = await fetch('/api/v2/clients').then(r => r.json());
+      const clients = res.data || [];
+      allClients = clients.map(c => ({
+        ...c,
+        _reqs:      c._needSummaries || [],
+        _latestReq: (c._needSummaries||[])[0] || null,
+        _reqCount:  c._activeNeeds || 0
+      }));
+      updateStats();
+      applyFilter();
+    } catch(e) {
+      document.getElementById('clients-tbody').innerHTML =
+        `<tr><td colspan="8" class="loader" style="color:#dc2626">Failed to load clients: ${e.message}</td></tr>`;
+    }
+  }
+
+  function updateStats() {
+    const s = allClients.reduce((acc, c) => {
+      acc.total++;
+      const st = normalizeClientStatus(c.ClientStatus || c.LeadStatus || '');
+      if (st === 'Contacted') acc.contacted++;
+      if (st === 'New')      acc.new++;
+      acc.reqs += (c._reqCount || 0);
+      return acc;
+    }, { total:0, contacted:0, new:0, reqs:0 });
+    document.getElementById('stat-total').textContent  = s.total;
+    document.getElementById('stat-contacted').textContent = s.contacted;
+    document.getElementById('stat-new').textContent    = s.new;
+    document.getElementById('stat-reqs').textContent   = s.reqs;
+  }
+
+  function normalizeClientStatus(value) {
+    const raw = String(value || '').trim();
+    const alias = {
+      Verified: 'Contacted',
+      Active: 'Qualified',
+      Inactive: 'Lost',
+      Blacklisted: 'Lost',
+      Converted: 'Won'
+    };
+    return alias[raw] || raw || 'New';
+  }
+
+  function clientStatusBadgeClass(status) {
+    return 'badge-' + String(normalizeClientStatus(status) || 'new').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  }
+
+  function applyFilter() {
+    filtered = allClients.filter(c => {
+      const status = normalizeClientStatus(c.ClientStatus || c.LeadStatus || '');
+      if (activeFilter.startsWith('tag:')) {
+        const tag = activeFilter.slice(4);
+        if (!(c.Tags||[]).includes(tag)) return false;
+      } else if (activeFilter && status !== activeFilter) {
+        return false;
+      }
+      if (searchQ) {
+        const q = searchQ.toLowerCase();
+        const name  = (c.ClientName||'').toLowerCase();
+        const phone = ((c.PrimaryMobile||c.Phone||'')).replace(/\s/g,'');
+        const email = (c.Email||'').toLowerCase();
+        if (!name.includes(q) && !phone.includes(q.replace(/\s/g,'')) && !email.includes(q)) return false;
+      }
+      return true;
+    });
+    sortData();
+    currentPage = 1;
+    renderPage();
+  }
+
+  function sortData() {
+    filtered.sort((a,b) => {
+      let av = a[sortKey] || '', bv = b[sortKey] || '';
+      if (typeof av === 'object') av = av?.total || 0;
+      if (typeof bv === 'object') bv = bv?.total || 0;
+      if (av < bv) return -1 * sortDir;
+      if (av > bv) return  1 * sortDir;
+      return 0;
+    });
+  }
+
+  function sort(key) {
+    if (sortKey === key) sortDir *= -1;
+    else { sortKey = key; sortDir = -1; }
+    sortData();
+    renderPage();
+  }
+
+  function renderPage() {
+    const tbody = document.getElementById('clients-tbody');
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const page  = filtered.slice(start, start + PAGE_SIZE);
+
+    if (!page.length) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">No clients found.</div></td></tr>`;
+      document.getElementById('pagination').innerHTML = '';
+      return;
+    }
+
+    tbody.innerHTML = page.map(c => {
+      const status    = normalizeClientStatus(c.ClientStatus || c.LeadStatus || 'New');
+      const phone     = c.PrimaryMobile || c.Phone || '—';
+      const reqCount  = c._reqCount || 0;
+      const latestReq = c._latestReq;
+      const budget    = latestReq ? formatBudget(latestReq.BudgetMin, latestReq.BudgetMax) : '—';
+      const ratePsf   = latestReq ? formatRate(latestReq.RatePerSqFtMin, latestReq.RatePerSqFtMax) : '—';
+      const location  = latestReq ? [latestReq.Location1, latestReq.Location2].filter(Boolean).join(', ') || '—' : '—';
+      const lastAct   = c.UpdatedAt ? relativeDate(c.UpdatedAt) : '—';
+      const source    = c.LeadSource || '—';
+      return `<tr data-testid="client-row-${esc(c.LeadID)}">
+        <td>
+          <a class="client-link" data-testid="client-link-${esc(c.LeadID)}" href="/client-workspace?id=${enc(c.LeadID)}">${esc(c.ClientName||'—')}</a><br>
+          <span style="font-size:11px;color:#b09080">${esc(c.LeadID)}</span>
+        </td>
+        <td style="font-size:13px">${esc(phone)}</td>
+        <td><span class="badge ${clientStatusBadgeClass(status)}">${esc(status)}</span></td>
+        <td style="text-align:center"><span class="reqs-pill${reqCount===0?' zero':''}">${reqCount}</span></td>
+        <td style="font-size:12.5px;color:var(--clr-text-light)">${esc(budget)}</td>
+        <td style="font-size:12.5px;color:var(--clr-text-light)">${esc(ratePsf)}</td>
+        <td style="font-size:12.5px;color:var(--clr-text-light)">${esc(location)}</td>
+        <td style="font-size:12px;color:var(--clr-text-light)">${esc(source)}</td>
+        <td style="font-size:12px;color:var(--clr-text-light)">${esc(lastAct)}</td>
+      </tr>`;
+    }).join('');
+
+    renderPagination();
+  }
+
+  function renderPagination() {
+    const total = Math.ceil(filtered.length / PAGE_SIZE);
+    const pag   = document.getElementById('pagination');
+    if (total <= 1) { pag.innerHTML = filtered.length ? `<span>${filtered.length} clients</span>` : ''; return; }
+    let html = `<span>${filtered.length} clients</span>`;
+    for (let i=1; i<=total; i++) {
+      html += `<button class="page-btn${i===currentPage?' active':''}" onclick="gotoPage(${i})">${i}</button>`;
+    }
+    pag.innerHTML = html;
+  }
+
+  function gotoPage(n) { currentPage=n; renderPage(); }
+
+  function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { searchQ = document.getElementById('search-input').value; applyFilter(); }, 250);
+  }
+
+  function setupFilterChips() {
+    document.querySelectorAll('.filter-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter || '';
+        applyFilter();
+      });
+    });
+  }
+
+  // ── Duplicate check ──────────────────────────────────────────────────────────
+  async function checkDuplicate() {
+    const mobile = document.getElementById('f-mobile').value;
+    if (!mobile) return;
+    try {
+      const res = await fetch('/api/v2/clients/check-duplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ PrimaryMobile: mobile, ClientName: document.getElementById('f-name').value })
+      }).then(r => r.json());
+      const warn = document.getElementById('dup-warning');
+      if (res.result === 'EXACT_MATCH') {
+        document.getElementById('dup-title').textContent = '🚫 Exact duplicate — client already exists';
+        document.getElementById('dup-candidates').innerHTML = renderCandidates(res.candidates);
+        document.getElementById('confirm-dup').parentElement.style.display='none';
+        warn.style.display='block'; warn.style.borderColor='#ef4444'; warn.style.background='#fef2f2';
+      } else if (res.result === 'POSSIBLE_MATCH') {
+        document.getElementById('dup-title').textContent = '⚠️ Possible duplicate detected';
+        document.getElementById('dup-candidates').innerHTML = renderCandidates(res.candidates);
+        document.getElementById('confirm-dup').parentElement.style.display='';
+        warn.style.display='block'; warn.style.borderColor='#f59e0b'; warn.style.background='#fffbeb';
+      } else {
+        warn.style.display='none';
+      }
+    } catch(e) {}
+  }
+
+  function renderCandidates(list) {
+    return (list||[]).map(c => `<div class="dup-candidate">
+      <strong>${esc(c.ClientName||'—')}</strong> &nbsp;•&nbsp; ${esc(c.MaskedMobile||'—')}
+      &nbsp;<a href="/client-workspace?id=${enc(c.LeadID)}" target="_blank" style="font-size:12px;color:var(--clr-gold)">View →</a>
+    </div>`).join('');
+  }
+
+  // ── Dynamic form-config engine (mirrors client-workspace.html) ───────────────
+  const NC_SUBCATS = {
+    Residential: ['Flat','Villa','Row House','Bungalow','Penthouse','Studio'],
+    Commercial:  ['Office','Shop','Showroom','Warehouse'],
+    Land:        ['Residential Plot','Commercial Plot','Agricultural Land'],
+    Industrial:  ['Factory','Warehouse'],
+    Agriculture: ['Farm Land','Agricultural Plot']
+  };
+
+  function ncOnTxnOrCatChange() {
+    const cat  = document.getElementById('f-category').value;
+    const wrap = document.getElementById('f-subcategory-wrap');
+    const dyn  = document.getElementById('nc-dynamic-fields');
+    const subs = NC_SUBCATS[cat] || [];
+    if (cat && subs.length) {
+      document.getElementById('f-subcategory').innerHTML =
+        '<option value="">— Not sure yet —</option>' + subs.map(s => `<option>${esc(s)}</option>`).join('');
+      wrap.style.display = '';
+    } else {
+      wrap.style.display = 'none';
+      document.getElementById('f-subcategory').value = '';
+    }
+    // Load form config immediately so Budget+Location appear even without SubCategory
+    ncLoadFormConfig();
+  }
+
+  async function ncLoadFormConfig() {
+    const txnType = document.getElementById('f-txn-type').value;
+    const cat     = document.getElementById('f-category').value;
+    const sub     = document.getElementById('f-subcategory').value || '';
+    const dyn     = document.getElementById('nc-dynamic-fields');
+
+    if (!txnType || !cat) { dyn.innerHTML = ''; return; }
+
+    try {
+      const url = `/api/v2/form-config?transactionType=${enc(txnType)}&category=${enc(cat)}${sub ? '&subCategory='+enc(sub) : ''}`;
+      const res = await fetch(url).then(r => r.json());
+      if (!res.ok || !res.data) { dyn.innerHTML = ncBasicFields(); return; }
+
+      // API uses PascalCase: FieldKey, FieldLabel, FieldType, Options, Active, DisplayOrder
+      // Filter out fields already rendered in the header (Transaction/Category/SubCategory/LeadSource)
+      const HEADER_FIELDS = new Set(['TransactionType','Category','SubCategory','LeadSource','ClientName','PrimaryMobile','Email','City']);
+      const allFields = (res.data.fields || [])
+        .filter(f => f.Active !== false && !HEADER_FIELDS.has(f.FieldKey))
+        .sort((a,b) => (a.DisplayOrder||99) - (b.DisplayOrder||99));
+
+      // FULLY DYNAMIC: render ALL fields from V2FieldConfig registry
+      let html = '<div class="nc-dyn-grid">';
+      allFields.forEach(f => {
+        html += ncRenderDynField(f);
+      });
+      html += '</div>';
+      // Attach datalist definitions for autocomplete fields
+      html += ncBuildDatalists(allFields);
+      dyn.innerHTML = html;
+    } catch(e) {
+      dyn.innerHTML = ncBasicFields();
+    }
+  }
+
+  function ncBasicFields() {
+    return `<div class="nc-dyn-grid">
+      <div class="form-group"><label>Budget (₹)</label><input id="nc-BudgetMax" type="number" placeholder="e.g. 8000000" /></div>
+      <div class="form-group"><label>Location</label><input id="nc-Location1" list="surat-areas-list" type="text" placeholder="e.g. Vesu, Adajan" autocomplete="off" /></div>
+    </div>` + ncSuratAreasDatalist();
+  }
+
+  const SURAT_AREAS = ['Adajan','Althan','Anand Mahal Road','Athwa','Bhatar','Bhimrad','Causeway Road','City Light','Dumas Road','Ghod Dod Road','Jahangirpura','Kadodara','Kamrej','Katargam','LP Savani Road','Magdalla','Nanpura','New Textile Market','Nikol','Pal','Palanpur Patiya','Parle Point','Piplod','Puna','Rander','Rustampura','Salabatpura','Sarthana','Singanpore','Tapi Road','Udhna','Umra','Varachha','Vesu','VIP Road'];
+  function ncSuratAreasDatalist() {
+    return `<datalist id="surat-areas-list">${SURAT_AREAS.map(a => `<option value="${a}">`).join('')}</datalist>`;
+  }
+  function ncBuildDatalists(fields) {
+    // For each Autocomplete field with Options, emit a <datalist>
+    return fields.filter(f => f.FieldType === 'Autocomplete' && Array.isArray(f.Options) && f.Options.length)
+      .map(f => `<datalist id="dl-${esc(f.FieldKey)}">${f.Options.map(o => `<option value="${esc(o)}">`).join('')}</datalist>`)
+      .join('');
+  }
+
+  function ncRenderDynField(f, ctx) {
+    ctx = ctx || {};
+    const fk    = f.FieldKey;
+    const id    = `nc-${fk}`;
+    const typ   = f.FieldType;
+    const lbl   = f.FieldLabel;
+    const opts  = f.Options || [];
+    const hint  = f.Placeholder || lbl;
+    const help  = f.HelpText || '';
+    const testId = `req-field-${fk}`;
+    const isFull = typ === 'Textarea' || typ === 'MultiSelect' || fk === 'SocietyName' || fk === 'RERANumber' || fk === 'AvoidLocations' || fk === 'Preferences';
+    const groupClass = isFull ? 'form-group full' : 'form-group';
+    let input;
+    if ((typ === 'Select') && opts.length)
+      input = `<select id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}"><option value="">—</option>${opts.map(o => `<option>${esc(o)}</option>`).join('')}</select>`;
+    else if (typ === 'MultiSelect' && opts.length)
+      input = `<select id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}" multiple size="3">${opts.map(o => `<option>${esc(o)}</option>`).join('')}</select>`;
+    else if (typ === 'Boolean')
+      input = `<select id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}"><option value="">—</option><option value="true">Yes</option><option value="false">No</option></select>`;
+    else if (typ === 'Number' || typ === 'Area')
+      input = `<input id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}" type="number" placeholder="${esc(hint)}" />`;
+    else if (typ === 'Date')
+      input = `<input id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}" type="date" />`;
+    else if (typ === 'Textarea')
+      input = `<textarea id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}" rows="2" placeholder="${esc(hint)}"></textarea>`;
+    else if (typ === 'Autocomplete' && opts.length)
+      input = `<input id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}" list="dl-${esc(fk)}" type="text" placeholder="${esc(hint)}" autocomplete="off" />`;
+    else
+      input = `<input id="${esc(id)}" data-testid="${esc(testId)}" data-field-key="${esc(fk)}" type="text" placeholder="${esc(hint)}" />`;
+    const tierBadge = f.Tier === 'CORE' ? '<span style="color:var(--clr-danger);font-size:10px;margin-left:4px">*</span>' : '';
+    return `<div class="${groupClass}"><label>${esc(lbl)}${tierBadge}</label>${input}${help ? `<span style="font-size:11px;color:var(--clr-text-light);margin-top:2px">${esc(help)}</span>` : ''}</div>`;
+  }
+
+  function numOrNull(v) { const n=Number(v); return (v!==''&&v!=null&&!isNaN(n)&&v!==undefined)?n:null; }
+
+  // ── Add Client Modal ─────────────────────────────────────────────────────────
+  function openAddModal() {
+    document.getElementById('add-modal').classList.remove('hidden');
+    document.getElementById('dup-warning').style.display='none';
+    document.getElementById('form-error').textContent='';
+    document.getElementById('f-name').value    = '';
+    document.getElementById('f-mobile').value  = '';
+    document.getElementById('f-email').value   = '';
+    document.getElementById('f-city').value    = 'Surat';
+    document.getElementById('f-source').value  = '';
+    document.getElementById('f-txn-type').value = '';
+    document.getElementById('f-category').value = '';
+    document.getElementById('f-subcategory').value = '';
+    document.getElementById('f-subcategory-wrap').style.display = 'none';
+    document.getElementById('nc-dynamic-fields').innerHTML = '';
+    document.getElementById('confirm-dup').checked = false;
+  }
+
+  function closeModal() { document.getElementById('add-modal').classList.add('hidden'); }
+
+  async function submitClient() {
+    const name   = document.getElementById('f-name').value.trim();
+    const mobile = document.getElementById('f-mobile').value.trim();
+    if (!name)   { document.getElementById('form-error').textContent = 'Client Name is required'; return; }
+    if (!mobile) { document.getElementById('form-error').textContent = 'Primary Mobile is required'; return; }
+
+       const confirmDup = document.getElementById('confirm-dup').checked;
+
+    try {
+      const emailVal = document.getElementById('f-email').value.trim();
+      const cityVal = document.getElementById('f-city').value.trim() || 'Surat';
+      const sourceVal = document.getElementById('f-source').value;
+       const txnType  = document.getElementById('f-txn-type').value;
+       const category = document.getElementById('f-category').value;
+       if (!txnType) { document.getElementById('form-error').textContent = 'Transaction is required'; return; }
+       if (!category) { document.getElementById('form-error').textContent = 'Category is required'; return; }
+
+       const requirementPayload = {
+         category,
+         subCategory: document.getElementById('f-subcategory')?.value || undefined,
+         locations: []
+       };
+       document.querySelectorAll('#nc-dynamic-fields [data-field-key]').forEach(el => {
+         const key = el.dataset.fieldKey;
+         let val;
+         if (el.tagName === 'SELECT' && el.multiple) {
+           val = Array.from(el.selectedOptions).map(o => o.value).filter(Boolean);
+           if (!val.length) return;
+         } else {
+           val = el.value?.trim ? el.value.trim() : el.value;
+           if (val === '' || val == null) return;
+           if (el.type === 'number') { const n = Number(val); if (isNaN(n)) return; val = n; }
+           if (val === 'true') val = true;
+           if (val === 'false') val = false;
+         }
+         if (/^Location[123]$/.test(key)) requirementPayload.locations.push(val);
+         requirementPayload[key] = val;
+       });
+       if (requirementPayload.BudgetMin === undefined && requirementPayload.budgetMin !== undefined) requirementPayload.BudgetMin = requirementPayload.budgetMin;
+       if (requirementPayload.BudgetMax === undefined && requirementPayload.budgetMax !== undefined) requirementPayload.BudgetMax = requirementPayload.budgetMax;
+
+       const clientRes = await fetch('/api/v2/quick-capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           client: {
+             name,
+             primaryMobile: mobile,
+             email: emailVal || undefined,
+             city: cityVal,
+             source: sourceVal || undefined
+           },
+           transaction: { transactionType: txnType },
+           requirement: requirementPayload,
+           duplicateAction: confirmDup ? 'CREATE_NEW' : undefined
+         })
+      }).then(r => r.json());
+
+      if (!clientRes.ok) {
+         if (clientRes.duplicateResult === 'EXACT_MATCH') {
+           document.getElementById('form-error').textContent = 'This client already exists. Open the existing client instead.';
+         } else if (clientRes.requiresConfirmation) {
+           document.getElementById('form-error').textContent = 'Possible duplicate found. Tick “create anyway” or use the existing client.';
+         } else {
+           document.getElementById('form-error').textContent = clientRes.error || 'Failed to create client';
+         }
+        return;
+      }
+
+      closeModal();
+       window.location.href = `/client-workspace?id=${enc(clientRes.client?.leadId)}`;
+    } catch(e) {
+      document.getElementById('form-error').textContent = 'Network error: ' + e.message;
+    }
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+  function formatBudget(mn, mx) {
+    const fmt = n => n==null?null : n>=1e7 ? `₹${(n/1e7).toFixed(1)}Cr` : n>=1e5 ? `₹${(n/1e5).toFixed(0)}L` : `₹${n.toLocaleString('en-IN')}`;
+    const a=fmt(mn), b=fmt(mx);
+    return [a,b].filter(Boolean).join(' – ') || '—';
+  }
+  function formatRate(mn, mx) {
+    const fmt = n => n==null?null : `₹${Number(n).toLocaleString('en-IN')}`;
+    const a=fmt(mn), b=fmt(mx);
+    if (!a && !b) return '—';
+    return [a,b].filter(Boolean).join(' – ') + '/sqft';
+  }
+  function relativeDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso), now = new Date();
+    const diff = Math.floor((now - d) / 86400000);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Yesterday';
+    if (diff < 7)  return `${diff}d ago`;
+    if (diff < 30) return `${Math.floor(diff/7)}w ago`;
+    return d.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+  }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function enc(s) { return encodeURIComponent(s||''); }
+
+  init();
+</script>
+</body>
+</html>

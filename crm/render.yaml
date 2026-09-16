@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: signature-realty-os
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SIG_REALTY_GOOGLE_CLIENT_ID
+        sync: false
+      - key: SIG_REALTY_GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: STORAGE_MODE
+        value: mongo
+      - key: MONGO_URL
+        sync: false
+      - key: MONGO_DB
+        value: signature_properties

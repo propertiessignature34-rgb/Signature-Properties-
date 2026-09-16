@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2c1405" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Signature CRM" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/assets/signature-mark.svg" type="image/svg+xml" />
+  <script src="/pwa-register.js" defer></script>
+  <title>Signature Properties — Dashboard</title>
+  <style>
+    :root {
+      --brown-dark: #2c1405; --brown: #5c3317; --brown-mid: #7a4a2a;
+      --gold: #d4a017; --gold-soft: #fdf8ec; --gold-mid: #f0b429;
+      --bg: #faf7f2; --card: #ffffff; --border: #e8ddd0;
+      --text: #1c0a00; --text-light: #7a6355; --text-mute: #a89686;
+      --ok: #16a34a; --warn: #d97706; --danger: #dc2626; --info: #0284c7;
+      --shadow: 0 2px 4px rgba(60,25,10,.06), 0 8px 24px rgba(60,25,10,.05);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
+
+    /* ── Top bar ─────────────────────────────────────────────────── */
+    .topbar { background: var(--brown-dark); color: #fff; padding: 12px 16px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 40; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; color: var(--gold); letter-spacing: .02em; text-decoration: none; }
+    .brand-badge { background: linear-gradient(135deg, var(--gold) 0%, var(--gold-mid) 100%); color: var(--brown-dark); width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; font-size: 12px; font-weight: 800; }
+    .topbar-nav { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+    .topbar-nav a { color: #d4b896; text-decoration: none; padding: 7px 12px; border-radius: 8px; font-size: 13.5px; font-weight: 600; transition: all .15s; }
+    .topbar-nav a:hover { background: rgba(255,255,255,.08); color: #fff; }
+    .topbar-nav a.active { background: rgba(212,160,23,.22); color: var(--gold); }
+    .hamburger { display: none; margin-left: auto; background: transparent; border: none; color: #fff; font-size: 22px; cursor: pointer; padding: 4px 8px; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--gold-mid), var(--gold)); color: var(--brown-dark); display: grid; place-items: center; font-weight: 800; font-size: 12.5px; margin-left: 6px; }
+
+    @media (max-width: 900px) {
+      .hamburger { display: block; }
+      .topbar-nav { display: none; position: fixed; top: 56px; left: 0; right: 0; background: var(--brown-dark); flex-direction: column; align-items: stretch; padding: 8px 12px 16px; gap: 2px; box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+      .topbar-nav.open { display: flex; }
+      .topbar-nav a { padding: 12px 14px; font-size: 15px; }
+      .avatar { margin-left: 0; }
+    }
+
+    /* ── Page ────────────────────────────────────────────────────── */
+    .page { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; }
+    @media (min-width: 900px) { .page { padding: 28px 24px 60px; } }
+
+    /* Hero + Smart Call */
+    .hero { background: linear-gradient(135deg, var(--brown-dark) 0%, var(--brown) 55%, var(--brown-mid) 100%); color: #fff; border-radius: 16px; padding: 20px 20px 22px; display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    .hero::after { content: ''; position: absolute; top: -60px; right: -60px; width: 240px; height: 240px; background: radial-gradient(circle at center, rgba(212,160,23,.35), transparent 70%); pointer-events: none; }
+    .hero-text { position: relative; z-index: 1; }
+    .hero-greeting { font-size: 12px; letter-spacing: .1em; color: var(--gold); text-transform: uppercase; font-weight: 700; }
+    .hero-title { font-size: 22px; font-weight: 800; margin-top: 4px; line-height: 1.25; }
+    @media (min-width: 900px) { .hero-title { font-size: 26px; } }
+    .hero-sub { font-size: 13.5px; color: rgba(255,255,255,.75); margin-top: 4px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 8px; position: relative; z-index: 1; }
+    .hero-btn { padding: 11px 16px; border-radius: 10px; border: none; font-weight: 700; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all .15s; }
+    .hero-btn.primary { background: var(--gold); color: var(--brown-dark); }
+    .hero-btn.primary:hover { background: var(--gold-mid); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+    .hero-btn.ghost { background: rgba(255,255,255,.14); color: #fff; }
+    .hero-btn.ghost:hover { background: rgba(255,255,255,.2); }
+    .hero-btn.call { background: #22c55e; color: #fff; box-shadow: 0 4px 12px rgba(34,197,94,.35); }
+    .hero-btn.call:hover { background: #16a34a; transform: translateY(-1px); }
+    .hero-btn.call .pulse { width: 8px; height: 8px; background: #fff; border-radius: 50%; animation: pulse 1.4s ease-out infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,.7); } 70% { box-shadow: 0 0 0 10px rgba(255,255,255,0); } 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); } }
+
+    /* Stat tiles */
+    .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+    @media (min-width: 700px) { .stat-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; } }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; box-shadow: var(--shadow); transition: all .15s; }
+    .stat:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(60,25,10,.1); }
+    .stat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-light); display: flex; align-items: center; gap: 6px; }
+    .stat-value { font-size: 26px; font-weight: 800; margin-top: 6px; color: var(--brown-dark); line-height: 1; }
+    @media (min-width: 900px) { .stat-value { font-size: 32px; } }
+    .stat-sub { font-size: 11.5px; color: var(--text-light); margin-top: 4px; }
+    .stat.accent { border-color: var(--gold); background: linear-gradient(135deg, var(--gold-soft), #fff); }
+
+    /* Module grid */
+    .section-title { font-size: 15px; font-weight: 800; color: var(--brown); margin: 6px 4px 10px; display: flex; align-items: center; gap: 8px; }
+    .section-title .count { color: var(--text-light); font-weight: 500; font-size: 12.5px; }
+    .module-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 24px; }
+    @media (min-width: 700px) { .module-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; } }
+    @media (min-width: 1000px) { .module-grid { grid-template-columns: repeat(4, 1fr); } }
+    .mod { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 6px; transition: all .15s; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    .mod::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--gold); opacity: 0; transition: opacity .15s; }
+    .mod:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(60,25,10,.1); border-color: var(--gold); }
+    .mod:hover::before { opacity: 1; }
+    .mod-icon { font-size: 22px; width: 44px; height: 44px; background: var(--gold-soft); border-radius: 10px; display: grid; place-items: center; margin-bottom: 4px; }
+    .mod-title { font-weight: 700; font-size: 14px; color: var(--brown); }
+    .mod-count { font-size: 20px; font-weight: 800; color: var(--brown-dark); }
+    .mod-hint { font-size: 11.5px; color: var(--text-light); }
+
+    /* Cards */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-shadow: var(--shadow); margin-bottom: 20px; }
+    .card-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .card-h h3 { font-size: 15px; font-weight: 800; color: var(--brown); }
+    .card-h .link { color: var(--brown); font-size: 12.5px; font-weight: 700; text-decoration: none; }
+    .card-h .link:hover { color: var(--gold); }
+
+    /* Call list */
+    .call-list { display: flex; flex-direction: column; gap: 8px; }
+    .call-item { display: flex; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; align-items: center; transition: all .15s; background: #fff; }
+    .call-item:hover { border-color: var(--gold); background: var(--gold-soft); }
+    .call-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--brown-mid), var(--brown)); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+    .call-info { flex: 1; min-width: 0; }
+    .call-name { font-weight: 700; font-size: 14px; color: var(--brown-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .call-meta { font-size: 11.5px; color: var(--text-light); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .call-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .icon-btn { width: 36px; height: 36px; border-radius: 8px; border: none; display: grid; place-items: center; font-size: 15px; cursor: pointer; transition: all .15s; text-decoration: none; }
+    .icon-btn.call { background: #22c55e; color: #fff; }
+    .icon-btn.call:hover { background: #16a34a; }
+    .icon-btn.wa { background: #25d366; color: #fff; }
+    .icon-btn.wa:hover { background: #128c7e; }
+    .icon-btn.open { background: var(--brown); color: #fff; }
+    .icon-btn.open:hover { background: var(--brown-dark); }
+
+    /* Smart Call Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(28,10,0,.6); display: none; align-items: flex-end; justify-content: center; z-index: 100; padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+    @media (min-width: 700px) { .modal-overlay { align-items: center; padding: 20px; } }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 16px 16px 0 0; width: 100%; max-width: 500px; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.3); animation: slide-up .25s ease-out; }
+    @media (min-width: 700px) { .modal { border-radius: 16px; } }
+    @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-h { background: var(--brown-dark); color: #fff; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; }
+    .modal-h .t { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .modal-h .close { background: transparent; border: none; color: #fff; font-size: 24px; cursor: pointer; line-height: 1; }
+    .modal-b { padding: 14px 18px; overflow-y: auto; flex: 1; }
+    .modal-f { padding: 10px 18px; border-top: 1px solid var(--border); background: var(--gold-soft); font-size: 11.5px; color: var(--text-light); text-align: center; }
+
+    .loader { text-align: center; padding: 30px; color: var(--text-light); font-size: 13px; }
+    .empty { text-align: center; padding: 30px 20px; color: var(--text-light); font-size: 13px; }
+
+    /* Recent activity */
+    .activity-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); margin-top: 6px; flex-shrink: 0; }
+    .activity-text { flex: 1; }
+    .activity-time { color: var(--text-light); font-size: 11px; margin-top: 2px; }
+
+    /* Follow-up tabs */
+    .fu-tab { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); background: #fff; color: var(--text-light); font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; }
+    .fu-tab:hover { border-color: var(--gold); color: var(--brown); }
+    .fu-tab.active { background: var(--brown); color: #fff; border-color: var(--brown); }
+    .fu-item { display: flex; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; align-items: flex-start; margin-bottom: 6px; background: #fff; }
+    .fu-item.overdue { border-color: #fca5a5; background: #fef2f2; }
+    .fu-item.today { border-color: #fbbf24; background: #fffbeb; }
+    .fu-type-badge { flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 18px; background: var(--gold-soft); }
+    .fu-info { flex: 1; min-width: 0; }
+    .fu-title { font-weight: 700; font-size: 13.5px; color: var(--brown-dark); }
+    .fu-meta { font-size: 11.5px; color: var(--text-light); margin-top: 3px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .fu-time-badge { padding: 1px 7px; border-radius: 8px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .fu-time-badge.red { background: #fee2e2; color: #991b1b; }
+    .fu-time-badge.amber { background: #fef3c7; color: #78350f; }
+    .fu-time-badge.blue { background: #dbeafe; color: #1e40af; }
+    .fu-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .fu-btn { padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 11px; font-weight: 700; }
+    .fu-btn.done { background: #16a34a; color: #fff; }
+    .fu-btn.done:hover { background: #15803d; }
+    .fu-btn.snooze { background: #fef3c7; color: #78350f; }
+
+    /* Floating call FAB (mobile only) */
+    .fab-call { display: none; }
+    @media (max-width: 700px) {
+      .fab-call { display: grid; position: fixed; bottom: calc(20px + env(safe-area-inset-bottom)); right: 20px; width: 56px; height: 56px; border-radius: 50%; background: #22c55e; color: #fff; border: none; place-items: center; font-size: 22px; cursor: pointer; box-shadow: 0 8px 20px rgba(34,197,94,.5); z-index: 50; }
+      .fab-call::after { content: ''; position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 0 rgba(34,197,94,.6); animation: fab-pulse 1.8s ease-out infinite; }
+      @keyframes fab-pulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,.5); } 70% { box-shadow: 0 0 0 20px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/" class="brand" style="display:flex;align-items:center;gap:8px"><img src="/assets/signature-mark.svg" alt="logo" style="width:28px;height:28px;border-radius:50%;object-fit:cover" />Signature Properties</a>
+  <nav class="topbar-nav" id="nav">
+    <a href="/" class="active">Dashboard</a>
+    <a href="/clients">Clients</a>
+    <a href="/inventory">Inventory</a>
+    <a href="/requirements-view">Requirements</a>
+    <a href="/duplicates">Duplicates</a>
+    <a href="/builder-projects">🏗️ Builder Projects</a>
+    <a href="/broker-network">👥 Broker Network</a>
+    <a href="/calculators">🧮 Calculators</a>
+    <a href="/digital-card">🪪 Digital Card</a>
+    <a href="/gethub" data-testid="dashboard-gethub-link">▣ Gethub Files</a>
+</nav>
+  <button class="hamburger" data-testid="nav-toggle" onclick="document.getElementById('nav').classList.toggle('open')">☰</button>
+  <div class="avatar" id="user-avatar" data-testid="user-avatar" title="">--</div>
+</div>
+
+<div class="page">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-text">
+      <div class="hero-greeting" id="greeting">Namaste, Jatin</div>
+      <div class="hero-title">Aaj ka focus 🎯</div>
+      <div class="hero-sub" id="hero-sub">Loading your call list...</div>
+    </div>
+    <div class="hero-actions">
+      <button class="hero-btn call" data-testid="smart-call-btn" onclick="openSmartCall()">
+        <span class="pulse"></span>☎️ Smart Call
+      </button>
+      <a href="/clients" class="hero-btn primary" data-testid="hero-new-lead">➕ New Lead</a>
+      <a href="/inventory" class="hero-btn ghost" data-testid="hero-add-property">🏘️ Add Property</a>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <div class="stat-grid" data-testid="stat-grid">
+    <div class="stat" data-testid="stat-leads">
+      <div class="stat-label">👥 Total Leads</div>
+      <div class="stat-value" id="s-leads">—</div>
+      <div class="stat-sub" id="s-leads-sub">Live CRM</div>
+    </div>
+    <div class="stat" data-testid="stat-inventory">
+      <div class="stat-label">🏘️ Inventory</div>
+      <div class="stat-value" id="s-inv">—</div>
+      <div class="stat-sub" id="s-inv-sub">Active listings</div>
+    </div>
+    <div class="stat accent" data-testid="stat-builder-projects">
+      <div class="stat-label">🏗️ Builder Projects</div>
+      <div class="stat-value" id="s-bldp">—</div>
+      <div class="stat-sub" id="s-bldp-sub">Surat</div>
+    </div>
+    <div class="stat" data-testid="stat-visits">
+      <div class="stat-label">🏠 Site Visits</div>
+      <div class="stat-value" id="s-visits">—</div>
+      <div class="stat-sub" id="s-visits-sub">Upcoming</div>
+    </div>
+  </div>
+
+  <!-- Modules -->
+  <div class="section-title">🧩 Modules</div>
+  <div class="module-grid" data-testid="module-grid">
+    <a href="/clients" class="mod" data-testid="mod-clients">
+      <div class="mod-icon">👥</div>
+      <div class="mod-count" id="m-clients">—</div>
+      <div class="mod-title">Clients & Leads</div>
+      <div class="mod-hint">Add · search · workspace</div>
+    </a>
+    <a href="/inventory" class="mod" data-testid="mod-inventory">
+      <div class="mod-icon">🏘️</div>
+      <div class="mod-count" id="m-inv">—</div>
+      <div class="mod-title">Inventory</div>
+      <div class="mod-hint">Own · Builder · Broker</div>
+    </a>
+    <a href="/builder-projects" class="mod" data-testid="mod-builder-projects">
+      <div class="mod-icon">🏗️</div>
+      <div class="mod-count" id="m-bldp">—</div>
+      <div class="mod-title">Builder Projects</div>
+      <div class="mod-hint">Surat · Manual + Bulk upload</div>
+    </a>
+    <a href="/requirements-view" class="mod" data-testid="mod-reqs">
+      <div class="mod-icon">🎯</div>
+      <div class="mod-count" id="m-reqs">—</div>
+      <div class="mod-title">Requirements</div>
+      <div class="mod-hint">All client needs</div>
+    </a>
+    <a href="/duplicates" class="mod" data-testid="mod-dups">
+      <div class="mod-icon">👯</div>
+      <div class="mod-count" id="m-dups">—</div>
+      <div class="mod-title">Duplicates</div>
+      <div class="mod-hint">Review & merge</div>
+    </a>
+    <a href="/clients" class="mod" data-testid="mod-hot">
+      <div class="mod-icon">🔥</div>
+      <div class="mod-count" id="m-hot">—</div>
+      <div class="mod-title">Hot Leads</div>
+      <div class="mod-hint">Priority to close</div>
+    </a>
+    <a href="/broker-network" class="mod" data-testid="mod-broker-network">
+      <div class="mod-icon">👥</div>
+      <div class="mod-count" id="m-network">—</div>
+      <div class="mod-title">Broker Network</div>
+      <div class="mod-hint">Commission ledger · Shared history</div>
+    </a>
+  </div>
+
+  <!-- Today's Call List -->
+  <div class="card">
+    <div class="card-h">
+      <h3>☎️ Aaj Call Karo <span class="count" id="call-count"></span></h3>
+      <button class="link" onclick="openSmartCall()" data-testid="see-all-calls">See all →</button>
+    </div>
+    <div class="call-list" id="call-preview">
+      <div class="loader">Loading call priorities...</div>
+    </div>
+  </div>
+
+  <!-- Follow-ups Widget -->
+  <div class="card" data-testid="followups-widget">
+    <div class="card-h">
+      <h3>🔔 Follow-ups <span class="count" id="fu-count"></span></h3>
+      <button class="link" onclick="switchFuTab('overdue')" data-testid="fu-switch-overdue" id="fu-tab-overdue-btn">⚠️ Overdue</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px" id="fu-tabs">
+      <button class="fu-tab active" data-tab="today" onclick="switchFuTab('today')" data-testid="fu-tab-today">📅 Today</button>
+      <button class="fu-tab" data-tab="overdue" onclick="switchFuTab('overdue')" data-testid="fu-tab-overdue">⚠️ Overdue</button>
+      <button class="fu-tab" data-tab="upcoming" onclick="switchFuTab('upcoming')" data-testid="fu-tab-upcoming">🕐 Upcoming</button>
+    </div>
+    <div id="fu-list"><div class="loader">Loading follow-ups...</div></div>
+  </div>
+
+  <!-- Recent activity -->
+  <div class="card">
+    <div class="card-h">
+      <h3>🕐 Recent Activity</h3>
+      <a href="/clients" class="link">All →</a>
+    </div>
+    <div id="activity-feed">
+      <div class="loader">Loading recent activity...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Floating call button (mobile) -->
+<button class="fab-call" data-testid="fab-call" onclick="openSmartCall()" aria-label="Smart Call">☎️</button>
+
+<!-- Smart Call Modal -->
+<div class="modal-overlay" id="smart-call-modal" data-testid="smart-call-modal" onclick="if(event.target===this)closeSmartCall()">
+  <div class="modal">
+    <div class="modal-h">
+      <div class="t">☎️ Smart Call List</div>
+      <button class="close" data-testid="smart-call-close" onclick="closeSmartCall()">×</button>
+    </div>
+    <div class="modal-b" id="smart-call-body">
+      <div class="loader">Analyzing your leads...</div>
+    </div>
+    <div class="modal-f">🔥 Recently added · Hot tag · High-value clients prioritized</div>
+  </div>
+</div>
+
+<script>
+  function getCallbackArtifacts() {
+    const search = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+    return {
+      sessionId: String(
+        search.get('session_id') ||
+        search.get('sessionId') ||
+        hash.get('session_id') ||
+        hash.get('sessionId') ||
+        ''
+      ).trim(),
+      state: String(
+        search.get('auth_state') ||
+        search.get('state') ||
+        hash.get('auth_state') ||
+        hash.get('state') ||
+        ''
+      ).trim()
+    };
+  }
+
+  function replaceUrlWithoutAuthArtifacts() {
+    const url = new URL(window.location.href);
+    url.hash = '';
+    url.searchParams.delete('session_id');
+    url.searchParams.delete('sessionId');
+    url.searchParams.delete('auth_state');
+    url.searchParams.delete('state');
+    history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+  }
+
+  async function exchangeSessionFromCallback() {
+    const { sessionId, state } = getCallbackArtifacts();
+    if (!sessionId) return { ok: true, exchanged: false };
+    const res = await fetch('/api/auth/session-exchange', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, state })
+    }).then(r => r.json().catch(() => ({ ok: false, error: 'Invalid session exchange response' })));
+    replaceUrlWithoutAuthArtifacts();
+    return { ok: !!res?.ok, exchanged: true, error: res?.error || 'Session exchange failed' };
+  }
+
+  async function waitForAuthenticatedSession(attempts = 8, delayMs = 250) {
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      const result = await fetch('/api/auth/me', { credentials: 'include' })
+        .then(async (response) => {
+          const payload = await response.json().catch(() => null);
+          if (response.ok && payload?.ok) return { ok: true, me: payload };
+          return { ok: false, retryable: response.status === 401 };
+        })
+        .catch(() => ({ ok: false, retryable: true }));
+      if (result.ok) return result.me;
+      if (!result.retryable || attempt + 1 >= attempts) return null;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    return null;
+  }
+
+  async function bootstrapAuth() {
+    const exchange = await exchangeSessionFromCallback().catch((e) => ({ ok: false, exchanged: true, error: e.message }));
+    if (!exchange.ok) {
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      const code = exchange.error === 'This Google account is not authorized.'
+        ? 'not_authorized'
+        : exchange.error === 'Invalid auth state'
+          ? 'invalid_auth_state'
+          : /^Auth provider unavailable:/i.test(String(exchange.error || ''))
+            ? 'auth_provider_unavailable'
+          : 'auth_failed';
+      window.location.replace(`/login.html?next=${next}&error=${code}`);
+      return false;
+    }
+    const me = await waitForAuthenticatedSession();
+    if (!me || !me.ok) {
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.replace(`/login.html?next=${next}&error=session_required`);
+      return false;
+    }
+    const avatarEl = document.getElementById('user-avatar');
+    if (avatarEl && me.data?.name) {
+      avatarEl.title = me.data.name;
+      avatarEl.textContent = initials(me.data.name);
+    }
+    return true;
+  }
+
+  async function doLogout() {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
+    window.location.href = '/login.html';
+  }
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const digits = (s) => String(s || '').replace(/\D/g, '');
+  const initials = (name) => {
+    const parts = String(name || '?').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    return (parts[0][0] + (parts[1]?.[0] || '')).toUpperCase();
+  };
+
+  let ALL_LEADS = [];
+  let ALL_INV = [];
+  let ALL_DUPS = [];
+
+  // ── Smart-call scoring (recency + tags + has-phone) ──────────────────
+  function scoreLead(l) {
+    let s = 0;
+    if (digits(l.PrimaryMobile).length >= 10) s += 20; else return -1; // must have phone
+    const created = l.CreatedAt ? new Date(l.CreatedAt) : null;
+    if (created) {
+      const days = (Date.now() - created) / 86400000;
+      if (days < 3) s += 40;
+      else if (days < 7) s += 30;
+      else if (days < 14) s += 20;
+      else if (days < 30) s += 10;
+    }
+    const tags = (l.Tags || []).map(t => String(t).toLowerCase());
+    if (tags.some(t => t.includes('hot')))       s += 25;
+    if (tags.some(t => t.includes('investor')))  s += 15;
+    if (tags.some(t => t.includes('premium')))   s += 10;
+    if (String(l.ClientStatus || '').toLowerCase() === 'hot') s += 25;
+    if (l._reviewStatus === 'pending') s += 5;
+    return s;
+  }
+
+  function topLeadsToCall(limit = 20) {
+    return ALL_LEADS
+      .map(l => ({ ...l, _score: scoreLead(l) }))
+      .filter(l => l._score >= 0)
+      .sort((a, b) => b._score - a._score)
+      .slice(0, limit);
+  }
+
+  function leadRow(l, compact = false) {
+    const phone = digits(l.PrimaryMobile);
+    const telHref = phone ? `tel:+${phone}` : '#';
+    const waMsg = encodeURIComponent(`Namaste ${l.ClientName || 'ji'} 🙏\nSignature Properties se — kya aap available hain ek chhoti si baat ke liye?`);
+    const waHref = phone ? `https://wa.me/${phone}?text=${waMsg}` : '#';
+    const tagStr = (l.Tags || []).slice(0, 2).join(' · ');
+    const meta = [l.LeadSource, l.City, tagStr].filter(Boolean).join(' · ');
+    return `<div class="call-item" data-testid="call-item-${esc(l.LeadID)}">
+      <div class="call-avatar">${esc(initials(l.ClientName))}</div>
+      <div class="call-info">
+        <div class="call-name">${esc(l.ClientName || l.LeadID)}</div>
+        <div class="call-meta">${esc(meta || l.PrimaryMobile || '—')}</div>
+      </div>
+      <div class="call-actions">
+        <a class="icon-btn call" href="${telHref}" data-testid="tel-${esc(l.LeadID)}" title="Call" aria-label="Call">📞</a>
+        <a class="icon-btn wa" href="${waHref}" target="_blank" rel="noopener" data-testid="wa-${esc(l.LeadID)}" title="WhatsApp" aria-label="WhatsApp">💬</a>
+        ${compact ? '' : `<a class="icon-btn open" href="/client-workspace?id=${encodeURIComponent(l.LeadID)}" data-testid="open-${esc(l.LeadID)}" title="Open" aria-label="Open">➜</a>`}
+      </div>
+    </div>`;
+  }
+
+  // ── Smart Call modal ─────────────────────────────────────────────────
+  function openSmartCall() {
+    $('smart-call-modal').classList.add('open');
+    const list = topLeadsToCall(20);
+    $('smart-call-body').innerHTML = list.length
+      ? `<div class="call-list">${list.map(l => leadRow(l)).join('')}</div>`
+      : '<div class="empty">Koi call-worthy lead nahi mila. Kuch naye leads add karo pehle.</div>';
+  }
+  function closeSmartCall() { $('smart-call-modal').classList.remove('open'); }
+
+  // Close on Escape
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSmartCall(); });
+
+  // ── Data loading ─────────────────────────────────────────────────────
+  async function jget(url) {
+    try { const r = await fetch(url, { cache: 'no-store' }); return await r.json(); }
+    catch (e) { return { ok: false, error: e.message }; }
+  }
+
+  let ALL_BLDP = [];
+  function renderStats() {
+    const totalLeads = ALL_LEADS.length;
+    const invAll = ALL_INV.filter(p => !p._deleted);
+    const hotLeads = ALL_LEADS.filter(l => (l.Tags || []).some(t => /hot/i.test(t)) || /hot/i.test(String(l.ClientStatus || ''))).length;
+
+    $('s-leads').textContent = totalLeads;
+    $('s-leads-sub').textContent = `${ALL_LEADS.filter(l => l._reviewStatus !== 'pending').length} verified`;
+    $('s-inv').textContent = invAll.length;
+    $('s-inv-sub').textContent = 'Active listings';
+    $('s-bldp').textContent = ALL_BLDP.length;
+    $('s-bldp-sub').textContent = 'Surat';
+
+    $('m-clients').textContent = totalLeads;
+    $('m-inv').textContent = invAll.length;
+    $('m-bldp').textContent = ALL_BLDP.length;
+    $('m-reqs').textContent = '—';
+    $('m-dups').textContent = ALL_DUPS.length || '0';
+    $('m-hot').textContent = hotLeads;
+  }
+
+  async function loadDupsCount() {
+    const r = await jget('/api/v2/duplicates/pending');
+    if (r?.ok && Array.isArray(r.data)) {
+      ALL_DUPS = r.data;
+      renderStats();
+    }
+  }
+
+  async function loadReqsCount() {
+    const r = await jget('/api/requirements');
+    if (r?.ok) {
+      const arr = Array.isArray(r.data) ? r.data : (r.data?.requirements || []);
+      $('m-reqs').textContent = arr.length;
+    }
+  }
+
+  async function loadBrokerNetworkCount() {
+    const r = await jget('/api/v2/broker-network?active=true');
+    if (r?.ok && Array.isArray(r.data)) {
+      $('m-network').textContent = r.data.length;
+    }
+  }
+
+  async function loadSiteVisits() {
+    // Aggregate across all leads with bookings not efficient; use a proxy
+    const r = await jget('/api/v2/site-visit-bookings?leadId=all').catch(() => null);
+    // If not supported, leave blank
+    if (r?.ok && Array.isArray(r.data)) {
+      const upcoming = r.data.filter(b => {
+        if (!b.VisitDate) return false;
+        return new Date(b.VisitDate) >= new Date(new Date().toDateString());
+      });
+      $('s-visits').textContent = upcoming.length;
+      $('s-visits-sub').textContent = upcoming.length ? 'Upcoming bookings' : 'None scheduled';
+    } else {
+      $('s-visits').textContent = '0';
+      $('s-visits-sub').textContent = 'None scheduled';
+    }
+  }
+
+  function renderActivity() {
+    // Show last 6 leads sorted by CreatedAt desc
+    const recent = [...ALL_LEADS]
+      .filter(l => l.CreatedAt)
+      .sort((a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt))
+      .slice(0, 6);
+    const feed = $('activity-feed');
+    if (!recent.length) { feed.innerHTML = '<div class="empty">No recent activity yet.</div>'; return; }
+    feed.innerHTML = recent.map(l => {
+      const when = new Date(l.CreatedAt);
+      const rel = fmtRel(when);
+      return `<div class="activity-item">
+        <div class="activity-dot"></div>
+        <div class="activity-text">
+          <b>${esc(l.ClientName || l.LeadID)}</b> added
+          <span style="color:var(--text-light)">${l.LeadSource ? '· ' + esc(l.LeadSource) : ''} ${l.City ? '· ' + esc(l.City) : ''}</span>
+          <div class="activity-time">${rel} · <a href="/client-workspace?id=${encodeURIComponent(l.LeadID)}" style="color:var(--brown);font-weight:600;text-decoration:none">Open →</a></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function fmtRel(d) {
+    const s = (Date.now() - d) / 1000;
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.floor(s / 60) + ' min ago';
+    if (s < 86400) return Math.floor(s / 3600) + ' hr ago';
+    if (s < 604800) return Math.floor(s / 86400) + ' d ago';
+    return d.toLocaleDateString('en-IN');
+  }
+
+  function renderCallPreview() {
+    const list = topLeadsToCall(4);
+    $('call-count').textContent = list.length ? `— ${list.length} priority` : '';
+    $('hero-sub').textContent = list.length
+      ? `${list.length} client${list.length > 1 ? 's' : ''} tap-and-call ready`
+      : 'No priority calls right now — add a lead to get started';
+    const wrap = $('call-preview');
+    wrap.innerHTML = list.length
+      ? list.map(l => leadRow(l)).join('')
+      : '<div class="empty">Koi call-worthy lead nahi mila.</div>';
+  }
+
+  // ── Follow-ups widget ───────────────────────────────────────────────────
+  let CURRENT_FU_TAB = 'today';
+  const FU_TYPE_ICON = { CALL: '☎️', WHATSAPP: '💬', EMAIL: '📧', VISIT: '🏠', 'SITE VISIT': '🏠', MEETING: '🤝', DOCUMENT: '📄', OTHER: '⭐' };
+
+  function leadNameById(leadId) {
+    const l = ALL_LEADS.find(x => x.LeadID === leadId);
+    return l?.ClientName || leadId;
+  }
+  function leadPhoneById(leadId) {
+    const l = ALL_LEADS.find(x => x.LeadID === leadId);
+    return digits(l?.PrimaryMobile);
+  }
+
+  function relTime(iso) {
+    if (!iso) return '—';
+    const t = new Date(iso).getTime();
+    const now = Date.now();
+    const diff = t - now;
+    const abs = Math.abs(diff);
+    const s = abs / 1000;
+    let str;
+    if (s < 60) str = 'now';
+    else if (s < 3600) str = Math.floor(s / 60) + 'm';
+    else if (s < 86400) str = Math.floor(s / 3600) + 'h';
+    else str = Math.floor(s / 86400) + 'd';
+    return diff < 0 ? `${str} overdue` : `in ${str}`;
+  }
+
+  function switchFuTab(tab) {
+    CURRENT_FU_TAB = tab;
+    document.querySelectorAll('.fu-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    loadFollowUps();
+  }
+
+  async function loadFollowUps() {
+    const wrap = $('fu-list');
+    wrap.innerHTML = '<div class="loader">Loading follow-ups...</div>';
+    const r = await jget(`/api/v2/followups?preset=${encodeURIComponent(CURRENT_FU_TAB)}&limit=20`);
+    if (!r?.ok) { wrap.innerHTML = `<div class="empty">Error: ${esc(r?.error || 'Unknown')}</div>`; return; }
+    const items = Array.isArray(r.data) ? r.data : (r.data?.items || []);
+    // Update overdue badge
+    if (CURRENT_FU_TAB === 'today') {
+      const overdueRes = await jget('/api/v2/followups?preset=overdue&limit=100');
+      const overdueCount = (overdueRes?.data || []).length;
+      const btn = $('fu-tab-overdue-btn');
+      if (overdueCount) btn.innerHTML = `⚠️ ${overdueCount} Overdue`;
+    }
+    $('fu-count').textContent = items.length ? `— ${items.length}` : '';
+    if (!items.length) {
+      wrap.innerHTML = `<div class="empty">Koi ${CURRENT_FU_TAB === 'overdue' ? 'overdue' : CURRENT_FU_TAB === 'today' ? 'aaj ka' : 'aane wala'} follow-up nahi hai 🎉</div>`;
+      return;
+    }
+    wrap.innerHTML = items.map(fu => fuRow(fu)).join('');
+  }
+
+  function fuRow(fu) {
+    const isOverdue = fu.Status === 'OVERDUE' || new Date(fu.DueAt) < new Date();
+    const isToday = !isOverdue && new Date(fu.DueAt).toDateString() === new Date().toDateString();
+    const cls = isOverdue ? 'overdue' : isToday ? 'today' : '';
+    const timeBadge = isOverdue ? 'red' : isToday ? 'amber' : 'blue';
+    const type = String(fu.Type || 'CALL').toUpperCase();
+    const icon = FU_TYPE_ICON[type] || '⭐';
+    const cname = leadNameById(fu.LeadID);
+    const cphone = leadPhoneById(fu.LeadID);
+    const telHref = cphone ? `tel:+${cphone}` : '#';
+    const waText = encodeURIComponent(
+      `Namaste ${cname} ji 🙏\nSignature Properties se reminder — ${fu.Notes || 'thoda time nikal ke baat kar sakte hain?'}\n⏰ ${new Date(fu.DueAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}\n\n— Signature Properties`
+    );
+    const waHref = cphone ? `https://wa.me/${cphone}?text=${waText}` : '#';
+    return `<div class="fu-item ${cls}" data-testid="fu-item-${esc(fu.FollowUpID)}">
+      <div class="fu-type-badge">${icon}</div>
+      <div class="fu-info">
+        <div class="fu-title">${esc(cname)} <span style="color:var(--text-light);font-weight:500;font-size:11.5px">— ${esc(type)}</span></div>
+        <div class="fu-meta">
+          <span class="fu-time-badge ${timeBadge}">${esc(relTime(fu.DueAt))}</span>
+          <span>${esc(new Date(fu.DueAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }))}</span>
+          ${fu.Notes ? `<span style="color:var(--text-light)">· ${esc(fu.Notes)}</span>` : ''}
+        </div>
+      </div>
+      <div class="fu-actions">
+        ${cphone && type === 'WHATSAPP' ? `<a class="fu-btn snooze" href="${waHref}" target="_blank" rel="noopener" data-testid="fu-wa-${esc(fu.FollowUpID)}">💬</a>` : ''}
+        ${cphone && type === 'CALL' ? `<a class="fu-btn snooze" href="${telHref}" data-testid="fu-tel-${esc(fu.FollowUpID)}">📞</a>` : ''}
+        <button class="fu-btn done" onclick="completeFu('${esc(fu.FollowUpID)}')" data-testid="fu-done-${esc(fu.FollowUpID)}">✓ Done</button>
+      </div>
+    </div>`;
+  }
+
+  async function completeFu(fuId) {
+    try {
+      const r = await fetch(`/api/v2/followups/${encodeURIComponent(fuId)}/complete`, { method: 'POST' }).then(r => r.json());
+      if (!r.ok) throw new Error(r.error);
+      await loadFollowUps();
+    } catch (e) { alert('Complete failed: ' + e.message); }
+  }
+
+  async function boot() {
+    // Fire all in parallel
+    const [leadsRes, invRes, bldpRes] = await Promise.all([
+      jget('/api/leads'),
+      jget('/api/v2/inventory'),
+      jget('/api/v2/builder-projects')
+    ]);
+    if (leadsRes?.ok || Array.isArray(leadsRes?.data)) {
+      ALL_LEADS = leadsRes.data || [];
+    }
+    if (invRes?.ok) {
+      ALL_INV = invRes.data || [];
+    }
+    if (bldpRes?.ok) {
+      ALL_BLDP = bldpRes.data || [];
+    }
+    renderStats();
+    renderCallPreview();
+    renderActivity();
+    loadFollowUps();
+    // Fire non-blocking secondary
+    loadDupsCount();
+    loadReqsCount();
+    loadSiteVisits();
+    loadBrokerNetworkCount();
+  }
+
+  bootstrapAuth().then((authenticated) => {
+    if (authenticated) boot();
+  });
+</script>
+</body>
+</html>

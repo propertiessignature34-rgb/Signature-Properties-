@@ -1,0 +1,171 @@
+name: Deploy to VM
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        run: npx playwright test e2e/broker-network.e2e.spec.js --workers=1
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.VM_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${{ secrets.VM_SSH_PORT }}" -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy over SSH
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${{ secrets.VM_SSH_PORT }}" \
+            "${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}" \
+            bash -s <<'ENDSSH'
+          set -euo pipefail
+
+          on_error() {
+            sudo systemctl status --no-pager signature-realty || true
+            sudo journalctl -u signature-realty -n 200 --no-pager || true
+          }
+          trap on_error ERR
+
+          expect_http_status() {
+            local method="$1"
+            local path="$2"
+            local expected="$3"
+            local data="${4-}"
+            local response_file
+            response_file="$(mktemp)"
+
+            local curl_args=(
+              -sS
+              -o "$response_file"
+              -w '%{http_code}'
+              -X "$method"
+            )
+
+            if [ -n "$data" ]; then
+              curl_args+=(-H 'Content-Type: application/json' --data "$data")
+            fi
+
+            local status
+            status="$(curl "${curl_args[@]}" "http://127.0.0.1:4173$path")"
+            if [ "$status" != "$expected" ]; then
+              echo "Expected $method $path to return $expected but got $status" >&2
+              cat "$response_file" >&2
+              rm -f "$response_file"
+              exit 1
+            fi
+
+            rm -f "$response_file"
+          }
+
+          cd ~/signature-properties
+
+          BEFORE_SHA=$(git rev-parse HEAD)
+
+          git fetch origin
+          EXPECTED_SHA=$(git rev-parse origin/main)
+          git pull --ff-only origin main
+
+          AFTER_SHA=$(git rev-parse HEAD)
+          test "$AFTER_SHA" = "$EXPECTED_SHA"
+
+          if git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" | grep -Eq '^(package\.json|package-lock\.json)$'; then
+            npm install --omit=dev
+          fi
+
+          # Determine app user (the user running this script)
+          APP_USER="$(id -un)"
+          APP_HOME="$(pwd)"
+          NODE_BIN="$(command -v node)"
+
+          # Install systemd unit if missing or outdated
+          UNIT_FILE="/etc/systemd/system/signature-realty.service"
+          sudo tee "$UNIT_FILE" > /dev/null <<UNIT
+          [Unit]
+          Description=Signature Realty OS
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=$APP_USER
+          WorkingDirectory=$APP_HOME
+          ExecStart=$NODE_BIN server.js
+          Restart=on-failure
+          RestartSec=5
+          Environment=PORT=4173
+          EnvironmentFile=/etc/signature-realty/signature-realty.env
+
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+
+          sudo mkdir -p /etc/signature-realty
+          : > /tmp/signature-realty.env
+          sudo install -o root -g root -m 600 /tmp/signature-realty.env /etc/signature-realty/signature-realty.env
+
+          grep -Fx 'Environment=PORT=4173' "$UNIT_FILE"
+          grep -Fx 'EnvironmentFile=/etc/signature-realty/signature-realty.env' "$UNIT_FILE"
+          test "$(stat -c '%U:%G %a' /etc/signature-realty/signature-realty.env)" = 'root:root 600'
+
+          sudo systemctl daemon-reload
+          sudo systemctl enable signature-realty
+          sudo systemctl restart signature-realty
+
+          for i in $(seq 1 10); do
+            sudo systemctl is-active --quiet signature-realty && break
+            sleep 1
+          done
+          sudo systemctl is-active signature-realty
+
+          NODE_PID="$(sudo systemctl show -p MainPID --value signature-realty)"
+          test -n "$NODE_PID"
+          test "$NODE_PID" -gt 0
+          test "$(readlink -f "/proc/$NODE_PID/cwd")" = "$APP_HOME"
+          tr '\0' ' ' < "/proc/$NODE_PID/cmdline" | grep -F 'server.js'
+
+          for i in $(seq 1 15); do
+            ss -ltnp | grep -qF ':4173' && break
+            sleep 1
+          done
+          ss -ltnp | grep -F ':4173' || { echo "Port 4173 not listening after 15 seconds" >&2; exit 1; }
+
+          expect_http_status GET /health 200
+          expect_http_status GET / 200
+          expect_http_status GET /login.html 302
+          expect_http_status GET /clients.html 200
+          expect_http_status GET /api/dashboard 401
+          expect_http_status GET /api/leads 401
+          expect_http_status GET /api/inventory 401
+
+          echo "Deployed SHA: $AFTER_SHA"
+          ENDSSH
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

@@ -1,0 +1,32 @@
+{
+  "id": "/",
+  "name": "Signature Properties CRM",
+  "short_name": "Signature CRM",
+  "description": "Mobile-ready real estate CRM for Signature Properties.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#faf7f2",
+  "theme_color": "#2c1405",
+  "icons": [
+    {
+      "src": "/assets/signature-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Builder Projects",
+      "short_name": "Projects",
+      "url": "/builder-projects"
+    },
+    {
+      "name": "Clients",
+      "short_name": "Clients",
+      "url": "/clients"
+    }
+  ]
+}

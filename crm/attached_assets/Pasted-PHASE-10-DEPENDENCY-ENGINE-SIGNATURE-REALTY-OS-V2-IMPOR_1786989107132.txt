@@ -1,0 +1,772 @@
+PHASE 10 — DEPENDENCY ENGINE
+SIGNATURE REALTY OS V2
+
+IMPORTANT:
+Phase 1–9 are already completed/approved.
+
+DO NOT:
+- redo Phase 1–9
+- rewrite the Lead model
+- rewrite Transaction
+- rewrite Requirement
+- rewrite Configuration Engine
+- rewrite Form Registry
+- touch Inventory implementation
+- implement Matching Engine
+- implement Deal/Commission
+- redesign Authentication/RBAC
+- implement Next Question Engine
+- implement Quick Capture
+- redesign Client Workspace
+- redesign Client List
+- migrate production data
+- delete legacy configuration
+- delete legacy APIs
+
+Phase 10 is ONLY the Dependency Engine.
+
+====================================================
+CORE OBJECTIVE
+====================================================
+
+Build a configuration-driven Dependency Engine that determines:
+
+VISIBLE
+HIDDEN
+RELEVANT
+NOT_RELEVANT
+
+for Requirement questions/fields based on:
+
+TransactionType
+Category
+SubCategory
+and previously known Requirement values.
+
+The Dependency Engine controls which questions are relevant to the current client requirement.
+
+It does NOT decide whether a Requirement is valid.
+
+UNKNOWN remains a valid state.
+
+====================================================
+FINAL MODEL
+====================================================
+
+CLIENT
+  ↓
+LEAD
+  ↓
+TRANSACTION
+  ↓
+REQUIREMENT
+  ↓
+FORM CONFIGURATION
+  ↓
+DEPENDENCY ENGINE
+  ↓
+RELEVANT QUESTIONS
+
+Example:
+
+TransactionType = Rent
+Category = Residential
+SubCategory = Flat
+
+Dependency Engine may determine:
+
+BHK        → RELEVANT
+RentBudget → RELEVANT
+TenantType → RELEVANT
+MoveInDate → RELEVANT
+SalePrice  → NOT_RELEVANT
+
+====================================================
+IMPORTANT DISTINCTION
+====================================================
+
+FieldConfig answers:
+
+"What fields exist?"
+
+FormRegistry answers:
+
+"Which configuration applies to this Transaction + Category + SubCategory?"
+
+DependencyConfig answers:
+
+"Under the current answers/context, which fields are relevant?"
+
+These three layers MUST remain separate.
+
+====================================================
+THREE-STATE REQUIREMENT MODEL
+====================================================
+
+Do NOT confuse dependency state with Requirement field state.
+
+Requirement field state:
+
+UNKNOWN
+KNOWN
+NOT_APPLICABLE
+
+Dependency state:
+
+VISIBLE
+HIDDEN
+RELEVANT
+NOT_RELEVANT
+
+Example:
+
+Parking field:
+
+Dependency:
+RELEVANT
+
+Requirement:
+UNKNOWN
+
+This means:
+
+"The system wants to know Parking, but the client has not told us yet."
+
+Another example:
+
+SwimmingPool for a particular requirement:
+
+Dependency:
+NOT_RELEVANT
+
+Do not ask the client about it.
+
+====================================================
+DEPENDENCY CONFIG
+====================================================
+
+Create/use a DB-backed configuration collection:
+
+V2DependencyConfig
+
+or an equivalent configuration mechanism consistent with Phase 8/9.
+
+Do NOT create a second configuration architecture.
+
+Each dependency rule should support:
+
+- DependencyID
+- FormID / FormKey
+- TransactionType
+- Category
+- SubCategory
+- SourceField
+- Operator
+- ExpectedValue
+- TargetField
+- ResultState
+- Priority
+- IsActive
+- Version
+- CreatedAt
+- UpdatedAt
+
+If the existing Phase 8/9 configuration architecture already has a better schema, extend it instead of duplicating it.
+
+====================================================
+SUPPORTED OPERATORS
+====================================================
+
+At minimum support:
+
+EQUALS
+NOT_EQUALS
+IN
+NOT_IN
+EXISTS
+NOT_EXISTS
+GREATER_THAN
+GREATER_THAN_OR_EQUAL
+LESS_THAN
+LESS_THAN_OR_EQUAL
+
+Where practical also support:
+
+CONTAINS
+NOT_CONTAINS
+
+Do not implement a complicated expression language unless the existing architecture requires it.
+
+====================================================
+RULE EXAMPLES
+====================================================
+
+Example 1:
+
+TransactionType = Rent
+
+Target:
+
+TenantType
+
+Result:
+
+RELEVANT
+
+Example 2:
+
+TransactionType = Purchase
+
+Target:
+
+PropertyPreference
+
+Result:
+
+RELEVANT
+
+Example 3:
+
+TransactionType = Rent
+
+Target:
+
+PropertyPreference
+
+Result:
+
+NOT_RELEVANT
+
+Example 4:
+
+Category = Commercial
+
+Target:
+
+BusinessType
+
+Result:
+
+RELEVANT
+
+Example 5:
+
+Category = Industrial
+
+Target:
+
+PowerLoad
+
+Result:
+
+RELEVANT
+
+Example 6:
+
+SubCategory = Office
+
+Target:
+
+FireNOC
+
+Result:
+
+RELEVANT
+
+====================================================
+MULTIPLE RULES
+====================================================
+
+The engine must define deterministic behavior when multiple rules target the same field.
+
+Do NOT rely on object iteration order.
+
+Implement explicit precedence.
+
+Recommended precedence:
+
+1. NOT_RELEVANT
+2. HIDDEN
+3. RELEVANT
+4. VISIBLE
+
+If the existing architecture has a stronger precedence model, document and use it consistently.
+
+The final result for every target field must be deterministic.
+
+====================================================
+CONTEXT RESOLUTION
+====================================================
+
+The engine receives a context object such as:
+
+{
+  transactionType: "Rent",
+  category: "Residential",
+  subCategory: "Flat",
+  fields: {
+    BHKMin: {
+      state: "KNOWN",
+      value: 2
+    },
+    TenantType: {
+      state: "UNKNOWN"
+    }
+  }
+}
+
+The engine must NEVER assume an UNKNOWN value means:
+
+false
+0
+"No"
+"None"
+
+UNKNOWN means:
+
+"The answer is not known yet."
+
+Therefore a rule:
+
+TenantType == Family
+
+must NOT execute as true when TenantType is UNKNOWN.
+
+====================================================
+FIELD STATE INTERACTION
+====================================================
+
+If a source field is:
+
+UNKNOWN
+
+rules depending on that source cannot incorrectly force a positive result.
+
+Example:
+
+Parking = UNKNOWN
+
+Rule:
+
+Parking == "2"
+
+must not evaluate as true.
+
+Return the appropriate unresolved/default dependency state.
+
+Document this behavior.
+
+====================================================
+DEFAULT BEHAVIOR
+====================================================
+
+Every configured field must have a deterministic default state.
+
+Recommended:
+
+- If field belongs to resolved FormConfig and no dependency excludes it → RELEVANT/VISIBLE according to configuration.
+- If field is outside the current form context → NOT_RELEVANT.
+- If dependency conditions hide it → HIDDEN.
+- If dependency explicitly marks it irrelevant → NOT_RELEVANT.
+
+Do not leave fields in an undefined state.
+
+====================================================
+API
+====================================================
+
+Add APIs consistent with existing V2 routing.
+
+At minimum:
+
+GET /api/v2/dependencies
+
+GET /api/v2/dependencies/evaluate
+
+Example:
+
+GET /api/v2/dependencies/evaluate?
+transactionType=Rent&
+category=Residential&
+subCategory=Flat&
+requirementId=R000001
+
+If requirementId is supplied:
+
+- load Requirement
+- load its Transaction
+- resolve FormConfig
+- evaluate dependencies
+- return final field states
+
+Also support direct context evaluation if the existing API architecture allows it.
+
+Example response:
+
+{
+  "ok": true,
+  "context": {
+    "transactionType": "Rent",
+    "category": "Residential",
+    "subCategory": "Flat"
+  },
+  "fields": {
+    "BHK": "RELEVANT",
+    "RentBudget": "RELEVANT",
+    "TenantType": "RELEVANT",
+    "MoveInDate": "RELEVANT",
+    "SalePrice": "NOT_RELEVANT"
+  }
+}
+
+Do not expose internal implementation details unnecessarily.
+
+====================================================
+SERVICE
+====================================================
+
+Create or extend:
+
+DependencyService
+
+Suggested methods:
+
+- getDependencyRules()
+- getRulesForForm()
+- evaluateRule()
+- evaluateDependencies()
+- resolveFieldState()
+- resolveAllFieldStates()
+
+If an existing configuration service already owns configuration access, reuse it.
+
+Do NOT put dependency logic directly inside:
+
+- server.js
+- frontend
+- v2RequirementService
+
+====================================================
+NO FRONTEND BUSINESS LOGIC
+====================================================
+
+Do NOT write:
+
+if (category === "Residential") ...
+
+or:
+
+if (transactionType === "Rent") ...
+
+inside frontend code.
+
+Frontend receives evaluated configuration/state from the Dependency Engine.
+
+The UI simply renders the result.
+
+====================================================
+SERVER-SIDE VALIDATION
+====================================================
+
+Dependency Engine is primarily about relevance/visibility.
+
+It must NOT weaken Phase 7 validation.
+
+Phase 7 rules remain:
+
+- absent fields are valid
+- UNKNOWN is valid
+- provided invalid values are rejected
+- numeric/range validation remains
+- FormVersion remains immutable
+- LeadID/TransactionID relationships remain immutable
+
+Do not make a field mandatory merely because it is RELEVANT.
+
+RELEVANT means:
+
+"This is useful to ask/capture."
+
+It does NOT mean:
+
+"This must already have a value."
+
+====================================================
+CONFIGURATION SEEDING
+====================================================
+
+Add sensible initial dependency rules for:
+
+Residential
+Commercial
+Industrial
+Land
+Agriculture
+
+and:
+
+Purchase
+Sale
+Rent
+Rent Out
+Lease
+Lease Out
+
+Only add rules that are genuinely supported by the existing V2 configuration.
+
+Do not invent dozens of arbitrary business rules just to increase coverage.
+
+The system must remain extensible.
+
+====================================================
+ADMIN CONFIGURATION
+====================================================
+
+If Phase 8/9 already provides configuration APIs, expose DependencyConfig through the same architecture.
+
+At minimum:
+
+GET dependency configuration
+
+If the existing configuration architecture supports admin mutation safely, add:
+
+POST / PATCH / DELETE
+
+only if consistent with Phase 8/9.
+
+Do NOT build a separate Admin UI in Phase 10.
+
+====================================================
+BACKWARD COMPATIBILITY
+====================================================
+
+Existing APIs must continue working.
+
+Do NOT break:
+
+- V1 Requirements
+- V2 Requirements
+- V2 Form Registry
+- V2 FieldConfig
+- V2 QuestionConfig
+- Lead APIs
+- Transaction APIs
+- Workspace APIs
+
+Do not touch:
+
+- Inventory
+- Matching
+- Deal
+- Commission
+- Authentication
+- RBAC
+
+====================================================
+HISTORICAL REQUIREMENTS
+====================================================
+
+When evaluating an existing Requirement:
+
+Use its stored:
+
+FormVersion
+
+and corresponding configuration where available.
+
+Do not reinterpret historical Requirements using an unrelated newest configuration.
+
+If a historical dependency configuration is unavailable:
+
+use the safest compatible fallback and document it.
+
+Do NOT modify historical Requirement data.
+
+====================================================
+TESTING
+====================================================
+
+Create comprehensive Phase 10 tests.
+
+Do NOT target an artificial number of tests.
+
+Test actual behavior.
+
+At minimum:
+
+1. Dependency config loads from DB.
+
+2. Static/config fallback works if applicable.
+
+3. TransactionType dependency.
+
+4. Category dependency.
+
+5. SubCategory dependency.
+
+6. EQUALS.
+
+7. NOT_EQUALS.
+
+8. IN.
+
+9. NOT_IN.
+
+10. EXISTS.
+
+11. NOT_EXISTS.
+
+12. Numeric comparisons.
+
+13. Multiple rules.
+
+14. Deterministic precedence.
+
+15. UNKNOWN source field.
+
+16. KNOWN source field.
+
+17. NOT_APPLICABLE source field.
+
+18. Relevant field remains UNKNOWN if unanswered.
+
+19. NOT_RELEVANT fields are not treated as required.
+
+20. Rent-specific fields.
+
+21. Purchase-specific fields.
+
+22. Commercial-specific fields.
+
+23. Industrial-specific fields.
+
+24. Land-specific fields.
+
+25. Agriculture-specific fields.
+
+26. RequirementID evaluation.
+
+27. Direct context evaluation.
+
+28. API response.
+
+29. Invalid context handling.
+
+30. Inactive dependency rules.
+
+31. Version behavior.
+
+32. Historical FormVersion compatibility.
+
+33. Existing Phase 1–9 regression tests.
+
+34. Existing lifecycle tests.
+
+35. Existing Matching tests.
+
+36. Existing Site Visit tests.
+
+37. Inventory regression.
+
+====================================================
+TESTING POLICY
+====================================================
+
+You decide the exact test commands based on the repository.
+
+Run:
+
+- Phase 10 focused tests
+- all existing tests
+- relevant integration tests
+- syntax checks
+- git diff --check
+
+If failures occur:
+
+diagnose → fix Phase 10 issue → rerun.
+
+Do NOT weaken or delete existing tests.
+
+Do NOT modify tests merely to hide a real defect.
+
+====================================================
+DATA SAFETY
+====================================================
+
+DO NOT:
+
+- migrate production data
+- rewrite Requirements
+- rewrite Leads
+- rewrite Transactions
+- regenerate IDs
+- delete existing configuration
+- delete legacy records
+
+Phase 10 is dependency/configuration logic only.
+
+====================================================
+FILE SAFETY
+====================================================
+
+Before editing:
+
+inspect git status and existing diffs.
+
+Preserve all pre-existing work.
+
+Only modify files necessary for Phase 10.
+
+====================================================
+PHASE BOUNDARY
+====================================================
+
+DO NOT IMPLEMENT:
+
+Phase 11 — Next Question Engine
+Phase 12 — Scoring redesign
+Phase 13 — Quick Capture
+Phase 14 — Client Workspace redesign
+Phase 15 — Client List redesign
+Phase 16 — Conversation Engine
+Phase 17 — Final API consolidation
+Phase 18 — Migration
+Phase 19 — Final E2E
+Phase 20 — Production rollout
+
+If a tiny compatibility adapter is required, implement only that adapter.
+
+====================================================
+FINAL REPORT
+====================================================
+
+After implementation, return:
+
+PHASE 10 — PASS / FAIL
+
+1. Files changed
+2. Functions added/modified
+3. DependencyConfig schema
+4. Rule evaluation model
+5. State precedence
+6. UNKNOWN behavior
+7. FormVersion behavior
+8. APIs
+9. Seeded rules
+10. Backward compatibility
+11. Tests run
+12. Total tests passed/failed
+13. Full regression result
+14. Risks
+15. Exactly what remains for Phase 11
+
+IMPORTANT:
+
+Do NOT ask unnecessary questions.
+
+Do NOT redo Phase 1–9.
+
+Do NOT redesign the approved architecture.
+
+Implement Phase 10 completely and test it properly.
