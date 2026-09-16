@@ -10,13 +10,21 @@ import os
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
-from starlette.background import BackgroundTask
 
 CRM_TARGET = os.environ.get("CRM_TARGET", "http://127.0.0.1:3001")
 
 app = FastAPI()
 
-client = httpx.AsyncClient(base_url=CRM_TARGET, timeout=httpx.Timeout(120.0))
+# Keep pooled connections short-lived so we don't reuse a keep-alive socket
+# that the upstream Node server has already closed (avoids transient ReadError).
+client = httpx.AsyncClient(
+    base_url=CRM_TARGET,
+    timeout=httpx.Timeout(120.0),
+    limits=httpx.Limits(max_keepalive_connections=20, keepalive_expiry=2.0),
+)
+
+# Methods safe to retry once on a transient upstream connection drop.
+IDEMPOTENT_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 # Hop-by-hop headers that must not be forwarded.
 HOP_BY_HOP = {
@@ -53,13 +61,21 @@ async def proxy(request: Request, path: str):
 
     body = await request.body()
 
-    rp_req = client.build_request(
-        request.method, url, headers=headers, content=body,
-    )
-    rp_resp = await client.send(rp_req, stream=True)
+    async def _send():
+        rp_req = client.build_request(request.method, url, headers=headers, content=body)
+        resp = await client.send(rp_req)
+        return resp
 
-    content = await rp_resp.aread()
-    await rp_resp.aclose()
+    try:
+        rp_resp = await _send()
+    except (httpx.ConnectError, httpx.ReadError, httpx.RemoteProtocolError, httpx.PoolTimeout):
+        # Retry once for idempotent methods when a pooled connection was dropped.
+        if request.method in IDEMPOTENT_METHODS:
+            rp_resp = await _send()
+        else:
+            raise
+
+    content = rp_resp.content
 
     response = Response(content=content, status_code=rp_resp.status_code)
     # Preserve every header (including multiple Set-Cookie) verbatim.
