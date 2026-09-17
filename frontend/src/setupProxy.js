@@ -14,8 +14,17 @@ module.exports = function (app) {
       onProxyReq: (proxyReq, req) => {
         // Preview is always served over HTTPS at the edge.
         proxyReq.setHeader('x-forwarded-proto', 'https');
-        const host = req.headers['x-forwarded-host'] || req.headers.host;
+        // Prefer the browser's real host (Origin/Referer) over an edge-rewritten
+        // Host so the CRM resolves the same origin the browser is actually on.
+        let host = '';
+        for (const h of [req.headers.origin, req.headers.referer]) {
+          if (h) {
+            try { host = new URL(h).host; break; } catch (e) { /* ignore */ }
+          }
+        }
+        if (!host) host = req.headers['x-forwarded-host'] || req.headers.host;
         if (host) {
+          proxyReq.setHeader('host', host);
           proxyReq.setHeader('x-forwarded-host', host);
         }
       },

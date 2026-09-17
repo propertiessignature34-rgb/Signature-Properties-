@@ -8,6 +8,7 @@ pages and the /api endpoints.
 """
 import os
 import httpx
+from urllib.parse import urlparse
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
 
@@ -45,10 +46,24 @@ async def _shutdown():
 async def proxy(request: Request, path: str):
     url = httpx.URL(path="/" + path, query=request.url.query.encode("utf-8"))
 
-    # Preserve the browser-facing host/scheme so the CRM can resolve the
-    # real public origin for the OAuth redirect and secure cookies.
-    incoming_host = request.headers.get("x-forwarded-host") or request.headers.get("host", "")
-    incoming_proto = request.headers.get("x-forwarded-proto") or "https"
+    # Determine the REAL browser-facing host/scheme. The platform edge can rewrite
+    # the Host header to a canonical preview domain even when the browser is on a
+    # different one, which breaks the CRM's OAuth origin + CSRF checks. The browser's
+    # own Origin/Referer header is the source of truth, so we prefer it.
+    incoming_host = ""
+    incoming_proto = ""
+    for header_name in ("origin", "referer"):
+        raw = request.headers.get(header_name)
+        if raw:
+            parsed = urlparse(raw)
+            if parsed.scheme and parsed.netloc:
+                incoming_host = parsed.netloc
+                incoming_proto = parsed.scheme
+                break
+    if not incoming_host:
+        incoming_host = request.headers.get("x-forwarded-host") or request.headers.get("host", "")
+    if not incoming_proto:
+        incoming_proto = request.headers.get("x-forwarded-proto") or "https"
 
     headers = {
         k: v for k, v in request.headers.items()
