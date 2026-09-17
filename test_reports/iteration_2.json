@@ -1,0 +1,31 @@
+{
+  "summary": "Verified the Gethub removal fix and PIN login flow end-to-end. (1) GET /gethub and /gethub.html both return HTTP 302 with Location: '/'. Following the redirect while authenticated lands on the dashboard, not a gethub/file-browser screen; page body contains zero 'gethub' occurrences. (2) The dashboard nav (rendered from /app/crm/index.html) contains: Dashboard, Clients, Inventory, Requirements, Duplicates, Builder Projects, Broker Network, Calculators, Digital Card — no 'Gethub Files' link and no element with data-testid='dashboard-gethub-link'. (3) 4-digit PIN login works via UI on /login.html: entering '1234' auto-submits and lands on '/'; entering '0000' shows 'Invalid code. Please try again.' via [data-testid=login-status] and does NOT log in (API 401). (4) Dashboard core data loads: /api/dashboard returns ok:true with totalLeads=207 and stat cards (Total Leads, Inventory, Builder Projects, Site Visits) plus module tiles render. (5) Nav routing works: /clients returns 200 and renders 'Signature Properties — Clients'; /inventory returns 200. No redirects to /login or /gethub.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "All pages", "issues": ["CSP blocks Cloudflare beacon script (static.cloudflareinsights.com) — cosmetic console noise only; app functional. Consider dropping the cf-beacon tag or extending script-src if analytics needed."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Gethub redirect + nav removal is correctly wired in /app/crm/server.js and /app/crm/index.html; V2_ROUTES and publicPages no longer reference /gethub.",
+    "service-worker CACHE_NAME bumped to signature-properties-shell-v2 as expected — good practice to force clients off stale shells."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "PIN 1234 on https://signature-props.preview.emergentagent.com/login.html. Loopback ADMIN session available on localhost:3001 (see /app/memory/test_credentials.md).",
+  "seed_data_creation": "None this iteration.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Fix for the 'Gethub screen appearing' bug is fully verified on the preview URL. Iteration 1 backend suite (/app/backend/tests/backend_test.py) still applies; can be re-run with: pytest /app/backend/tests/backend_test.py -v --junitxml=/app/test_reports/pytest/pytest_results.xml.",
+  "rca_of_the_issue": "Root cause of the original bug: /gethub was served as a real static page and its nav link was present in index.html, so a logged-in user could see (or auto-land on after cached SW) a Gethub demo/file-browser screen. Fix (verified): (a) server.js now 302-redirects /gethub and /gethub.html to '/', and removed /gethub from V2_ROUTES and publicPages so it is no longer served as a static/public page; (b) index.html nav no longer contains the '<a href=\"/gethub\" data-testid=\"dashboard-gethub-link\">Gethub Files</a>' anchor; (c) service-worker CACHE_NAME bumped to v2 so returning clients invalidate the old shell that may still reference /gethub."
+}
