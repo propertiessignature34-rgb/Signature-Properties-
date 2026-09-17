@@ -670,6 +670,9 @@
   function preferredPhotoUrl(project, photo) {
     if (!project || !photo) return '';
     if (isStoredPhoto(photo) && photo.MediaID) return `/api/v2/builder-projects/${encodeURIComponent(project.ProjectID)}/images/${encodeURIComponent(photo.MediaID)}`;
+    // Fallback to the original imported image URL so the photo always shows.
+    const ext = photo.Url || photo.SourceUrl || photo.OriginalUrl;
+    if (typeof ext === 'string' && /^https?:\/\//i.test(ext.trim())) return ext.trim();
     return MEDIA_PLACEHOLDER_IMAGE;
   }
 

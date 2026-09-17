@@ -32,7 +32,10 @@
   .lc-name { font-weight:700; font-size:13.5px; color:var(--clr-text); }
   .lc-meta { font-size:11.5px; color:var(--clr-text-light); margin-top:3px; display:flex; gap:8px; flex-wrap:wrap; }
   .lc-date { font-size:11px; color:var(--clr-gold); margin-top:5px; font-weight:600; }
-  .lc-id { font-size:10.5px; color:var(--clr-text-light); }
+  .lc-id { font-size:10.5px; color:var(--clr-text-light); margin-top:5px; }
+  .lc-actions { display:flex; gap:6px; align-items:center; margin-top:8px; }
+  .lc-move { flex:1; padding:5px 6px; border:1px solid var(--clr-border); border-radius:6px; font-size:11.5px; background:#faf6f0; cursor:pointer; }
+  .lc-wa { text-decoration:none; font-size:16px; background:#e7f8ec; border:1px solid #bfe6cb; border-radius:6px; padding:3px 8px; }
   .empty { color:var(--clr-text-light); font-size:12px; text-align:center; padding:14px 0; }
   .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--clr-brown); color:#fff; padding:10px 18px; border-radius:10px; font-size:13.5px; opacity:0; transition:opacity .2s; z-index:1000; }
   .toast.show { opacity:1; }
@@ -110,13 +113,45 @@
     });
   }
 
+  function waLink(l){
+    const digits = String(l.Mobile||'').replace(/\D/g,'');
+    if (!digits) return '';
+    const num = digits.length===10 ? '91'+digits : digits;
+    const msg = encodeURIComponent(`Namaste ${l.ClientName||''}, Signature Properties se sampark. Aapki property requirement ke liye humare paas kuch achhe options hain. Kya main aapko details bhej sakta/sakti hoon?`);
+    return `https://wa.me/${num}?text=${msg}`;
+  }
+
   function cardHtml(l){
+    const wa = waLink(l);
     return `<div class="lead-card" draggable="true" data-id="${esc(l.LeadID)}" data-testid="lead-card-${esc(l.LeadID)}" onclick="openLead('${esc(l.LeadID)}')">
       <div class="lc-name">${esc(l.ClientName||'Unnamed')}</div>
       <div class="lc-meta">${l.Mobile?('📞 '+esc(l.Mobile)):''}${l.City?(' • '+esc(l.City)):''}</div>
       <div class="lc-date">🗓 ${fmtDate(l.CreatedAt)}</div>
+      <div class="lc-actions" onclick="event.stopPropagation()">
+        <select class="lc-move" data-testid="move-${esc(l.LeadID)}" onchange="moveViaSelect('${esc(l.LeadID)}', this.value)">
+          ${STAGES.map(s=>`<option value="${esc(s)}"${s===(STAGES.includes(l.ClientStatus)?l.ClientStatus:'New')?' selected':''}>${esc(s)}</option>`).join('')}
+        </select>
+        ${wa?`<a class="lc-wa" href="${wa}" target="_blank" rel="noopener" data-testid="wa-${esc(l.LeadID)}" title="WhatsApp">💬</a>`:''}
+      </div>
       <div class="lc-id">${esc(l.LeadID)}</div>
     </div>`;
+  }
+
+  async function setLeadStatus(id, status, revertStatus){
+    const lead = leads.find(l => l.LeadID === id);
+    if (lead){ lead.ClientStatus = status; renderBoard(); } // optimistic
+    const res = await fetch('/api/v2/leads-board/'+encodeURIComponent(id)+'/status', {
+      method:'PATCH', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ status })
+    }).then(r=>r.json()).catch(()=>null);
+    if (res && res.ok){ toast('Moved to “'+status+'”'); }
+    else { if (lead){ lead.ClientStatus = revertStatus; renderBoard(); } toast('Move failed — reverted'); }
+  }
+
+  function moveViaSelect(id, status){
+    const lead = leads.find(l => l.LeadID === id);
+    const from = lead ? lead.ClientStatus : 'New';
+    if (from === status) return;
+    setLeadStatus(id, status, from);
   }
 
   function openLead(id){ if (dragMoved) { dragMoved=false; return; } window.location.href = '/client-workspace?id=' + encodeURIComponent(id); }
@@ -132,14 +167,9 @@
     dragMoved = true;
     const lead = leads.find(l => l.LeadID === dragId);
     const from = lead ? lead.ClientStatus : null;
-    if (lead && from === stage){ dragId=null; return; }
-    if (lead){ lead.ClientStatus = stage; renderBoard(); } // optimistic
-    const res = await fetch('/api/v2/leads-board/'+encodeURIComponent(dragId)+'/status', {
-      method:'PATCH', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ status: stage })
-    }).then(r=>r.json()).catch(()=>null);
-    if (res && res.ok){ toast('Moved to “'+stage+'”'); }
-    else { if (lead){ lead.ClientStatus = from; renderBoard(); } toast('Move failed — reverted'); }
-    dragId = null;
+    const id = dragId; dragId = null;
+    if (lead && from === stage){ return; }
+    setLeadStatus(id, stage, from);
   }
 
   loadBoard();
