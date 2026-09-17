@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#2c1405" />
+<link rel="icon" href="/assets/signature-mark.svg" type="image/svg+xml" />
+<script src="/pwa-register.js" defer></script>
+<title>Leads Board — Signature Properties</title>
+<style>
+  :root { --clr-brown:#2c1405; --clr-brown-dark:#1c0a00; --clr-gold:#b8860b; --clr-gold-mid:#d4a017; --clr-gold-soft:#f7ecd2; --clr-bg:#faf7f2; --clr-card:#fff; --clr-border:#e8ddd0; --clr-text:#1c0a00; --clr-text-light:#7a6355; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--clr-bg); color:var(--clr-text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+  .topnav { display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:12px 22px; background:var(--clr-brown); color:#fff; }
+  .topnav .brand { font-weight:800; }
+  .topnav a { color:#f3e7d2; text-decoration:none; font-size:14px; }
+  .topnav a.active { color:#fff; font-weight:700; }
+  .page { padding:18px 22px; }
+  .page-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:14px; }
+  .page-title { font-size:22px; font-weight:800; color:var(--clr-brown); }
+  .toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .toolbar input, .toolbar select { padding:8px 10px; border:1px solid var(--clr-border); border-radius:8px; font-size:13px; background:#fff; }
+  .board { display:flex; gap:14px; overflow-x:auto; padding-bottom:16px; align-items:flex-start; }
+  .col { flex:0 0 270px; background:#fff; border:1px solid var(--clr-border); border-radius:12px; display:flex; flex-direction:column; max-height:calc(100vh - 160px); }
+  .col-head { padding:10px 12px; border-bottom:1px solid var(--clr-border); font-weight:800; font-size:13px; color:var(--clr-brown); display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:#faf6f0; border-radius:12px 12px 0 0; }
+  .col-count { background:var(--clr-gold-soft); color:var(--clr-brown); border-radius:20px; padding:2px 9px; font-size:12px; }
+  .col-body { padding:10px; overflow-y:auto; flex:1; min-height:60px; }
+  .col-body.drag-over { background:var(--clr-gold-soft); outline:2px dashed var(--clr-gold-mid); outline-offset:-4px; }
+  .lead-card { background:#fff; border:1px solid var(--clr-border); border-left:4px solid var(--clr-gold-mid); border-radius:9px; padding:10px 11px; margin-bottom:9px; cursor:grab; box-shadow:0 2px 6px rgba(44,20,5,.04); }
+  .lead-card:active { cursor:grabbing; }
+  .lead-card.dragging { opacity:.5; }
+  .lc-name { font-weight:700; font-size:13.5px; color:var(--clr-text); }
+  .lc-meta { font-size:11.5px; color:var(--clr-text-light); margin-top:3px; display:flex; gap:8px; flex-wrap:wrap; }
+  .lc-date { font-size:11px; color:var(--clr-gold); margin-top:5px; font-weight:600; }
+  .lc-id { font-size:10.5px; color:var(--clr-text-light); }
+  .empty { color:var(--clr-text-light); font-size:12px; text-align:center; padding:14px 0; }
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--clr-brown); color:#fff; padding:10px 18px; border-radius:10px; font-size:13.5px; opacity:0; transition:opacity .2s; z-index:1000; }
+  .toast.show { opacity:1; }
+  @media (max-width:640px){ .col { flex:0 0 82vw; } }
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <span class="brand">📋 Signature Properties</span>
+  <a href="/">Dashboard</a>
+  <a href="/clients">Clients</a>
+  <a href="/leads-kanban" class="active">Leads Board</a>
+  <a href="/inventory">Inventory</a>
+  <a href="/builder-projects">Builder Projects</a>
+</nav>
+
+<div class="page">
+  <div class="page-head">
+    <div class="page-title">📋 Leads Board</div>
+    <div class="toolbar">
+      <input id="search" data-testid="board-search" placeholder="🔍 Search name / mobile" oninput="applyFilter()" />
+      <select id="sort" data-testid="board-sort" onchange="renderBoard()">
+        <option value="newest">Date: Newest first</option>
+        <option value="oldest">Date: Oldest first</option>
+      </select>
+      <button onclick="loadBoard()" data-testid="board-refresh" style="padding:8px 14px;border:1px solid var(--clr-border);border-radius:8px;background:#fff;cursor:pointer;font-weight:700">↻ Refresh</button>
+    </div>
+  </div>
+  <div class="board" id="board" data-testid="leads-board"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  const STAGES = ['New','Contacted','Follow-up','Qualified','Requirement Created','Site Visit','Negotiation','Won','Lost'];
+  let leads = [];
+  let dragId = null;
+
+  const esc = (s) => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+  function fmtDate(d){ if(!d) return '—'; const dt=new Date(d); if(isNaN(dt)) return '—'; return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}); }
+
+  async function loadBoard(){
+    const board = document.getElementById('board');
+    board.innerHTML = '<div class="empty">Loading leads…</div>';
+    const res = await fetch('/api/v2/leads-board', { credentials:'include' }).then(r=>r.json()).catch(()=>null);
+    if (!res || !res.ok){ board.innerHTML = '<div class="empty">Could not load leads.</div>'; return; }
+    leads = res.data || [];
+    renderBoard();
+  }
+
+  function applyFilter(){ renderBoard(); }
+
+  function renderBoard(){
+    const q = (document.getElementById('search').value||'').trim().toLowerCase();
+    const sort = document.getElementById('sort').value;
+    const board = document.getElementById('board');
+    const filtered = leads.filter(l => !q || (l.ClientName||'').toLowerCase().includes(q) || (l.Mobile||'').toLowerCase().includes(q) || (l.LeadID||'').toLowerCase().includes(q));
+    const byStage = {};
+    STAGES.forEach(s => byStage[s] = []);
+    filtered.forEach(l => { const s = STAGES.includes(l.ClientStatus) ? l.ClientStatus : 'New'; byStage[s].push(l); });
+    Object.values(byStage).forEach(arr => arr.sort((a,b)=>{
+      const da = new Date(a.CreatedAt||0).getTime()||0, db = new Date(b.CreatedAt||0).getTime()||0;
+      return sort==='oldest' ? da-db : db-da;
+    }));
+    board.innerHTML = STAGES.map(stage => `
+      <div class="col">
+        <div class="col-head">${esc(stage)}<span class="col-count" data-testid="count-${esc(stage)}">${byStage[stage].length}</span></div>
+        <div class="col-body" data-stage="${esc(stage)}" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${esc(stage)}')">
+          ${byStage[stage].length ? byStage[stage].map(cardHtml).join('') : '<div class="empty">No leads</div>'}
+        </div>
+      </div>`).join('');
+    document.querySelectorAll('.lead-card').forEach(c => {
+      c.addEventListener('dragstart', onDragStart);
+      c.addEventListener('dragend', e => e.target.classList.remove('dragging'));
+    });
+  }
+
+  function cardHtml(l){
+    return `<div class="lead-card" draggable="true" data-id="${esc(l.LeadID)}" data-testid="lead-card-${esc(l.LeadID)}" onclick="openLead('${esc(l.LeadID)}')">
+      <div class="lc-name">${esc(l.ClientName||'Unnamed')}</div>
+      <div class="lc-meta">${l.Mobile?('📞 '+esc(l.Mobile)):''}${l.City?(' • '+esc(l.City)):''}</div>
+      <div class="lc-date">🗓 ${fmtDate(l.CreatedAt)}</div>
+      <div class="lc-id">${esc(l.LeadID)}</div>
+    </div>`;
+  }
+
+  function openLead(id){ if (dragMoved) { dragMoved=false; return; } window.location.href = '/client-workspace?id=' + encodeURIComponent(id); }
+
+  let dragMoved = false;
+  function onDragStart(e){ dragId = e.target.getAttribute('data-id'); e.target.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
+  function onDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+  function onDragLeave(e){ e.currentTarget.classList.remove('drag-over'); }
+  async function onDrop(e, stage){
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    if (!dragId) return;
+    dragMoved = true;
+    const lead = leads.find(l => l.LeadID === dragId);
+    const from = lead ? lead.ClientStatus : null;
+    if (lead && from === stage){ dragId=null; return; }
+    if (lead){ lead.ClientStatus = stage; renderBoard(); } // optimistic
+    const res = await fetch('/api/v2/leads-board/'+encodeURIComponent(dragId)+'/status', {
+      method:'PATCH', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ status: stage })
+    }).then(r=>r.json()).catch(()=>null);
+    if (res && res.ok){ toast('Moved to “'+stage+'”'); }
+    else { if (lead){ lead.ClientStatus = from; renderBoard(); } toast('Move failed — reverted'); }
+    dragId = null;
+  }
+
+  loadBoard();
+</script>
+</body>
+</html>

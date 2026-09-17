@@ -1218,6 +1218,40 @@ async function handleApi(req, res, url) {
       }
     }
 
+    // ── Leads Kanban board (fast, in-memory) ───────────────────────────────
+    if (/^\/api\/v2\/leads-board\/?$/i.test(pathname) && req.method === 'GET') {
+      const actor = getAuthenticatedActor(req, url);
+      if (!actor?.userId) { sendJson(res, { ok: false, error: 'Unauthorized' }, 401); return; }
+      const leads = runtime.repository.list('Leads') || [];
+      const data = leads.map((l) => ({
+        LeadID: l.LeadID,
+        ClientName: l.ClientName || l.Name || l.LeadID,
+        ClientStatus: l.ClientStatus || l.LeadStatus || 'New',
+        Mobile: l.PrimaryMobile || l.Phone || l.WhatsApp || '',
+        AssignedAgentID: l.AssignedAgentID || null,
+        Source: l.Source || l.LeadSource || null,
+        City: l.City || null,
+        CreatedAt: l.CreatedAt || null,
+        UpdatedAt: l.UpdatedAt || null
+      }));
+      sendJson(res, { ok: true, data, count: data.length });
+      return;
+    }
+    const leadsBoardStatus = pathname.match(/^\/api\/v2\/leads-board\/([^\/]+)\/status\/?$/i);
+    if (leadsBoardStatus && (req.method === 'PATCH' || req.method === 'POST')) {
+      const actor = getAuthenticatedActor(req, url);
+      if (!actor?.userId) { sendJson(res, { ok: false, error: 'Unauthorized' }, 401); return; }
+      const id = decodeURIComponent(leadsBoardStatus[1]);
+      const STAGES = ['New', 'Contacted', 'Follow-up', 'Qualified', 'Requirement Created', 'Site Visit', 'Negotiation', 'Won', 'Lost'];
+      const status = String((bodyForV2 || {}).status || (bodyForV2 || {}).ClientStatus || '').trim();
+      if (!STAGES.includes(status)) { sendJson(res, { ok: false, error: 'Invalid status' }, 400); return; }
+      const existing = runtime.repository.find('Leads', 'LeadID', id);
+      if (!existing) { sendJson(res, { ok: false, error: 'Lead not found' }, 404); return; }
+      runtime.repository.update('Leads', 'LeadID', id, { ClientStatus: status, LeadStatus: status, UpdatedAt: new Date().toISOString() });
+      sendJson(res, { ok: true, data: { LeadID: id, ClientStatus: status } });
+      return;
+    }
+
     // ── Investor budgets (fast, in-memory) — for the analyzer's budget match ─
     if (/^\/api\/v2\/investor-budgets\/?$/i.test(pathname) && req.method === 'GET') {
       const actor = getAuthenticatedActor(req, url);
@@ -4744,6 +4778,7 @@ appServer = http.createServer(async (req, res) => {
   // ── V2 page routing — extensionless URLs → .html files ─────────────────────
   const V2_ROUTES = {
     '/clients':             '/clients.html',
+    '/leads-kanban':        '/leads-kanban.html',
     '/property-investment-analyzer': '/property-investment-analyzer.html',
     '/client-workspace':    '/client-workspace.html',
     '/requirements-view':   '/requirements-view.html',
