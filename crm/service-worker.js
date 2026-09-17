@@ -1,43 +1,24 @@
-const CACHE_NAME = 'signature-properties-shell-v2';
-const SHELL_ASSETS = [
-  '/manifest.webmanifest',
-  '/assets/signature-mark.svg',
-  '/login.html'
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS)));
+// Self-destructing service worker.
+// Earlier versions cached HTML shells (including the retired Gethub page),
+// which caused stale screens to keep appearing. This SW takes over, wipes all
+// caches, unregisters itself, and reloads open tabs so every request goes
+// straight to the live server from now on.
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    } catch (e) { /* ignore */ }
+    try { await self.registration.unregister(); } catch (e) { /* ignore */ }
+    const clients = await self.clients.matchAll({ type: 'window' });
+    clients.forEach((client) => {
+      try { client.navigate(client.url); } catch (e) { /* ignore */ }
+    });
+  })());
 });
 
-self.addEventListener('fetch', (event) => {
-  const request = event.request;
-  if (request.method !== 'GET') return;
-  const url = new URL(request.url);
-  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
-
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(() => caches.match('/login.html'))
-    );
-    return;
-  }
-
-  event.respondWith(
-    caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-      if (response.ok) {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-      }
-      return response;
-    }))
-  );
-});
+// No fetch handler: all requests bypass the SW and hit the network directly.
