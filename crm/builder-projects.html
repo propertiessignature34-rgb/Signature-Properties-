@@ -675,22 +675,29 @@
   }
 
   function preferredBrochureUrl(project, brochure) {
-    if (!project || !brochure) return '';
+    if (!project) return '';
     if (
+      brochure &&
       isStoredBrochure(brochure) &&
       brochure.verified === true &&
       hasInternalPath(brochure.Url, 'brochure')
     ) {
       return `/api/v2/builder-projects/${encodeURIComponent(project.ProjectID)}/brochure`;
     }
+    // Fallback to the original imported brochure URL so it always opens.
+    const ext = project.BrochureUrl
+      || (brochure && (brochure.SourceUrl || brochure.OriginalUrl || brochure.Url));
+    if (typeof ext === 'string' && /^https?:\/\//i.test(ext.trim())) return ext.trim();
     return '';
   }
 
   function brochureStatusText(project) {
     const brochures = Array.isArray(project?.Brochures) ? project.Brochures : [];
-    if (!brochures.length) return '⏳ Pending permanent storage';
-    if (brochures.some(b => b.downloadStatus === 'failed')) return '⚠ Failed — Retry';
     if (brochures.some(isStoredBrochure)) return '✓ Permanently Stored';
+    if (brochures.some(b => b.downloadStatus === 'failed')) return '⚠ Failed — Retry';
+    const ext = project && project.BrochureUrl;
+    if (typeof ext === 'string' && /^https?:\/\//i.test(ext.trim())) return '🔗 Brochure available';
+    if (!brochures.length) return '— No brochure';
     return '⏳ Pending permanent storage';
   }
 
@@ -730,7 +737,7 @@
         <div class="card-facts">${facts.map(f => `<span class="card-fact">${esc(f)}</span>`).join('')}
           ${p.Photos && p.Photos.length ? `<span class="card-fact">📷 ${p.Photos.length}</span>` : ''}
           ${p.Videos && p.Videos.length ? `<span class="card-fact">🎥 ${p.Videos.length}</span>` : ''}
-          ${firstBrochureUrl ? `<a class="card-fact" href="${esc(firstBrochureUrl)}" target="_blank" rel="noopener">📄 Brochure</a>` : ''}
+          ${firstBrochureUrl ? `<a class="card-fact" href="${esc(firstBrochureUrl)}" target="_blank" rel="noopener" data-testid="brochure-link-${esc(p.ProjectID)}">📄 Brochure</a>` : ''}
           <span class="card-fact">📄 ${esc(brochureStatusText(p))}</span>
         </div>
         ${p.RERANumber ? `<div class="card-rera">RERA: ${esc(p.RERANumber)}</div>` : ''}

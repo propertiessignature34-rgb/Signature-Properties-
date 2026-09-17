@@ -1,0 +1,30 @@
+{
+  "summary": "Full pre-publish regression on Signature Realty CRM against https://signature-props.preview.emergentagent.com. Backend pytest suite (backend_test.py) refreshed to match PIN-login (Google removed) and expanded to cover builder-projects & broker-network — 22 passed, 1 skipped (site-visit create requires an engine-generated MatchID, kept as contract skip). Frontend Playwright e2e in real Chromium: unauth redirect to /login.html?next=/clients works; wrong PIN 0000 shows 'Invalid code. Please try again.' via [data-testid=login-status]; PIN 1234 auto-submits and lands on '/'; dashboard renders stat cards (Total Leads, Inventory, Builder Projects, Site Visits) and full nav (Dashboard, Clients, Inventory, Requirements, Duplicates, Builder Projects, Broker Network, Calculators, Digital Card) with NO Gethub entry; every nav route returns HTTP 200 without landing on /login or /gethub; /gethub and /gethub.html still 302-redirect; GET /api/dashboard ok:true; GET /api/site-visits 200 ok:true. Loopback ADMIN session verified CRUD create+persist for /api/leads and /api/inventory, plus list for /api/requirements and creation of a requirement bound to the created lead. One real (non-blocking) frontend defect found on Digital Card: /vendor/qrcode.js and /vendor/html2canvas.min.js return 404 (with MIME-type refuse-to-execute errors), so the QR code and 'Download Card Image' features cannot render on that page. Everything else is production-ready.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Digital Card", "issue": "/vendor/qrcode.js and /vendor/html2canvas.min.js return 404, QR code image is broken and 'Download Card Image' will fail (html2canvas missing).", "selector": "/digital-card page — img inside .SCAN TO WHATSAPP block and Download Card Image button", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "All pages", "issues": ["CSP still blocks static.cloudflareinsights.com beacon (cosmetic console noise, pre-existing from iterations 2/3, not a regression)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Digital Card: either ship /vendor/qrcode.js and /vendor/html2canvas.min.js (or switch to CDN URLs allowed by CSP) so the QR image and 'Download Card Image' actually work. Currently both 404 and the QR slot is empty in the rendered page."
+  ],
+  "critical_code_review_comments": [
+    "PIN-login endpoint /api/auth/pin-login exhibited one transient 500 during retesting on the preview URL (curl and immediate retries returned 200). Consider adding a small retry/backoff at the FastAPI proxy or investigating the intermittent upstream error — not reproducible reliably.",
+    "Digital Card page depends on local /vendor/qrcode.js and /vendor/html2canvas.min.js which are missing from the deployed static assets. Either commit these vendored files or serve via CDN with an updated CSP.",
+    "Site-visit creation requires a pre-existing engine-generated MatchID; there is no simple API path for a UI/backend caller to create one directly from lead+requirement+property. If the UI supports scheduling a visit, verify the match flow is discoverable — otherwise this is confusing."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100% (22/22 executed passing, 1 intentional skip)", "frontend": "~95% (all core flows pass; Digital Card QR/Download broken due to missing vendor JS)"},
+  "test_credentials": "PIN 1234 on https://signature-props.preview.emergentagent.com/login.html; loopback ADMIN via POST http://localhost:3001/api/auth/test-session with secret loopback-test-72f0c9a1b4e84d6c.",
+  "seed_data_creation": "Created TEST_ prefixed lead + inventory + requirement via loopback ADMIN session during pytest run (persist checks). Not cleaned up (small, prefixed for manual removal).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend regression is /app/backend/tests/backend_test.py — pytest -v runs 22 tests (1 skip). It covers preview URL (PIN login, unauth 401, gethub 302, blocked test-session) and loopback ADMIN CRUD for leads/inventory/requirements/site-visits list + builder-projects + broker-network. The only outstanding UI defect is Digital Card missing vendor JS.",
+  "rca_of_the_issue": "Digital Card QR broken: /digital-card page includes <script src='/vendor/qrcode.js'> and <script src='/vendor/html2canvas.min.js'>, but these files are not present in /app/crm and return 404 with an empty MIME so the browser refuses to execute them. The generated QR <img> therefore never loads (visible as tiny broken 'VB' alt fallback) and 'Download Card Image' would throw at click time. Fix: add the vendored JS files to the CRM static tree (or use a CDN + adjust CSP)."
+}

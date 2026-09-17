@@ -21,19 +21,32 @@ class TestPublic:
     def test_login_html_renders(self):
         r = requests.get(f"{PREVIEW_URL}/login.html", timeout=15)
         assert r.status_code == 200
-        assert "Sign in with Google" in r.text or "Google" in r.text
+        # Google login removed; PIN login now
+        assert "pin-input-0" in r.text or "pin" in r.text.lower()
+        assert "Google" not in r.text or "Sign in with Google" not in r.text
 
-    def test_login_state_returns_sign_in_url(self):
-        r = requests.get(f"{PREVIEW_URL}/api/auth/login-state?next=/", timeout=15)
+    def test_pin_login_wrong(self):
+        r = requests.post(f"{PREVIEW_URL}/api/auth/pin-login", json={"pin": "0000"}, timeout=15)
+        assert r.status_code in (400, 401, 403)
+
+    def test_pin_login_correct(self):
+        s = requests.Session()
+        r = s.post(f"{PREVIEW_URL}/api/auth/pin-login", json={"pin": "1234"}, timeout=15)
+        if r.status_code == 500:
+            time.sleep(1)
+            r = s.post(f"{PREVIEW_URL}/api/auth/pin-login", json={"pin": "1234"}, timeout=15)
         assert r.status_code == 200
         body = r.json()
         assert body.get("ok") is True
-        data = body["data"]
-        assert "signInUrl" in data
-        assert "auth.emergentagent.com" in data["signInUrl"]
-        # redirect should contain preview origin + /login.html
-        assert "signature-props.preview.emergentagent.com" in data["signInUrl"]
-        assert "login.html" in data["signInUrl"]
+        # Verify session persists
+        r2 = s.get(f"{PREVIEW_URL}/api/auth/me", timeout=15)
+        assert r2.status_code == 200
+
+    def test_gethub_redirects(self):
+        r = requests.get(f"{PREVIEW_URL}/gethub", timeout=15, allow_redirects=False)
+        assert r.status_code in (301, 302)
+        r2 = requests.get(f"{PREVIEW_URL}/gethub.html", timeout=15, allow_redirects=False)
+        assert r2.status_code in (301, 302)
 
     def test_me_unauth_401(self):
         # Retry once to tolerate rare transient proxy ReadError (500)
@@ -240,6 +253,29 @@ class TestSiteVisits:
         body = r.json()
         assert body.get("ok") is True
         assert isinstance(body["data"], list)
+
+
+# ---------- Additional modules: builder-projects, broker-network ----------
+
+class TestModules:
+    def test_builder_projects_list(self, admin_session):
+        # Try common paths
+        for path in ["/api/builder-projects", "/api/builderProjects", "/api/projects"]:
+            r = admin_session.get(f"{LOCAL_URL}{path}", headers=LOOPBACK_HEADERS, timeout=15)
+            if r.status_code == 200:
+                body = r.json()
+                assert body.get("ok") is True
+                return
+        pytest.fail("no builder-projects endpoint returned 200")
+
+    def test_broker_network_list(self, admin_session):
+        for path in ["/api/broker-network", "/api/brokers", "/api/brokerNetwork"]:
+            r = admin_session.get(f"{LOCAL_URL}{path}", headers=LOOPBACK_HEADERS, timeout=15)
+            if r.status_code == 200:
+                body = r.json()
+                assert body.get("ok") is True
+                return
+        pytest.fail("no broker-network endpoint returned 200")
 
     def test_create_site_visit_requires_fields(self, admin_session):
         # Site visit creation requires LeadID + RequirementID + PropertyID + MatchID + VisitDate + VisitTime
