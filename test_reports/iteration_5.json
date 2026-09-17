@@ -1,0 +1,22 @@
+{
+  "summary": "Frontend-only regression for brochure fix on /builder-projects.html. Logged in with PIN 1234, verified all 5 requested test cases pass. 432 brochure-link anchors render (matches backend BrochureUrl count of 432/758), all with valid https .pdf hrefs and target=_blank. Zero 'Pending permanent storage' occurrences (bug fixed). 326 projects show '— No brochure' (758-432=326, correct). Dashboard nav clean (no 'Gethub'). Page loads full 758 project dataset without JS errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Search box on /builder-projects appears to filter only by name/builder — not by ProjectID. Searching for BLDP-1789615241330-769 yielded 'No builder projects found' even though that project exists and has a valid BrochureUrl. Not part of this bug fix, but consider indexing ProjectID in the search filter for usability."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "test_credentials": "PIN 1234 on /login.html",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Brochure fix verified. Loopback API confirmed 432/758 projects with BrochureUrl. Public /builder-projects.html renders anchors [data-testid=brochure-link-<ProjectID>] with correct external karmagroup.co.in .pdf hrefs. First 3 anchors sampled: BLDP-1789615241330-769, -768, -767 all valid.",
+  "rca of the issue": "Prior code only consulted the empty Brochures[] array; imported Karma projects store PDF URL in BrochureUrl string field. Fix in preferredBrochureUrl()/renderCard() to fallback to project.BrochureUrl now correctly surfaces 432 brochure links."
+}
