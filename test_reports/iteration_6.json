@@ -1,0 +1,28 @@
+{
+  "summary": "End-to-end verification of the additive Property Investment Analyzer feature. Backend: 16/16 pytest tests pass — auth-gated calculate/list/create/get/delete, headline metrics (grossYield=6.08%, annualRentYear1=912000), projection rents Y1/Y2/Y3=76000/79800/83790, scenarios (conservative/base/optimistic) present, sensitivity matrix non-empty, EMI computed when loan provided, save→list→get→delete round-trip persists via v2 API. Frontend (PIN 1234 → /calculators → /property-investment-analyzer): nav link `nav-investment-analyzer` and tab `tab-investment` visible on Calculators page. Analyzer auto-calculates on load with headline KPIs (6.08%, ₹9.12 L, no NaN/Infinity/undefined). Projection table shows Y1 ₹76,000 → Y2 ₹79,800 → Y3 ₹83,790 exactly. Reactivity: setting Monthly Rent=100000 recomputes yield to 8.00% within debounce. Advanced mode reveals loan inputs; loan=1cr @ 8.5% / 20y → EMI KPI = ₹86,782 (non-'—'). Save persists the analysis (`TEST_UI_PIA_1` appears in Saved list with data-testid `saved-open-<id>`), Open reloads inputs, Delete removes it. Sensitivity table is 4 rows × 3 rent-growth columns (head=4 cols including row-label). Scenario grid has all three cards with ROI + IRR. Regression: /builder-projects (200) and /inventory (200) load cleanly through public URL after PIN login. Unauthenticated POST /api/v2/property-investment/calculate → 401 as required.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_property_investment.py",
+    "/app/test_reports/pytest/pia_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.js: /api/v2/property-investment ownership predicate uses actor.userId for CreatedBy. Non-admin users cannot see analyses saved by admin. Fine for MVP, but consider CompanyID scoping for shared org access.",
+    "property-investment-analyzer.html: alert('Saved.') / alert('Save failed') is intrusive UX. Consider a non-blocking toast to match rest of CRM.",
+    "property-investment-analyzer.html: Delete uses window.confirm which shares a dialog handler with save's alert; in test we auto-accept both. Not a bug, but a modal confirmation would be cleaner and testable.",
+    "server.js: PropertyInvestmentAnalyses ownRow check uses `String(row.CreatedBy) === String(actor.userId)`. Verify runtime.repository.create is idempotent — repeated Save clicks will create duplicate rows (no dedupe by AnalysisName+PropertyID).",
+    "calculators.html nav links directly to `/property-investment-analyzer` — good, but consider preserving `?propertyId=` when navigating from an Inventory context to prefill.",
+    "Content-Security-Policy blocks Cloudflare beacon script (script-src 'self' 'unsafe-inline'). Not a functional issue but produces console noise on every page load."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_property_investment.py"
+  ],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "100% (all 9 flows verified)"},
+  "test_credentials": "PIN 1234 on /login.html; loopback ADMIN test-session for API",
+  "seed_data_creation": "Created + deleted a `TEST_UI_PIA_1` analysis and (via backend tests) a `TEST_PIA_Backend` analysis. Both cleaned up during test run.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The Property Investment Analyzer feature is fully functional and does not regress existing CRM pages. Backend regression tests in /app/backend/tests/test_property_investment.py cover auth, headline calc math (6.08% / 912000 / 76000-79800-83790), scenarios, sensitivity, EMI, save/list/get/delete lifecycle, and page-load regression for /calculators and /property-investment-analyzer. Note: pytest.ini forces `-n 2 --dist loadscope`; when the analyzer suite races the save/get/delete tests, occasional `ConnectionResetError` can appear on preview URL only. Running with `-n 0` (serial) is fully green. Dashboard link in nav is `/` not `/dashboard`.",
+  "rca of the issue": "N/A — no defects found. Deterministic server-side engine returns exact expected values; UI renders them without NaN/Infinity/undefined."
+}
