@@ -1,0 +1,27 @@
+{
+  "summary": "Iteration 3 focused on the service-worker self-destruct fix that removes stale Gethub cache. Backend curl checks: GET /gethub -> 302 to /, GET /gethub.html -> 302 to /, GET /gethub.js -> 404, GET /gethub.css -> 404. /service-worker.js served with no fetch handler and calls registration.unregister() + caches.delete on activate. /pwa-register.js only unregisters existing SWs and clears caches (no register). Playwright end-to-end simulation in real Chromium against https://signature-props.preview.emergentagent.com: (1) opened /login.html, pre-seeded cache 'signature-properties-shell-v1' with a fake /gethub Response containing 'OLD GETHUB CACHED', then manually registered /service-worker.js. After activation + reload, navigator.serviceWorker.getRegistrations() = [] and caches.keys() = [] (both wiped). (2) Navigating to /gethub returned the DASHBOARD ('Signature Properties, Dashboard, Clients, Inventory...'); no 'OLD GETHUB CACHED' string in body. (3) PIN login 1234 on /login.html auto-submits and lands on '/'. (4) Dashboard nav contains no [data-testid=dashboard-gethub-link]. (5) GET /api/dashboard -> 200 ok:true. (6) GET /clients -> 200, GET /inventory -> 200. (7) Wrong PIN 0000 shows 'Invalid code. Please try again.' via [data-testid=login-status] and does NOT navigate. All target features PASS.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "All pages", "issues": ["CSP still blocks static.cloudflareinsights.com beacon (cosmetic console noise, pre-existing from iteration 2). Not a regression."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "service-worker.js is correctly self-destructing: install->skipWaiting, activate->wipe all caches + registration.unregister() + clients.navigate(), and importantly NO fetch handler, so nothing is cached going forward.",
+    "pwa-register.js correctly stops registering the SW and instead cleans up any leftover registration + caches on every page load. Belt-and-suspenders with the SW itself.",
+    "server.js correctly 302-redirects both /gethub and /gethub.html to '/'; associated .js/.css return 404. Files removed from disk as intended.",
+    "Verified in a real browser that a client that had previously cached '/gethub' in cache 'signature-properties-shell-v1' has that cache wiped and its SW unregistered after one visit + reload. Fix is effective for stale clients."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "PIN 1234 on https://signature-props.preview.emergentagent.com/login.html.",
+  "seed_data_creation": "In-browser only: cache 'signature-properties-shell-v1' with fake '/gethub' entry (transient, wiped by SW during test).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "SW self-destruct behavior is verified end-to-end in Chromium. If regression testing later, the key check is: after visiting any page on the domain, navigator.serviceWorker.getRegistrations() must be [] and caches.keys() must be []. Backend regression suite from iteration 1/2 still applies.",
+  "rca_of_the_issue": "Original bug: previously-registered service worker had cached HTML shells (including /gethub), so returning users kept seeing the retired Gethub demo screen even after server-side removal. Fix (verified this iteration): (a) service-worker.js replaced with a no-fetch, self-destructing worker that on activate deletes all caches and unregisters itself + reloads open clients; (b) pwa-register.js no longer registers a SW and actively cleans up any existing registrations/caches; (c) server 302-redirects /gethub and /gethub.html to '/' and returns 404 for gethub.js/css; (d) gethub.* files removed. Real-browser test with pre-seeded stale cache confirms caches AND registrations are wiped, and /gethub no longer serves the stale shell."
+}
