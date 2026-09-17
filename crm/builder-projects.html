@@ -175,7 +175,7 @@
       <div class="page-sub">Manually add a project, or bulk-upload a CSV/Excel with all your builder projects.</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-      <button class="btn btn-accent" id="karma-scrape-btn" data-testid="karma-scrape-btn" onclick="startKarmaScrape()">🔄 Scrape Karma Group</button>
+      <button class="btn btn-accent" id="karma-scrape-btn" data-testid="karma-scrape-btn" onclick="startKarmaScrape()" style="display:none">🔄 Scrape Karma Group</button>
       <button class="btn btn-ghost" data-testid="cleanup-builders-btn" onclick="openCleanupModal()">🧹 Clean Names</button>
       <button class="btn btn-ghost" data-testid="fix-unknown-btn" onclick="openUnknownModal()">🏗️ Fix Unknown Builders</button>
       <button class="btn btn-ghost" data-testid="bulk-brochure-btn" onclick="openBulkBrochureModal()">🤖 Bulk from Brochures</button>
@@ -484,7 +484,6 @@
     setupDrop();
     loadProjects();
     loadHistory();
-    pollKarmaScrape();
   });
 
   async function loadProjects() {
