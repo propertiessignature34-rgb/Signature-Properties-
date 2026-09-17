@@ -4623,7 +4623,6 @@ appServer = http.createServer(async (req, res) => {
 
   // ── V2 page routing — extensionless URLs → .html files ─────────────────────
   const V2_ROUTES = {
-    '/gethub':              '/gethub.html',
     '/clients':             '/clients.html',
     '/client-workspace':    '/client-workspace.html',
     '/requirements-view':   '/requirements-view.html',
@@ -4641,9 +4640,15 @@ appServer = http.createServer(async (req, res) => {
     : (V2_ROUTES[url.pathname] || url.pathname);
 
   const requestPath = url.pathname === '/' ? '/index.html' : url.pathname;
-  const publicPages = new Set(['/index.html', '/login.html', '/share-req.html', '/gethub']);
+  const publicPages = new Set(['/index.html', '/login.html', '/share-req.html']);
   if (url.pathname === '/login') {
     res.writeHead(302, withSecurityHeaders({ Location: '/login.html' }));
+    res.end();
+    return;
+  }
+  // Gethub is a retired demo page — always send visitors to the dashboard.
+  if (url.pathname === '/gethub' || url.pathname === '/gethub.html') {
+    res.writeHead(302, withSecurityHeaders({ Location: '/' }));
     res.end();
     return;
   }

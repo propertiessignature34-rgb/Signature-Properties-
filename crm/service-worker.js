@@ -1,4 +1,4 @@
-const CACHE_NAME = 'signature-properties-shell-v1';
+const CACHE_NAME = 'signature-properties-shell-v2';
 const SHELL_ASSETS = [
   '/manifest.webmanifest',
   '/assets/signature-mark.svg',
