@@ -170,6 +170,18 @@
     </div>
 
     <div>
+      <div class="card" id="investor-card">
+        <h3>Investor Budget Match</h3>
+        <div class="row2">
+          <div class="form-group"><label>Select Investor / Client</label>
+            <select id="in-investor" data-testid="in-investor" onchange="renderBudgetMatch()"><option value="">— None —</option></select>
+          </div>
+          <div class="form-group"><label>Match against</label>
+            <select id="in-matchbasis" data-testid="in-matchbasis" onchange="renderBudgetMatch()"><option value="value">Property Value</option><option value="acq">Total Acquisition Cost</option></select>
+          </div>
+        </div>
+        <div id="budget-match" data-testid="budget-match" class="muted">Select an investor to check if this property fits their budget.</div>
+      </div>
       <div class="card">
         <h3>Summary</h3>
         <div class="cards-grid" id="kpi-grid" data-testid="kpi-grid"></div>
@@ -213,6 +225,47 @@
 
   function setMode(m){ document.body.classList.toggle('advanced', m==='advanced'); document.getElementById('mode-basic').classList.toggle('active', m==='basic'); document.getElementById('mode-advanced').classList.toggle('active', m==='advanced'); }
 
+  // Prefill from deep-link (e.g. from an Inventory item: ?propertyId=&name=&value=&rent=)
+  function prefillFromUrl(){
+    const set=(id,v)=>{ const e=document.getElementById(id); if(e && v!=null && v!=='') e.value=v; };
+    set('in-name', params.get('name'));
+    const v = Number(params.get('value')); if (v > 0) set('in-value', Math.round(v));
+    const rt = Number(params.get('rent')); if (rt > 0) set('in-rent', Math.round(rt));
+  }
+
+  // ── Investor budget match ────────────────────────────────────────────────
+  let investors = [];
+  async function loadInvestors(){
+    const sel = document.getElementById('in-investor');
+    try {
+      const res = await fetch('/api/v2/investor-budgets', { credentials:'include' }).then(r=>r.json()).catch(()=>null);
+      if (!res || !res.ok){ return; }
+      investors = res.data || [];
+      sel.innerHTML = '<option value="">— None —</option>' + investors.map((r,i)=>{
+        return `<option value="${i}">${(r.name||'Investor')} — ${fmtL(r.budgetMin)}–${fmtL(r.budgetMax)}${r.category?(' • '+r.category):''}${r.transactionType?(' • '+r.transactionType):''}</option>`;
+      }).join('');
+    } catch(e){ /* ignore */ }
+  }
+
+  let lastMetrics = null;
+  function renderBudgetMatch(){
+    const el = document.getElementById('budget-match');
+    const idx = document.getElementById('in-investor').value;
+    if (idx==='' || !investors[idx]){ el.className='muted'; el.textContent='Select an investor to check if this property fits their budget.'; return; }
+    const r = investors[idx];
+    const min = Number(r.budgetMin||0), max = Number(r.budgetMax||0);
+    const basis = document.getElementById('in-matchbasis').value;
+    const amount = basis==='acq' && lastMetrics ? lastMetrics.totalAcquisitionCost : numOf('in-value');
+    const nm = r.name || 'Investor';
+    let verdict, color;
+    if (max>0 && amount>max){ verdict='⚠ Above budget by '+fmtL(amount-max); color='var(--clr-danger)'; }
+    else if (min>0 && amount<min){ verdict='↓ Below budget range (–'+fmtL(min-amount)+')'; color='var(--clr-warning)'; }
+    else { verdict='✓ Within budget'; color='var(--clr-success)'; }
+    el.className='';
+    el.innerHTML = `<div style="font-weight:800;color:${color};font-size:15px">${verdict}</div>
+      <div class="muted" style="margin-top:6px">Investor: <b>${nm}</b>${r.category?(' • '+r.category):''}<br>Budget: <b>${fmtL(min)} – ${fmtL(max)}</b><br>${basis==='acq'?'Total Acquisition Cost':'Property Value'}: <b>${fmtL(amount)}</b></div>`;
+  }
+
   function collectInput(){
     return {
       propertyName: val('in-name'),
@@ -247,13 +300,18 @@
 
   async function runCalc(){
     const input = collectInput();
-    const res = await fetch('/api/v2/property-investment/calculate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ input }) }).then(r=>r.json()).catch(()=>null);
+    let res = null;
+    for (let attempt = 0; attempt < 2 && !(res && res.ok); attempt++) {
+      res = await fetch('/api/v2/property-investment/calculate', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ input }) }).then(r=>r.json()).catch(()=>null);
+      if (!res) await new Promise(r=>setTimeout(r, 500));
+    }
     if (!res || !res.ok){ document.getElementById('kpi-grid').innerHTML = '<div class="muted">'+((res&&res.error)||'Please check inputs')+'</div>'; return; }
     render(res.data);
   }
 
   function render(d){
     const m = d.metrics;
+    lastMetrics = m;
     const kpis = [
       ['Property Value', fmtL(m.currentValue)],
       ['Monthly Rent', fmt(numOf('in-rent'))],
@@ -294,6 +352,7 @@
       document.getElementById('sens-head').innerHTML = '<tr><th>Appr \\ Rent</th>'+sen.rentGrowth.map(r=>`<th>${r}%</th>`).join('')+'</tr>';
       document.getElementById('sens-body').innerHTML = sen.matrix.map(row=>`<tr><td>${row.appreciation}%</td>`+row.cells.map(c=>`<td>${fmtL(c.totalReturn)}</td>`).join('')+'</tr>').join('');
     }
+    renderBudgetMatch();
   }
 
   async function saveAnalysis(){
@@ -330,6 +389,8 @@
     loadSaved();
   }
 
+  prefillFromUrl();
+  loadInvestors();
   runCalc();
   loadSaved();
 </script>

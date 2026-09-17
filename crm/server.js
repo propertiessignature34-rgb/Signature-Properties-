@@ -1218,6 +1218,35 @@ async function handleApi(req, res, url) {
       }
     }
 
+    // ── Investor budgets (fast, in-memory) — for the analyzer's budget match ─
+    if (/^\/api\/v2\/investor-budgets\/?$/i.test(pathname) && req.method === 'GET') {
+      const actor = getAuthenticatedActor(req, url);
+      if (!actor?.userId) { sendJson(res, { ok: false, error: 'Unauthorized' }, 401); return; }
+      const reqs = runtime.repository.list('Requirements') || [];
+      const leads = runtime.repository.list('Leads') || [];
+      const nameByKey = {};
+      leads.forEach((l) => {
+        if (l && l.ClientName) {
+          if (l.LeadID) nameByKey[l.LeadID] = l.ClientName;
+          if (l.LegacyID) nameByKey[l.LegacyID] = l.ClientName;
+        }
+      });
+      const out = reqs
+        .filter((r) => Number(r.BudgetMin || 0) > 0 || Number(r.BudgetMax || 0) > 0)
+        .map((r) => ({
+          requirementId: r.RequirementID,
+          leadId: r.LeadID || null,
+          name: nameByKey[r.LeadID] || r.LeadID || 'Investor',
+          budgetMin: Number(r.BudgetMin || 0),
+          budgetMax: Number(r.BudgetMax || 0),
+          category: r.Category || null,
+          transactionType: r.TransactionType || null
+        }))
+        .sort((a, b) => (b.budgetMax || 0) - (a.budgetMax || 0));
+      sendJson(res, { ok: true, data: out, count: out.length });
+      return;
+    }
+
     // ── Property Investment Analyzer (additive) ────────────────────────────
     // POST   /api/v2/property-investment/calculate         — stateless calc
     // GET    /api/v2/property-investment                   — list own analyses
