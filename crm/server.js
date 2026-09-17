@@ -2372,6 +2372,40 @@ async function handleApi(req, res, url) {
       return;
     }
 
+    if (pathname === '/api/auth/pin-login' && req.method === 'POST') {
+      const expected = String(process.env.APP_PIN || '').trim();
+      const body = bodyForV2 || {};
+      const submitted = String(body.pin || body.code || '').trim();
+      if (!expected) {
+        sendJson(res, { ok: false, error: 'PIN login is not configured' }, 503);
+        return;
+      }
+      if (!submitted || !safeSecretEquals(submitted, expected)) {
+        logAuthEvent('pin_login_rejected', { reason: 'invalid_code' });
+        sendJson(res, { ok: false, error: 'Invalid code. Please try again.' }, 401);
+        return;
+      }
+      const users = typeof runtime?.repository?.listUsers === 'function' ? (runtime.repository.listUsers() || []) : [];
+      const admin = users.find((u) => String(u.Status || '').trim().toUpperCase() === 'ACTIVE' && String(u.Role || '').trim().toUpperCase() === 'ADMIN')
+        || users.find((u) => u.UserID === 'USR-SYSTEM-ADMIN');
+      if (!admin) {
+        sendJson(res, { ok: false, error: 'No admin user available' }, 500);
+        return;
+      }
+      const token = runtime.auth.issueSession({
+        userId: admin.UserID,
+        role: admin.Role || 'ADMIN',
+        companyId: admin.CompanyID || admin.CompanyId || 'COMP-DEFAULT',
+        brokerageId: admin.BrokerageID || admin.BrokerageId || 'BRK-DEFAULT',
+        permissions: Array.isArray(admin.Permissions) && admin.Permissions.length ? admin.Permissions : ['*']
+      });
+      setSessionCookie(res, req, token);
+      logAuthEvent('pin_login_succeeded', { userId: admin.UserID });
+      sendJson(res, { ok: true, data: { redirectTo: '/' } });
+      return;
+    }
+
+
     if (pathname === '/api/auth/login-state' && req.method === 'GET') {
       const nextPath = sanitizeAuthNextPath(url?.searchParams?.get('next') || '/');
       const authStateMaxAgeSeconds = getAuthExchangeStateMaxAgeSeconds(runtime?.repository);

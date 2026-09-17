@@ -46,32 +46,35 @@ async def _shutdown():
 async def proxy(request: Request, path: str):
     url = httpx.URL(path="/" + path, query=request.url.query.encode("utf-8"))
 
-    # Determine the REAL browser-facing host/scheme. The platform edge can rewrite
-    # the Host header to a canonical preview domain even when the browser is on a
-    # different one, which breaks the CRM's OAuth origin + CSRF checks. The browser's
-    # own Origin/Referer header is the source of truth, so we prefer it.
-    incoming_host = ""
-    incoming_proto = ""
-    for header_name in ("origin", "referer"):
-        raw = request.headers.get(header_name)
-        if raw:
-            parsed = urlparse(raw)
-            if parsed.scheme and parsed.netloc:
-                incoming_host = parsed.netloc
-                incoming_proto = parsed.scheme
-                break
-    if not incoming_host:
-        incoming_host = request.headers.get("x-forwarded-host") or request.headers.get("host", "")
-    if not incoming_proto:
-        incoming_proto = request.headers.get("x-forwarded-proto") or "https"
+    # The platform's dual-domain edge can send INCONSISTENT Origin vs Referer
+    # headers (e.g. Origin on one preview domain, Referer on another). The CRM's
+    # CSRF/origin checks require Origin, Referer and the forwarded host to all
+    # agree, so we normalize them to a single canonical host derived from what the
+    # browser actually connected to (Origin host > Host > X-Forwarded-Host).
+    canonical_host = ""
+    origin_raw = request.headers.get("origin")
+    if origin_raw:
+        parsed = urlparse(origin_raw)
+        if parsed.netloc:
+            canonical_host = parsed.netloc
+    if not canonical_host:
+        canonical_host = request.headers.get("host") or request.headers.get("x-forwarded-host", "")
+    incoming_proto = "https"
+    canonical_origin = f"{incoming_proto}://{canonical_host}" if canonical_host else ""
 
     headers = {
         k: v for k, v in request.headers.items()
         if k.lower() not in HOP_BY_HOP
     }
-    if incoming_host:
-        headers["host"] = incoming_host
-        headers["x-forwarded-host"] = incoming_host
+    if canonical_host:
+        headers["host"] = canonical_host
+        headers["x-forwarded-host"] = canonical_host
+        headers["origin"] = canonical_origin
+        # Rewrite Referer onto the canonical host, preserving its path if any.
+        ref = request.headers.get("referer")
+        if ref:
+            rp = urlparse(ref)
+            headers["referer"] = f"{canonical_origin}{rp.path or ''}" + (f"?{rp.query}" if rp.query else "")
     headers["x-forwarded-proto"] = incoming_proto
 
     body = await request.body()

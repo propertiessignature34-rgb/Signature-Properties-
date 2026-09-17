@@ -19,12 +19,15 @@
   .brand { width: 48px; height: 48px; display: block; margin: 0 0 16px; border-radius: 12px; }
   h1 { margin: 0 0 8px; font-size: 28px; color: var(--brown); }
   p { margin: 0; line-height: 1.5; color: var(--muted); }
+  .pins { display: flex; gap: 12px; margin-top: 22px; justify-content: space-between; }
+  .pins input { width: 100%; height: 64px; text-align: center; font-size: 28px; font-weight: 700; color: var(--text); border: 1.5px solid var(--border); border-radius: 12px; background: #fffdfa; outline: none; transition: border-color .15s, box-shadow .15s; }
+  .pins input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,160,23,.18); }
   .status { min-height: 22px; margin: 16px 0 0; font-size: 14px; color: var(--muted); }
   .status.error { color: var(--danger); }
   .status.ok { color: #166534; }
   .btn { display: inline-flex; margin-top: 20px; align-items: center; justify-content: center; width: 100%; min-height: 48px; border: 0; border-radius: 12px; background: var(--brown); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; text-decoration: none; }
   .btn:hover { background: #4a2410; }
-  .btn:disabled { opacity: 0.7; cursor: wait; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .hint { margin-top: 14px; font-size: 12px; color: var(--muted); }
 </style>
 </head>
@@ -32,236 +35,107 @@
   <div class="card">
     <img class="brand" src="/assets/signature-mark.svg" alt="Signature Properties" />
     <h1>Sign in</h1>
-    <p>Use your authorized Google account to access Signature Properties.</p>
-    <button class="btn" id="google-sign-in" type="button">Sign in with Google</button>
-    <div class="status" id="status" aria-live="polite"></div>
-    <div class="hint">Only active users already registered in the CRM can sign in.</div>
+    <p>Enter your 4-digit access code to open Signature Properties.</p>
+    <form id="pin-form" autocomplete="off">
+      <div class="pins">
+        <input data-testid="pin-input-0" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 1" />
+        <input data-testid="pin-input-1" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 2" />
+        <input data-testid="pin-input-2" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 3" />
+        <input data-testid="pin-input-3" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 4" />
+      </div>
+      <button class="btn" id="submit-btn" type="submit" data-testid="pin-submit-button">Unlock</button>
+    </form>
+    <div class="status" id="status" data-testid="login-status" aria-live="polite"></div>
+    <div class="hint">Enter the code to continue.</div>
   </div>
 <script>
-  const params = new URLSearchParams(window.location.search);
-  const statusEl = document.getElementById('status');
-  const signInButton = document.getElementById('google-sign-in');
-  const AUTH_FLOW_STORAGE_KEY = 'sig_auth_flow';
-  // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-  const GOOGLE_REDIRECT_URI = window.location.origin + '/login.html';
+  (function () {
+    var statusEl = document.getElementById('status');
+    var form = document.getElementById('pin-form');
+    var submitBtn = document.getElementById('submit-btn');
+    var inputs = Array.prototype.slice.call(document.querySelectorAll('.pins input'));
 
-  function safeNextPath(value) {
-    try {
-      const resolved = new URL(String(value || '/'), window.location.origin);
-      if (resolved.origin !== window.location.origin) return '/';
-      if (!resolved.pathname.startsWith('/')) return '/';
-      const normalizedPath = String(resolved.pathname || '').trim().toLowerCase();
-      if (normalizedPath === '/login' || normalizedPath === '/login.html') return '/';
-      return `${resolved.pathname}${resolved.search}${resolved.hash}`;
-    } catch (_) {
-      return '/';
+    function safeNextPath(value) {
+      try {
+        var resolved = new URL(String(value || '/'), window.location.origin);
+        if (resolved.origin !== window.location.origin) return '/';
+        var p = resolved.pathname;
+        if (p === '/login' || p === '/login.html') return '/';
+        return p + resolved.search + resolved.hash;
+      } catch (_) { return '/'; }
     }
-  }
 
-  const next = safeNextPath(params.get('next'));
+    var nextParam = new URLSearchParams(window.location.search).get('next');
+    var next = safeNextPath(nextParam || '/');
 
-  function setStatus(message, kind = '') {
-    statusEl.textContent = message || '';
-    statusEl.className = `status${kind ? ` ${kind}` : ''}`;
-    statusEl.setAttribute('aria-live', kind === 'error' ? 'assertive' : 'polite');
-    statusEl.setAttribute('role', kind === 'error' ? 'alert' : 'status');
-  }
-
-  function setSignInBusy(isBusy) {
-    signInButton.disabled = !!isBusy;
-    signInButton.setAttribute('aria-disabled', isBusy ? 'true' : 'false');
-  }
-
-  function messageFromErrorCode(code, fallback = 'Authentication failed. Please try again.') {
-    const key = String(code || '').trim();
-    if (key === 'not_authorized' || key === 'This Google account is not authorized.') return 'This Google account is not authorized.';
-    if (key === 'session_required') return 'Please sign in to continue.';
-    if (key === 'invalid_auth_state') return 'Your sign-in session expired. Please try again.';
-    if (key === 'auth_failed') return 'Authentication failed. Please try again.';
-    if (key === 'auth_provider_unavailable') return 'Google sign-in is temporarily unavailable. Please try again.';
-    return fallback;
-  }
-
-  function sanitizeVisibleError(message, fallback = 'Authentication failed. Please try again.') {
-    const text = String(message || '').replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
-    if (!text) return fallback;
-    if (/not authorized/i.test(text)) return 'This Google account is not authorized.';
-    if (/invalid auth state/i.test(text)) return 'Your sign-in session expired. Please try again.';
-    if (/auth provider unavailable/i.test(text)) return 'Google sign-in is temporarily unavailable. Please try again.';
-    if (/unable to start sign-in/i.test(text)) return 'Unable to start sign-in. Please try again.';
-    return fallback;
-  }
-
-  function getCallbackArtifacts() {
-    const hash = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
-    return {
-      code: String(
-        params.get('code') ||
-        hash.get('code') ||
-        ''
-      ).trim(),
-      sessionId: String(
-        params.get('session_id') ||
-        params.get('sessionId') ||
-        hash.get('session_id') ||
-        hash.get('sessionId') ||
-        ''
-      ).trim(),
-      state: String(
-        params.get('auth_state') ||
-        params.get('state') ||
-        hash.get('auth_state') ||
-        hash.get('state') ||
-        ''
-      ).trim()
-    };
-  }
-
-  function storeAuthFlowArtifacts(state, browserFlowId) {
-    const normalizedState = String(state || '').trim();
-    const normalizedBrowserFlowId = String(browserFlowId || '').trim();
-    if (!normalizedState || !normalizedBrowserFlowId) return;
-    const payload = JSON.stringify({
-      state: normalizedState,
-      browserFlowId: normalizedBrowserFlowId
-    });
-    try { window.sessionStorage?.setItem(AUTH_FLOW_STORAGE_KEY, payload); } catch (_) {}
-  }
-
-  function readStoredAuthFlowArtifacts(expectedState) {
-    const state = String(expectedState || '').trim();
-    if (!state) return null;
-    let raw = '';
-    try { raw = window.sessionStorage?.getItem(AUTH_FLOW_STORAGE_KEY) || ''; } catch (_) {}
-    if (!raw) return null;
-    try {
-      const parsed = JSON.parse(raw);
-      if (String(parsed?.state || '').trim() !== state) return null;
-      const browserFlowId = String(parsed?.browserFlowId || '').trim();
-      if (browserFlowId) return { state, browserFlowId };
-    } catch (_) {}
-    return null;
-  }
-
-  function clearStoredAuthFlowArtifacts() {
-    try { window.sessionStorage?.removeItem(AUTH_FLOW_STORAGE_KEY); } catch (_) {}
-  }
-
-  function replaceUrlWithoutAuthArtifacts() {
-    const url = new URL(window.location.href);
-    url.hash = '';
-    url.searchParams.delete('code');
-    url.searchParams.delete('session_id');
-    url.searchParams.delete('sessionId');
-    url.searchParams.delete('error');
-    url.searchParams.delete('error_description');
-    url.searchParams.delete('auth_state');
-    url.searchParams.delete('state');
-    history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
-  }
-
-  async function waitForAuthenticatedSession(attempts = 8, delayMs = 250) {
-    for (let attempt = 0; attempt < attempts; attempt += 1) {
-      const result = await fetch('/api/auth/me', { credentials: 'include' })
-        .then(async (r) => {
-          const payload = await r.json().catch(() => null);
-          if (r.ok && payload?.ok) return { ok: true, me: payload };
-          if (r.status === 401) return { ok: false, retryable: true };
-          return { ok: false, error: String(payload?.error || 'Unable to confirm your session. Please try again.') };
-        })
-        .catch(() => ({ ok: false, retryable: true }));
-      if (result?.ok) return result.me;
-      if (result?.error) return result;
-      if (attempt + 1 < attempts) {
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-      }
+    function setStatus(msg, kind) {
+      statusEl.textContent = msg || '';
+      statusEl.className = 'status' + (kind ? ' ' + kind : '');
     }
-    return { ok: false, error: 'Sign-in completed, but we could not confirm your session. Please try again.' };
-  }
 
-  async function exchangeSessionIfPresent() {
-    const { code, sessionId, state } = getCallbackArtifacts();
-    if (!code && !sessionId) return null;
-    const storedFlow = readStoredAuthFlowArtifacts(state);
-    setStatus('Signing you in...');
-    setSignInBusy(true);
-    const res = await fetch('/api/auth/session-exchange', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        session_id: sessionId,
-        code,
-        state,
-        browser_flow_id: storedFlow?.browserFlowId || '',
-        redirect_uri: GOOGLE_REDIRECT_URI
-      })
-    }).then(async (r) => {
-      const payload = await r.json().catch(() => ({ ok: false, error: 'Invalid session exchange response' }));
-      console.info('[auth]', 'session_exchange_response', r.status, payload?.ok ? 'ok' : (payload?.error || 'error'));
-      return { ok: r.ok && payload?.ok, payload };
-    }).catch((e) => ({ ok: false, payload: { error: e.message } }));
-    replaceUrlWithoutAuthArtifacts();
-    if (res.ok) {
-      clearStoredAuthFlowArtifacts();
-      setStatus('Signed in. Redirecting…', 'ok');
-      const confirmed = await waitForAuthenticatedSession();
-      if (!confirmed?.ok) {
-        setSignInBusy(false);
-        setStatus(String(confirmed?.error || 'Sign-in completed, but we could not confirm your session. Please try again.'), 'error');
-        return false;
-      }
-      const redirectTo = safeNextPath(res.payload?.data?.redirectTo || next);
-      window.location.replace(redirectTo);
-      return true;
+    function currentCode() {
+      return inputs.map(function (i) { return (i.value || '').replace(/\D/g, ''); }).join('');
     }
-    setSignInBusy(false);
-    setStatus(sanitizeVisibleError(messageFromErrorCode(res.payload?.error, res.payload?.error)), 'error');
-    return false;
-  }
 
-  async function bootstrapLoginPage() {
-    const exchangeResult = await exchangeSessionIfPresent();
-    if (exchangeResult !== null) return;
-    const me = await fetch('/api/auth/me', { credentials: 'include' }).then(async (r) => r.ok ? r.json() : null).catch(() => null);
-    if (me?.ok) {
-      window.location.replace(next);
-      return;
-    }
-    if (params.get('error')) {
-      setStatus(messageFromErrorCode(params.get('error')), 'error');
-    } else if (params.get('logged_out')) {
-      setStatus('Signed out.');
-    } else {
-      setStatus('Please sign in to continue.');
-    }
-  }
-
-  signInButton.addEventListener('click', () => {
-    if (signInButton.disabled) return;
-    setSignInBusy(true);
-    setStatus('Redirecting to Google sign-in…');
-    console.info('[auth]', 'google_sign_in_clicked');
-    fetch(`/api/auth/login-state?next=${encodeURIComponent(next)}`, { credentials: 'include' })
-      .then(async (r) => {
-        const payload = await r.json().catch(() => null);
-        if (!r.ok || !payload?.ok || !payload?.data?.state || !payload?.data?.signInUrl) {
-          throw new Error(payload?.error || 'Unable to start sign-in');
-        }
-        storeAuthFlowArtifacts(payload.data.state, payload.data.browserFlowId);
-        const signInUrl = String(payload.data.signInUrl).trim();
-        console.info('[auth]', 'google_sign_in_redirect', payload?.data?.authMode || 'provider_session');
-        window.location.href = signInUrl;
-      })
-      .catch((error) => {
-        clearStoredAuthFlowArtifacts();
-        console.warn('[auth]', 'google_sign_in_failed', error?.message || 'Unable to start sign-in');
-        setSignInBusy(false);
-        setStatus(sanitizeVisibleError(error?.message, 'Unable to start sign-in. Please try again.'), 'error');
+    inputs.forEach(function (input, idx) {
+      input.addEventListener('input', function () {
+        input.value = (input.value || '').replace(/\D/g, '').slice(0, 1);
+        if (input.value && idx < inputs.length - 1) inputs[idx + 1].focus();
+        if (currentCode().length === 4) submit();
       });
-  });
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Backspace' && !input.value && idx > 0) inputs[idx - 1].focus();
+      });
+      input.addEventListener('paste', function (e) {
+        e.preventDefault();
+        var digits = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 4);
+        inputs.forEach(function (el, i) { el.value = digits[i] || ''; });
+        if (digits.length === 4) submit(); else if (digits.length) inputs[Math.min(digits.length, 3)].focus();
+      });
+    });
 
-  bootstrapLoginPage();
+    var submitting = false;
+    function submit() {
+      if (submitting) return;
+      var code = currentCode();
+      if (code.length !== 4) { setStatus('Please enter all 4 digits.', 'error'); return; }
+      submitting = true;
+      submitBtn.disabled = true;
+      setStatus('Checking…');
+      fetch('/api/auth/pin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ pin: code })
+      }).then(async function (r) {
+        var payload = await r.json().catch(function () { return null; });
+        if (r.ok && payload && payload.ok) {
+          setStatus('Success! Opening…', 'ok');
+          var to = safeNextPath((payload.data && payload.data.redirectTo) || next);
+          window.location.replace(to);
+          return;
+        }
+        throw new Error((payload && payload.error) || 'Invalid code. Please try again.');
+      }).catch(function (err) {
+        setStatus(err && err.message ? err.message : 'Invalid code. Please try again.', 'error');
+        inputs.forEach(function (el) { el.value = ''; });
+        inputs[0].focus();
+      }).finally(function () {
+        submitting = false;
+        submitBtn.disabled = false;
+      });
+    }
+
+    form.addEventListener('submit', function (e) { e.preventDefault(); submit(); });
+
+    // If already signed in, skip straight to the app.
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (me) { if (me && me.ok) window.location.replace(next); })
+      .catch(function () {});
+
+    inputs[0].focus();
+  })();
 </script>
 </body>
 </html>
