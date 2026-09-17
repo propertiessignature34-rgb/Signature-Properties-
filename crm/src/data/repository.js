@@ -55,7 +55,8 @@ const ARRAY_COLLECTION_KEYS = [
   'V2QuestionConfig',
   'V2FormRegistry',
   'V2DependencyConfig',
-  'V2ScoringConfig'
+  'V2ScoringConfig',
+  'PropertyInvestmentAnalyses'
 ];
 
 class JsonRepository {

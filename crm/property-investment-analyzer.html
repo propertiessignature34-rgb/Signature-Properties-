@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#2c1405" />
+<link rel="icon" href="/assets/signature-mark.svg" type="image/svg+xml" />
+<script src="/pwa-register.js" defer></script>
+<title>Property Investment Analyzer — Signature Properties</title>
+<style>
+  :root { --clr-brown:#2c1405; --clr-brown-dark:#1c0a00; --clr-gold:#b8860b; --clr-gold-mid:#d4a017; --clr-gold-soft:#f7ecd2; --clr-bg:#faf7f2; --clr-card:#fff; --clr-border:#e8ddd0; --clr-text:#1c0a00; --clr-text-light:#7a6355; --clr-success:#166534; --clr-warning:#b45309; --clr-danger:#b91c1c; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--clr-bg); color:var(--clr-text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+  .topnav { display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:12px 22px; background:var(--clr-brown); color:#fff; }
+  .topnav .brand { font-weight:800; color:#fff; }
+  .topnav a { color:#f3e7d2; text-decoration:none; font-size:14px; }
+  .topnav a.active { color:#fff; font-weight:700; }
+  .page { max-width:1200px; margin:0 auto; padding:22px; }
+  .page-title { font-size:24px; font-weight:800; color:var(--clr-brown); }
+  .page-sub { color:var(--clr-text-light); font-size:14px; margin:4px 0 18px; }
+  .mode-toggle { display:inline-flex; gap:6px; background:#fff; border:1px solid var(--clr-border); border-radius:10px; padding:4px; margin-bottom:16px; }
+  .mode-toggle button { border:0; background:none; padding:8px 16px; border-radius:8px; font-weight:700; cursor:pointer; color:var(--clr-text-light); font-size:13px; }
+  .mode-toggle button.active { background:var(--clr-brown); color:#fff; }
+  .layout { display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr); gap:20px; }
+  @media (max-width:900px){ .layout { grid-template-columns:1fr; } }
+  .card { background:var(--clr-card); border:1px solid var(--clr-border); border-radius:14px; padding:18px 20px; box-shadow:0 8px 24px rgba(44,20,5,.05); margin-bottom:18px; }
+  .card h3 { margin:0 0 14px; font-size:15px; color:var(--clr-brown); font-weight:800; }
+  .form-group { display:flex; flex-direction:column; margin-bottom:12px; }
+  .form-group label { font-size:11px; font-weight:700; color:var(--clr-text-light); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px; }
+  .form-group input, .form-group select { padding:8px 10px; border:1px solid var(--clr-border); border-radius:6px; font-size:13.5px; font-family:inherit; background:#fff; }
+  .form-group input:focus, .form-group select:focus { outline:none; border-color:var(--clr-gold-mid); box-shadow:0 0 0 3px rgba(212,160,23,.15); }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .adv { display:none; }
+  body.advanced .adv { display:block; }
+  body.advanced .adv.row2 { display:grid; }
+  .cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+  .kpi { background:var(--clr-gold-soft); border-radius:10px; padding:12px 14px; }
+  .kpi .k-label { font-size:10.5px; font-weight:700; color:var(--clr-text-light); text-transform:uppercase; letter-spacing:.05em; }
+  .kpi .k-val { font-size:20px; font-weight:800; color:var(--clr-brown); margin-top:4px; }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th, td { padding:7px 8px; text-align:right; border-bottom:1px solid var(--clr-border); white-space:nowrap; }
+  th:first-child, td:first-child { text-align:left; }
+  thead th { background:#faf6f0; color:var(--clr-brown); font-size:11px; text-transform:uppercase; letter-spacing:.04em; position:sticky; top:0; }
+  .table-wrap { overflow-x:auto; }
+  .btn { border:0; border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer; font-size:13.5px; }
+  .btn-primary { background:var(--clr-brown); color:#fff; }
+  .btn-ghost { background:#fff; border:1px solid var(--clr-border); color:var(--clr-text); }
+  .btn-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+  .chart-bar { height:14px; background:var(--clr-gold-mid); border-radius:3px; }
+  .chart-row { display:flex; align-items:center; gap:8px; font-size:11.5px; margin-bottom:5px; }
+  .chart-row .lab { width:52px; color:var(--clr-text-light); }
+  .chart-row .val { width:90px; text-align:right; }
+  .disclaimer { font-size:11.5px; color:var(--clr-text-light); background:var(--clr-gold-soft); padding:10px 12px; border-radius:8px; margin-top:14px; }
+  .saved-item { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--clr-border); border-radius:8px; margin-bottom:8px; font-size:13px; }
+  .saved-item a { color:var(--clr-brown); font-weight:700; cursor:pointer; }
+  .muted { color:var(--clr-text-light); font-size:12px; }
+  .scn-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  @media (max-width:640px){ .scn-grid { grid-template-columns:1fr; } .row2 { grid-template-columns:1fr; } }
+  @media print { .topnav, .mode-toggle, .btn, #input-card, #saved-card { display:none !important; } .layout { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <span class="brand">📈 Signature Properties</span>
+  <a href="/">Dashboard</a>
+  <a href="/inventory">Inventory</a>
+  <a href="/builder-projects">Builder Projects</a>
+  <a href="/calculators">Calculators</a>
+  <a href="/property-investment-analyzer" class="active">Investment Analyzer</a>
+</nav>
+
+<div class="page">
+  <div class="page-title">📈 Property Investment Analyzer</div>
+  <div class="page-sub">Rental yield, ROI, IRR, appreciation & year-by-year projection — powered by your assumptions.</div>
+
+  <div class="mode-toggle" data-testid="mode-toggle">
+    <button id="mode-basic" class="active" data-testid="mode-basic-btn" onclick="setMode('basic')">Basic (Broker)</button>
+    <button id="mode-advanced" data-testid="mode-advanced-btn" onclick="setMode('advanced')">Advanced (Investor)</button>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="card" id="input-card">
+        <h3>Inputs</h3>
+        <div class="form-group"><label>Property Name</label><input id="in-name" data-testid="in-name" placeholder="e.g. 3BHK Vesu" /></div>
+        <div class="form-group"><label>Property Value / Current Market Value (₹)</label><input id="in-value" data-testid="in-value" type="number" value="15000000" oninput="scheduleCalc()" /></div>
+        <div class="form-group"><label>Current Monthly Rent (₹)</label><input id="in-rent" data-testid="in-rent" type="number" value="76000" oninput="scheduleCalc()" /></div>
+        <div class="row2">
+          <div class="form-group"><label>Rent Growth % / yr</label><input id="in-rentgrowth" data-testid="in-rentgrowth" type="number" value="5" oninput="scheduleCalc()" /></div>
+          <div class="form-group"><label>Appreciation % / yr</label><input id="in-appreciation" data-testid="in-appreciation" type="number" value="5" oninput="scheduleCalc()" /></div>
+        </div>
+        <div class="row2">
+          <div class="form-group"><label>Holding Period (yrs)</label>
+            <select id="in-holding" data-testid="in-holding" onchange="scheduleCalc()">
+              <option>1</option><option>3</option><option selected>5</option><option>10</option><option>15</option><option>20</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Rent Escalation</label>
+            <select id="in-freq" data-testid="in-freq" onchange="scheduleCalc()">
+              <option value="annual">Annual</option><option value="biennial">Every 2 yrs</option>
+            </select>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="form-group"><label>Maintenance Paid By</label>
+            <select id="in-maint" data-testid="in-maint" onchange="scheduleCalc()"><option value="tenant">Tenant</option><option value="owner">Owner</option></select>
+          </div>
+          <div class="form-group"><label>Water Paid By</label>
+            <select id="in-water" data-testid="in-water" onchange="scheduleCalc()"><option value="tenant">Tenant</option><option value="owner">Owner</option></select>
+          </div>
+        </div>
+
+        <!-- Advanced -->
+        <div class="adv"><h3 style="margin-top:8px">Acquisition Costs</h3></div>
+        <div class="adv row2">
+          <div class="form-group"><label>Purchase Price (₹)</label><input id="in-purchase" type="number" oninput="scheduleCalc()" placeholder="= property value" /></div>
+          <div class="form-group"><label>Stamp Duty (₹)</label><input id="in-stamp" type="number" oninput="scheduleCalc()" /></div>
+        </div>
+        <div class="adv row2">
+          <div class="form-group"><label>Registration (₹)</label><input id="in-reg" type="number" oninput="scheduleCalc()" /></div>
+          <div class="form-group"><label>Brokerage (₹)</label><input id="in-brok" type="number" oninput="scheduleCalc()" /></div>
+        </div>
+        <div class="adv row2">
+          <div class="form-group"><label>Interior/Reno (₹)</label><input id="in-interior" type="number" oninput="scheduleCalc()" /></div>
+          <div class="form-group"><label>Acquisition Date</label><input id="in-acqdate" type="date" oninput="scheduleCalc()" /></div>
+        </div>
+        <div class="adv"><h3 style="margin-top:8px">Vacancy & Owner Expenses (annual)</h3></div>
+        <div class="adv row2">
+          <div class="form-group"><label>Vacancy Method</label><select id="in-vacmethod" onchange="scheduleCalc()"><option value="percent">Percent</option><option value="months">Months/yr</option></select></div>
+          <div class="form-group"><label>Vacancy % / Months</label><input id="in-vacancy" type="number" value="5" oninput="scheduleCalc()" /></div>
+        </div>
+        <div class="adv row2">
+          <div class="form-group"><label>Owner Property Tax (₹/yr)</label><input id="in-ptax" type="number" oninput="scheduleCalc()" /></div>
+          <div class="form-group"><label>Insurance (₹/yr)</label><input id="in-ins" type="number" oninput="scheduleCalc()" /></div>
+        </div>
+        <div class="adv row2">
+          <div class="form-group"><label>Repairs (₹/yr)</label><input id="in-repairs" type="number" oninput="scheduleCalc()" /></div>
+          <div class="form-group"><label>Owner Maintenance (₹/yr)</label><input id="in-omaint" type="number" oninput="scheduleCalc()" /></div>
+        </div>
+        <div class="adv"><h3 style="margin-top:8px">Loan (optional)</h3></div>
+        <div class="adv row2">
+          <div class="form-group"><label>Loan Amount (₹)</label><input id="in-loan" type="number" oninput="scheduleCalc()" /></div>
+          <div class="form-group"><label>Interest Rate %</label><input id="in-intrate" type="number" value="8.5" oninput="scheduleCalc()" /></div>
+        </div>
+        <div class="adv row2">
+          <div class="form-group"><label>Loan Tenure (yrs)</label><input id="in-tenure" type="number" value="20" oninput="scheduleCalc()" /></div>
+          <div class="form-group"><label>Processing Fee (₹)</label><input id="in-procfee" type="number" oninput="scheduleCalc()" /></div>
+        </div>
+        <div class="adv"><h3 style="margin-top:8px">Sale / Exit (optional)</h3></div>
+        <div class="adv row2">
+          <div class="form-group"><label>Exit Year</label><input id="in-exityear" type="number" oninput="scheduleCalc()" placeholder="= holding" /></div>
+          <div class="form-group"><label>Expected Selling Price (₹)</label><input id="in-sellprice" type="number" oninput="scheduleCalc()" placeholder="= future value" /></div>
+        </div>
+        <div class="adv row2">
+          <div class="form-group"><label>Selling Brokerage %</label><input id="in-sellbrok" type="number" value="1" oninput="scheduleCalc()" /></div>
+          <div class="form-group"><label>Other Selling Costs (₹)</label><input id="in-sellother" type="number" oninput="scheduleCalc()" /></div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" data-testid="calc-btn" onclick="runCalc()">Calculate</button>
+          <button class="btn btn-ghost" data-testid="save-btn" onclick="saveAnalysis()">💾 Save</button>
+          <button class="btn btn-ghost" onclick="window.print()">🖨️ Print / PDF</button>
+        </div>
+      </div>
+
+      <div class="card" id="saved-card">
+        <h3>Saved Analyses</h3>
+        <div id="saved-list" class="muted">Loading…</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h3>Summary</h3>
+        <div class="cards-grid" id="kpi-grid" data-testid="kpi-grid"></div>
+        <div class="disclaimer" data-testid="disclaimer" id="disclaimer"></div>
+      </div>
+      <div class="card">
+        <h3>Charts</h3>
+        <div class="row2">
+          <div><div class="muted" style="margin-bottom:6px">Rent Growth (monthly)</div><div id="chart-rent"></div></div>
+          <div><div class="muted" style="margin-bottom:6px">Property Value Growth</div><div id="chart-value"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Year-by-Year Projection</h3>
+        <div class="table-wrap">
+          <table data-testid="projection-table">
+            <thead><tr><th>Year</th><th>Monthly Rent</th><th>Annual Rent</th><th>Vacancy</th><th>Owner Exp</th><th>NOI</th><th>Property Value</th><th>Loan Bal</th><th>Cash Flow</th></tr></thead>
+            <tbody id="projection-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Scenario Analysis</h3>
+        <div class="scn-grid" id="scenario-grid" data-testid="scenario-grid"></div>
+      </div>
+      <div class="card">
+        <h3>Sensitivity — 10-yr Total Return (₹)</h3>
+        <div class="table-wrap"><table data-testid="sensitivity-table"><thead id="sens-head"></thead><tbody id="sens-body"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const fmt = (n) => '₹' + Math.round(Number(n)||0).toLocaleString('en-IN');
+  const fmtL = (n) => { n = Number(n)||0; if (Math.abs(n) >= 1e7) return '₹'+(n/1e7).toFixed(2)+' Cr'; if (Math.abs(n)>=1e5) return '₹'+(n/1e5).toFixed(2)+' L'; return fmt(n); };
+  const pct = (n) => (n===null||n===undefined) ? 'N/A' : (Number(n).toFixed(2)+'%');
+  const val = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const numOf = (id) => { const v = parseFloat(val(id)); return Number.isFinite(v) ? v : 0; };
+
+  function setMode(m){ document.body.classList.toggle('advanced', m==='advanced'); document.getElementById('mode-basic').classList.toggle('active', m==='basic'); document.getElementById('mode-advanced').classList.toggle('active', m==='advanced'); }
+
+  function collectInput(){
+    return {
+      propertyName: val('in-name'),
+      propertyId: params.get('propertyId') || null,
+      currentMarketValue: numOf('in-value'),
+      propertyValue: numOf('in-value'),
+      purchasePrice: numOf('in-purchase') || numOf('in-value'),
+      monthlyRent: numOf('in-rent'),
+      rentGrowthPct: numOf('in-rentgrowth'),
+      appreciationPct: numOf('in-appreciation'),
+      holdingYears: numOf('in-holding'),
+      rentFrequency: val('in-freq'),
+      tenantPaysMaintenance: val('in-maint')==='tenant',
+      ownerMaintenance: val('in-maint')==='owner' ? numOf('in-omaint') : 0,
+      tenantPaysWater: val('in-water')==='tenant',
+      stampDuty: numOf('in-stamp'), registration: numOf('in-reg'), brokerage: numOf('in-brok'),
+      interior: numOf('in-interior'), acquisitionDate: val('in-acqdate') || null,
+      vacancyMethod: val('in-vacmethod') || 'percent',
+      vacancyPct: val('in-vacmethod')==='months' ? 0 : numOf('in-vacancy'),
+      vacancyMonths: val('in-vacmethod')==='months' ? numOf('in-vacancy') : 0,
+      ownerPropertyTax: numOf('in-ptax'), insurance: numOf('in-ins'), repairs: numOf('in-repairs'),
+      loanAmount: numOf('in-loan'), interestRatePct: numOf('in-intrate'), loanTenureYears: numOf('in-tenure'),
+      loanProcessingFee: numOf('in-procfee'),
+      exitYear: numOf('in-exityear') || numOf('in-holding'),
+      expectedSellingPrice: numOf('in-sellprice'),
+      sellingBrokeragePct: numOf('in-sellbrok'), otherSellingCosts: numOf('in-sellother')
+    };
+  }
+
+  let timer=null;
+  function scheduleCalc(){ clearTimeout(timer); timer=setTimeout(runCalc, 400); }
+
+  async function runCalc(){
+    const input = collectInput();
+    const res = await fetch('/api/v2/property-investment/calculate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ input }) }).then(r=>r.json()).catch(()=>null);
+    if (!res || !res.ok){ document.getElementById('kpi-grid').innerHTML = '<div class="muted">'+((res&&res.error)||'Please check inputs')+'</div>'; return; }
+    render(res.data);
+  }
+
+  function render(d){
+    const m = d.metrics;
+    const kpis = [
+      ['Property Value', fmtL(m.currentValue)],
+      ['Monthly Rent', fmt(numOf('in-rent'))],
+      ['Annual Rent', fmtL(m.annualRentYear1)],
+      ['Gross Rental Yield', pct(m.grossYield)],
+      ['Net Yield (on cost)', pct(m.netYieldOnCost)],
+      ['Rent Growth', pct(numOf('in-rentgrowth'))],
+      [m.holdingYears+'-Yr Gross Rent', fmtL(m.totalGrossRent)],
+      [m.holdingYears+'-Yr Property Value', fmtL(m.futureValue)],
+      ['Total ROI', pct(m.totalROI)],
+      ['Annualized ROI', pct(m.annualizedROI)],
+      ['IRR', pct(m.irr)],
+      ['Equity Multiple', (m.equityMultiple||0).toFixed(2)+'x'],
+      ['Cash-on-Cash', pct(m.cashOnCash)],
+      ['Break-even', m.breakEvenYear ? ('Year '+m.breakEvenYear) : 'Not in period'],
+      ['EMI (monthly)', m.hasLoan ? fmt(m.emi) : '—'],
+      ['Net Sale Proceeds', fmtL(m.netSaleProceeds)]
+    ];
+    document.getElementById('kpi-grid').innerHTML = kpis.map(([k,v])=>`<div class="kpi"><div class="k-label">${k}</div><div class="k-val">${v}</div></div>`).join('');
+    document.getElementById('disclaimer').textContent = d.disclaimer;
+
+    document.getElementById('projection-body').innerHTML = d.projection.map(r=>`<tr><td>${r.year}</td><td>${fmt(r.monthlyRent)}</td><td>${fmt(r.annualRent)}</td><td>${fmt(r.vacancy)}</td><td>${fmt(r.ownerExpenses)}</td><td>${fmt(r.noi)}</td><td>${fmt(r.propertyValue)}</td><td>${fmt(r.loanBalance)}</td><td>${fmt(r.cashFlow)}</td></tr>`).join('');
+
+    const maxRent = Math.max(...d.projection.map(r=>r.monthlyRent));
+    const maxVal = Math.max(...d.projection.map(r=>r.propertyValue));
+    document.getElementById('chart-rent').innerHTML = d.projection.map(r=>`<div class="chart-row"><span class="lab">Y${r.year}</span><div class="chart-bar" style="width:${maxRent?(r.monthlyRent/maxRent*100):0}%"></div><span class="val">${fmt(r.monthlyRent)}</span></div>`).join('');
+    document.getElementById('chart-value').innerHTML = d.projection.map(r=>`<div class="chart-row"><span class="lab">Y${r.year}</span><div class="chart-bar" style="width:${maxVal?(r.propertyValue/maxVal*100):0}%;background:#2c1405"></div><span class="val">${fmtL(r.propertyValue)}</span></div>`).join('');
+
+    const s = d.scenarios || {};
+    const scn = [['Conservative', s.conservative],['Base', s.base],['Optimistic', s.optimistic]];
+    document.getElementById('scenario-grid').innerHTML = scn.map(([label,sc])=>{
+      if (!sc || !sc.ok) return `<div class="kpi"><div class="k-label">${label}</div><div class="muted">N/A</div></div>`;
+      return `<div class="kpi"><div class="k-label">${label}</div><div style="font-size:12.5px;margin-top:6px">ROI: <b>${pct(sc.totalROI)}</b><br>IRR: <b>${pct(sc.irr)}</b><br>Net Rent: <b>${fmtL(sc.totalNetRent)}</b><br>Future Value: <b>${fmtL(sc.futureValue)}</b></div></div>`;
+    }).join('');
+
+    const sen = d.sensitivity;
+    if (sen){
+      document.getElementById('sens-head').innerHTML = '<tr><th>Appr \\ Rent</th>'+sen.rentGrowth.map(r=>`<th>${r}%</th>`).join('')+'</tr>';
+      document.getElementById('sens-body').innerHTML = sen.matrix.map(row=>`<tr><td>${row.appreciation}%</td>`+row.cells.map(c=>`<td>${fmtL(c.totalReturn)}</td>`).join('')+'</tr>').join('');
+    }
+  }
+
+  async function saveAnalysis(){
+    const input = collectInput();
+    const body = { name: input.propertyName || 'Investment Analysis', propertyId: input.propertyId, input };
+    const res = await fetch('/api/v2/property-investment', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }).then(r=>r.json()).catch(()=>null);
+    if (res && res.ok){ loadSaved(); alert('Saved.'); } else { alert((res&&res.error)||'Save failed'); }
+  }
+
+  async function loadSaved(){
+    const res = await fetch('/api/v2/property-investment').then(r=>r.json()).catch(()=>null);
+    const el = document.getElementById('saved-list');
+    if (!res || !res.ok){ el.textContent = 'Could not load.'; return; }
+    if (!res.data.length){ el.innerHTML = '<div class="muted">No saved analyses yet.</div>'; return; }
+    el.innerHTML = res.data.map(a=>`<div class="saved-item"><a data-testid="saved-open-${a.AnalysisID}" onclick="openSaved('${a.AnalysisID}')">${(a.AnalysisName||'Analysis')} — ROI ${pct(a.Metrics&&a.Metrics.totalROI)}</a><button class="btn btn-ghost" style="padding:4px 10px" onclick="delSaved('${a.AnalysisID}')">🗑</button></div>`).join('');
+  }
+
+  async function openSaved(id){
+    const res = await fetch('/api/v2/property-investment/'+encodeURIComponent(id)).then(r=>r.json()).catch(()=>null);
+    if (!res || !res.ok) return alert('Not found');
+    const i = res.data.Input || {};
+    const set=(id,v)=>{ const e=document.getElementById(id); if(e && v!=null) e.value=v; };
+    set('in-name', res.data.AnalysisName); set('in-value', i.currentMarketValue); set('in-rent', i.monthlyRent);
+    set('in-rentgrowth', i.rentGrowthPct); set('in-appreciation', i.appreciationPct); set('in-holding', i.holdingYears);
+    set('in-loan', i.loanAmount); set('in-intrate', i.interestRatePct); set('in-tenure', i.loanTenureYears);
+    document.getElementById('in-maint').value = i.tenantPaysMaintenance ? 'tenant':'owner';
+    document.getElementById('in-water').value = i.tenantPaysWater ? 'tenant':'owner';
+    runCalc();
+  }
+
+  async function delSaved(id){
+    if (!confirm('Delete this analysis?')) return;
+    await fetch('/api/v2/property-investment/'+encodeURIComponent(id), { method:'DELETE' }).catch(()=>{});
+    loadSaved();
+  }
+
+  runCalc();
+  loadSaved();
+</script>
+</body>
+</html>

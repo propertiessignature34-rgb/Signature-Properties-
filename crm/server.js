@@ -1217,6 +1217,97 @@ async function handleApi(req, res, url) {
         return;
       }
     }
+
+    // ── Property Investment Analyzer (additive) ────────────────────────────
+    // POST   /api/v2/property-investment/calculate         — stateless calc
+    // GET    /api/v2/property-investment                   — list own analyses
+    // POST   /api/v2/property-investment                   — save analysis
+    // GET    /api/v2/property-investment/:id               — read own analysis
+    // PUT    /api/v2/property-investment/:id               — update own analysis
+    // DELETE /api/v2/property-investment/:id               — delete own analysis
+    if (/^\/api\/v2\/property-investment(?:\/.*)?$/i.test(pathname)) {
+      const actor = getAuthenticatedActor(req, url);
+      if (!actor?.userId) { sendJson(res, { ok: false, error: 'Unauthorized' }, 401); return; }
+      const calc = require('./src/services/propertyInvestmentCalculatorService');
+      const isAdmin = String(actor.role || '').toUpperCase() === 'ADMIN';
+      const ownsRow = (row) => isAdmin || String(row.CreatedBy || '') === String(actor.userId);
+
+      if (/^\/api\/v2\/property-investment\/calculate\/?$/i.test(pathname) && req.method === 'POST') {
+        const result = calc.analyze((bodyForV2 || {}).input || bodyForV2 || {});
+        sendJson(res, result.ok ? { ok: true, data: result } : { ok: false, error: (result.errors || ['Invalid input']).join('; '), errors: result.errors }, result.ok ? 200 : 400);
+        return;
+      }
+
+      if (/^\/api\/v2\/property-investment\/?$/i.test(pathname)) {
+        if (req.method === 'GET') {
+          const propertyId = url.searchParams.get('propertyId');
+          let rows = runtime.repository.list('PropertyInvestmentAnalyses').filter(ownsRow);
+          if (propertyId) rows = rows.filter((r) => String(r.PropertyID || '') === String(propertyId));
+          rows.sort((a, b) => new Date(b.CreatedAt || 0) - new Date(a.CreatedAt || 0));
+          sendJson(res, { ok: true, data: rows, count: rows.length });
+          return;
+        }
+        if (req.method === 'POST') {
+          const body = bodyForV2 || {};
+          const input = body.input || {};
+          const result = calc.analyze(input);
+          if (!result.ok) { sendJson(res, { ok: false, error: (result.errors || ['Invalid input']).join('; '), errors: result.errors }, 400); return; }
+          const now = new Date().toISOString();
+          const row = {
+            AnalysisID: runtime.repository.createId('PIA'),
+            AnalysisName: String(body.name || body.AnalysisName || input.propertyName || 'Investment Analysis').slice(0, 200),
+            PropertyID: body.propertyId || body.PropertyID || input.propertyId || null,
+            ClientID: body.clientId || body.ClientID || null,
+            OwnerID: body.ownerId || body.OwnerID || null,
+            BuilderProjectID: body.builderProjectId || body.BuilderProjectID || null,
+            Input: input,
+            Metrics: result.metrics,
+            ProjectionPeriod: result.metrics.holdingYears,
+            CompanyID: actor.companyId || null,
+            BrokerageID: actor.brokerageId || null,
+            CreatedBy: actor.userId,
+            CreatedAt: now,
+            UpdatedAt: now
+          };
+          runtime.repository.create('PropertyInvestmentAnalyses', row);
+          sendJson(res, { ok: true, data: row }, 201);
+          return;
+        }
+        sendJson(res, { ok: false, error: 'Method not supported' }, 405);
+        return;
+      }
+
+      const byId = pathname.match(/^\/api\/v2\/property-investment\/([^\/]+)\/?$/i);
+      if (byId) {
+        const id = decodeURIComponent(byId[1]);
+        const existing = runtime.repository.find('PropertyInvestmentAnalyses', 'AnalysisID', id);
+        if (!existing || !ownsRow(existing)) { sendJson(res, { ok: false, error: 'Analysis not found' }, 404); return; }
+        if (req.method === 'GET') { sendJson(res, { ok: true, data: existing }); return; }
+        if (req.method === 'PUT') {
+          const body = bodyForV2 || {};
+          const input = body.input || existing.Input || {};
+          const result = calc.analyze(input);
+          if (!result.ok) { sendJson(res, { ok: false, error: (result.errors || ['Invalid input']).join('; '), errors: result.errors }, 400); return; }
+          const updated = runtime.repository.update('PropertyInvestmentAnalyses', 'AnalysisID', id, {
+            AnalysisName: String(body.name || body.AnalysisName || existing.AnalysisName).slice(0, 200),
+            Input: input,
+            Metrics: result.metrics,
+            ProjectionPeriod: result.metrics.holdingYears,
+            UpdatedAt: new Date().toISOString()
+          });
+          sendJson(res, { ok: true, data: updated });
+          return;
+        }
+        if (req.method === 'DELETE') {
+          runtime.repository.delete('PropertyInvestmentAnalyses', 'AnalysisID', id);
+          sendJson(res, { ok: true, data: { AnalysisID: id } });
+          return;
+        }
+        sendJson(res, { ok: false, error: 'Method not supported' }, 405);
+        return;
+      }
+    }
+
     const { AccessControlService } = require('./src/services/accessControlService');
     const accessSvc = new AccessControlService(runtime.repository);
     const isSensitiveV2Api = /^\/api\/v2\/(clients|requirements|followups|activities|site-visits|shortlists|matches|transactions|documents|builder-projects|broker-network|inventory|duplicates)(?:\/|$)/i.test(pathname);
@@ -4624,6 +4715,7 @@ appServer = http.createServer(async (req, res) => {
   // ── V2 page routing — extensionless URLs → .html files ─────────────────────
   const V2_ROUTES = {
     '/clients':             '/clients.html',
+    '/property-investment-analyzer': '/property-investment-analyzer.html',
     '/client-workspace':    '/client-workspace.html',
     '/requirements-view':   '/requirements-view.html',
     '/duplicates':          '/duplicates.html',
